@@ -54,7 +54,7 @@ namespace Chetch{
 
             void begin(Stream* stream);
             void loop();
-            void receiveMessage();
+            bool receiveMessage(); //true if message has been received, false otherwise
     };
 
     static ArduinoBoard ArduinoBoard;
