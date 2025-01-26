@@ -6,6 +6,8 @@
 namespace Chetch{
     class ArduinoMessage{
         public:
+            static const byte NO_TARGET = 0; //can be used to delcare a braodcast message for example
+
             enum MessageType {
                 TYPE_NONE = 0, //used as a 'zero' value
                 TYPE_CUSTOM = 2,

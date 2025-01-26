@@ -39,6 +39,22 @@
 namespace Chetch{
             
     class ArduinoBoard{
+        public:
+            static const byte BOARD_ID = 1; //the target ID for messaging
+
+            enum class ErrorCode{
+                NO_ERROR = 0,
+                MESSAGE_FRAME_ERROR = 10, //To indicate this is a Frame error
+                MESSAGE_ERROR = 20,
+                TARGET_NOT_FOUND = 30,
+                MESSAGE_TYPE_PROHIBITED = 31, //if a particular target rejects a message type
+                NO_DEVICE_ID = 40,
+                DEVICE_LIMIT_REACHED = 41,
+                DEVICE_ID_ALREADY_USED = 42,
+                DEVICE_NOT_FOUND = 43,
+                DEVICE_ERROR = 100, //To indicate this is an error from the device (not ADM)
+            };
+
         private:
             MessageFrame frame;
             ArduinoMessage inboundMessage;
@@ -52,9 +68,15 @@ namespace Chetch{
                                 outboundMessage(MAX_FRAME_PAYLOAD_SIZE){}
             //~ArduinoBoard();
 
-            void begin(Stream* stream);
+            bool begin(Stream* stream); //will return false if fails to begin
             void loop();
+
+            //messaging stuff
+            void setErrorInfo(ArduinoMessage* message, ErrorCode errorCode, byte errorSubCode);
+            void setResponseInfo(ArduinoMessage* response, ArduinoMessage* message, byte sender);
             bool receiveMessage(); //true if message has been received, false otherwise
+            void sendMessage();
+            void handleMessage(ArduinoMessage* message, ArduinoMessage* response);
     };
 
     static ArduinoBoard ArduinoBoard;
