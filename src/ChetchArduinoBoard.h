@@ -34,6 +34,7 @@
 #include <Arduino.h>
 #include "ChetchMessageFrame.h"
 #include "ChetchArduinoMessage.h"
+#include "ChetchArduinoDevice.h"
 
 
 namespace Chetch{
@@ -41,13 +42,22 @@ namespace Chetch{
     class ArduinoBoard{
         public:
             static const byte BOARD_ID = 1; //the target ID for messaging
+            static const byte START_DEVICE_IDS_AT = 10;
+            static const int MAX_QUEUE_SIZE = MAX_DEVICES;
+
+            struct MessageQueueItem{
+                ArduinoDevice* device;
+                byte messageID; 
+                byte messageTag; 
+            };
 
             enum class ErrorCode{
                 NO_ERROR = 0,
                 MESSAGE_FRAME_ERROR = 10, //To indicate this is a Frame error
                 MESSAGE_ERROR = 20,
-                TARGET_NOT_FOUND = 30,
-                MESSAGE_TYPE_PROHIBITED = 31, //if a particular target rejects a message type
+                TARGET_NOT_SUPPLIED = 30,
+                TARGET_NOT_FOUND = 31,
+                MESSAGE_TYPE_PROHIBITED = 32, //if a particular target rejects a message type
                 NO_DEVICE_ID = 40,
                 DEVICE_LIMIT_REACHED = 41,
                 DEVICE_ID_ALREADY_USED = 42,
@@ -56,17 +66,26 @@ namespace Chetch{
             };
 
         private:
+            ArduinoDevice* devices[MAX_DEVICES];
+            byte deviceCount = 0;
+
             MessageFrame frame;
             ArduinoMessage inboundMessage;
             ArduinoMessage outboundMessage;
+
+            int queueStart = 0;
+            int queueCount = 0;
+            MessageQueueItem messageQueue[MAX_QUEUE_SIZE];
+        
             Stream* stream;
 
         public:
             //Constructor/Destructor
-            ArduinoBoard() : frame(MessageFrame::FrameSchema::SMALL_SIMPLE_CHECKSUM, MAX_FRAME_PAYLOAD_SIZE), 
-                                inboundMessage(MAX_FRAME_PAYLOAD_SIZE), 
-                                outboundMessage(MAX_FRAME_PAYLOAD_SIZE){}
+            ArduinoBoard(); 
             //~ArduinoBoard();
+
+            void addDevice(ArduinoDevice* device);
+            ArduinoDevice* getDevice(byte id);
 
             bool begin(Stream* stream); //will return false if fails to begin
             void loop();
@@ -76,7 +95,12 @@ namespace Chetch{
             void setResponseInfo(ArduinoMessage* response, ArduinoMessage* message, byte sender);
             bool receiveMessage(); //true if message has been received, false otherwise
             void sendMessage();
-            void handleMessage(ArduinoMessage* message, ArduinoMessage* response);
+            void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response);
+
+            bool enqueueMessageToSend(ArduinoDevice* device, byte messageID, byte messageTag = 0);
+            MessageQueueItem dequeueMessageToSend();
+            bool isMessageQueueFull();
+            bool isMessageQueueEmpty();
     };
 
     static ArduinoBoard ArduinoBoard;
