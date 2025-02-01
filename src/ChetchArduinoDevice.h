@@ -62,12 +62,14 @@ namespace Chetch{
             void addEventListener(EventListener listener);
             bool raiseEvent(int eventID);
 
+            void setReportInterval(int interval) { reportInterval = interval; }
+            
             bool enqueueMessageToSend(byte messageID);
             
-            void setReportInterval(int interval) { reportInterval = interval; }
             virtual void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response);
             virtual void populateOutboundMessage(ArduinoMessage* message, byte messageID);
             
+            void setErrorInfo(ArduinoMessage* message, byte errorSubCode);
             virtual void setReportInfo(ArduinoMessage* message){};
 
             virtual bool executeCommand(DeviceCommand command, ArduinoMessage* message, ArduinoMessage* response);

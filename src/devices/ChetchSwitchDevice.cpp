@@ -84,6 +84,8 @@ namespace Chetch{
                         handled = true;
                     } else {
                         //add some error shit here 
+                        setErrorInfo(response, ERROR_SWITCH_MODE);
+                        handled = false;
                     }
                     break;
             }

@@ -16,6 +16,8 @@ namespace Chetch{
             static const byte MESSAGE_ID_TRIGGERED = 100;
             static const int EVENT_SWITCH_TRIGGERED = 1;
 
+            static const byte ERROR_SWITCH_MODE = 101;
+
         private:
             SwitchMode mode;
             byte pin = 0;

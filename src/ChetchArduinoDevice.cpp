@@ -16,9 +16,14 @@ namespace Chetch{
         return false;
     }
 
+    void ArduinoDevice::setErrorInfo(ArduinoMessage* message, byte errorSubCode){
+        Board->setErrorInfo(message, ArduinoBoard::ErrorCode::DEVICE_ERROR, errorSubCode);
+    }
+
     void ArduinoDevice::handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response){
         switch(message->type){
             case ArduinoMessage::TYPE_STATUS_REQUEST:
+                //TODO: perhaps???
                 break;
 
             case ArduinoMessage::TYPE_COMMAND:
@@ -26,9 +31,6 @@ namespace Chetch{
                 if(executeCommand(command, message, response)){
                     response->type = ArduinoMessage::TYPE_COMMAND_RESPONSE;
                     response->add((byte)command);
-
-                } else {
-                    response->clear();
                 }
                 break;
         }

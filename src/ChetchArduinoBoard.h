@@ -48,7 +48,7 @@ namespace Chetch{
             struct MessageQueueItem{
                 ArduinoDevice* device;
                 byte messageID; 
-                byte messageTag; 
+                byte messageTag;  //currently not used 1/2/25
             };
 
             enum class ErrorCode{
@@ -62,7 +62,7 @@ namespace Chetch{
                 DEVICE_LIMIT_REACHED = 41,
                 DEVICE_ID_ALREADY_USED = 42,
                 DEVICE_NOT_FOUND = 43,
-                DEVICE_ERROR = 100, //To indicate this is an error from the device (not ADM)
+                DEVICE_ERROR = 100, //To indicate this is an error from the device (not Board)
             };
 
         private:
