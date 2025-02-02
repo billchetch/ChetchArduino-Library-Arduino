@@ -68,6 +68,7 @@ namespace Chetch{
         private:
             ArduinoDevice* devices[MAX_DEVICES];
             byte deviceCount = 0;
+            byte currentdevice = 0;
 
             MessageFrame frame;
             ArduinoMessage inboundMessage;
@@ -77,6 +78,7 @@ namespace Chetch{
             int queueCount = 0;
             MessageQueueItem messageQueue[MAX_QUEUE_SIZE];
         
+            bool begun = false;
             Stream* stream;
 
         public:

@@ -15,10 +15,13 @@ namespace Chetch{
     }
 
     bool ArduinoBoard::begin(Stream* stream){
+        if(stream == NULL)return false;
+
         this->stream = stream;
         inboundMessage.clear();
         outboundMessage.clear();
 
+        begun = true;
         //Note: could set up an outbound message here which will be sent on first loop
     }
 
@@ -132,7 +135,8 @@ namespace Chetch{
         MessageQueueItem qi;
         if(isMessageQueueEmpty()){
             qi.device = NULL;
-            qi.messageID = 100;
+            qi.messageID = 0;
+            qi.messageTag = 0;
         } else {
             qi.device = messageQueue[queueStart].device;
             qi.messageID = messageQueue[queueStart].messageID;
@@ -146,6 +150,9 @@ namespace Chetch{
     }
 
     void ArduinoBoard::loop(){
+        //basic error checking here to make sure that we've begun
+        if(!begun)return;
+
         //1. Receieve any message and possilbly reply (will get sent next loop)
         if(receiveMessage()){
             //we have received a valid message ... so direct it then to the appropriate place for handling
@@ -179,7 +186,6 @@ namespace Chetch{
         } //end receive massage
 
         //2. Loop next device
-        static byte currentdevice = 0;
         if(devices[currentdevice] != NULL){
             devices[currentdevice]->loop(); //will update device state, possible set flags etc. to then pouplate outbound message
             currentdevice = (currentdevice + 1) % deviceCount;

@@ -13,6 +13,7 @@ namespace Chetch{
     void Ticker::setHighLowDuration(unsigned int highDuration, unsigned int lowDuration){
         pinHighDuration = highDuration;
         pinLowDuration = lowDuration;
+        setReportInterval(1000); //default interval off 1 second
     }
 
     void Ticker::setReportInfo(ArduinoMessage* message){
