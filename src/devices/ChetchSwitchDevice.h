@@ -37,6 +37,7 @@ namespace Chetch{
             virtual void trigger();
             bool isOn();
 
+            void setStatusInfo(ArduinoMessage* message) override;
             void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
 
     }; //end class

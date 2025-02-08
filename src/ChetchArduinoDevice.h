@@ -71,6 +71,7 @@ namespace Chetch{
             
             void setErrorInfo(ArduinoMessage* message, byte errorSubCode);
             virtual void setReportInfo(ArduinoMessage* message){};
+            virtual void setStatusInfo(ArduinoMessage* message){};
 
             virtual bool executeCommand(DeviceCommand command, ArduinoMessage* message, ArduinoMessage* response);
 

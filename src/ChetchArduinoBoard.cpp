@@ -107,6 +107,13 @@ namespace Chetch{
                 response->add(freeMemory());
                 setResponseInfo(response, message, BOARD_ID);
                 break;
+
+            case ArduinoMessage::TYPE_PING:
+                response->type = ArduinoMessage::TYPE_PING_RESPONSE;
+                //response->add(BOARD_NAME);
+                response->add(millis());
+                setResponseInfo(response, message, BOARD_ID);
+                break;
         }
     }
 

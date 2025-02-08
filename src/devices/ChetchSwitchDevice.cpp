@@ -30,7 +30,10 @@ namespace Chetch{
         on = pinState == HIGH;
     }
 
-    
+    void SwitchDevice::setStatusInfo(ArduinoMessage* message){
+        message->add(pinState);
+    }
+
     void SwitchDevice::populateOutboundMessage(ArduinoMessage* message, byte messageID){
         if(messageID == MESSAGE_ID_TRIGGERED){
 

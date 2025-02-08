@@ -23,7 +23,8 @@ namespace Chetch{
     void ArduinoDevice::handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response){
         switch(message->type){
             case ArduinoMessage::TYPE_STATUS_REQUEST:
-                //TODO: perhaps???
+                response->type = ArduinoMessage::TYPE_STATUS_RESPONSE;
+                setStatusInfo(response);
                 break;
 
             case ArduinoMessage::TYPE_COMMAND:
