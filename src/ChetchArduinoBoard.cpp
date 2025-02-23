@@ -63,7 +63,7 @@ namespace Chetch{
                 } //end frame validate
 
                 //if we are here it must be an error so let the sender know
-                setResponseInfo(&outboundMessage, &inboundMessage, BOARD_ID);
+                setResponseInfo(&outboundMessage, &inboundMessage, getID());
             }
         } //end stream read
         return false;
@@ -96,7 +96,7 @@ namespace Chetch{
             case ArduinoMessage::TYPE_ECHO:
                 response->copy(message);
                 response->type = ArduinoMessage::TYPE_ECHO_RESPONSE;
-                setResponseInfo(response, message, BOARD_ID);
+                setResponseInfo(response, message, getID());
                 break;
 
             case ArduinoMessage::TYPE_STATUS_REQUEST:
@@ -105,14 +105,14 @@ namespace Chetch{
                 response->add(millis());
                 response->add(deviceCount);
                 response->add(freeMemory());
-                setResponseInfo(response, message, BOARD_ID);
+                setResponseInfo(response, message, getID());
                 break;
 
             case ArduinoMessage::TYPE_PING:
                 response->type = ArduinoMessage::TYPE_PING_RESPONSE;
                 //response->add(BOARD_NAME);
                 response->add(millis());
-                setResponseInfo(response, message, BOARD_ID);
+                setResponseInfo(response, message, getID());
                 break;
         }
     }
@@ -167,21 +167,24 @@ namespace Chetch{
             switch(inboundMessage.target){
                 case ArduinoMessage::NO_TARGET:
                     setErrorInfo(&outboundMessage, ErrorCode::TARGET_NOT_SUPPLIED, inboundMessage.target);
-                    setResponseInfo(&outboundMessage, &inboundMessage, BOARD_ID);
+                    setResponseInfo(&outboundMessage, &inboundMessage, getID());
                     break;
 
-                case ArduinoBoard::BOARD_ID:
-                    handleInboundMessage(&inboundMessage, &outboundMessage);
-                    break;
-
-                default: //assume this is for device
-                    ArduinoDevice* device = getDevice(inboundMessage.target);
-                    if(device != NULL){
-                        device->handleInboundMessage(&inboundMessage, &outboundMessage);
-                        setResponseInfo(&outboundMessage, &inboundMessage, device->id);
-                    } else {
-                        setErrorInfo(&outboundMessage, ErrorCode::TARGET_NOT_FOUND, inboundMessage.target);
-                        setResponseInfo(&outboundMessage, &inboundMessage, BOARD_ID);
+                default: //assume this is for device (but check it's within device range first)
+                    if(inboundMessage.target == getID()){ //intending this board
+                        handleInboundMessage(&inboundMessage, &outboundMessage);
+                    } else if(inboundMessage.target < START_DEVICE_IDS_AT){ //possible wrong board targeted
+                        setErrorInfo(&outboundMessage, ErrorCode::TARGET_NOT_VALID, inboundMessage.target);
+                        setResponseInfo(&outboundMessage, &inboundMessage, getID());
+                    } else { //intending a device
+                        ArduinoDevice* device = getDevice(inboundMessage.target);
+                        if(device != NULL){
+                            device->handleInboundMessage(&inboundMessage, &outboundMessage);
+                            setResponseInfo(&outboundMessage, &inboundMessage, device->id);
+                        } else {
+                            setErrorInfo(&outboundMessage, ErrorCode::TARGET_NOT_FOUND, inboundMessage.target);
+                            setResponseInfo(&outboundMessage, &inboundMessage, getID());
+                        }
                     }
                     break;
             }

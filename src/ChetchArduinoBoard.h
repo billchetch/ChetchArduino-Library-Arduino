@@ -41,7 +41,7 @@ namespace Chetch{
             
     class ArduinoBoard{
         public:
-            static const byte BOARD_ID = 1; //the target ID for messaging
+            static const byte DEFAULT_BOARD_ID = 1; //the target ID for messaging
             static const byte START_DEVICE_IDS_AT = 10;
             static const int MAX_QUEUE_SIZE = MAX_DEVICES;
 
@@ -55,6 +55,7 @@ namespace Chetch{
                 NO_ERROR = 0,
                 MESSAGE_FRAME_ERROR = 10, //To indicate this is a Frame error
                 MESSAGE_ERROR = 20,
+                TARGET_NOT_VALID = 29,
                 TARGET_NOT_SUPPLIED = 30,
                 TARGET_NOT_FOUND = 31,
                 MESSAGE_TYPE_PROHIBITED = 32, //if a particular target rejects a message type
@@ -66,6 +67,7 @@ namespace Chetch{
             };
 
         private:
+            byte id = DEFAULT_BOARD_ID;
             ArduinoDevice* devices[MAX_DEVICES];
             byte deviceCount = 0;
             byte currentdevice = 0;
@@ -83,8 +85,10 @@ namespace Chetch{
 
         public:
             //Constructor/Destructor
-            ArduinoBoard(); 
+            ArduinoBoard();
             //~ArduinoBoard();
+            byte getID(){ return id; }
+            void setID(byte id){ this->id = id; }
 
             void addDevice(ArduinoDevice* device);
             ArduinoDevice* getDevice(byte id);
