@@ -9,7 +9,7 @@ namespace Chetch{
         eventListener = listener;
     }
 
-    bool ArduinoDevice::raiseEvent(int eventID) {
+    bool ArduinoDevice::raiseEvent(byte eventID) {
         if (eventListener != NULL) {
             return eventListener(this, eventID);
         }
@@ -18,6 +18,10 @@ namespace Chetch{
 
     void ArduinoDevice::setErrorInfo(ArduinoMessage* message, byte errorSubCode){
         Board->setErrorInfo(message, ArduinoBoard::ErrorCode::DEVICE_ERROR, errorSubCode);
+    }
+
+    void ArduinoDevice::setStatusInfo(ArduinoMessage* message){
+        message->add(reportInterval);
     }
 
     void ArduinoDevice::handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response){

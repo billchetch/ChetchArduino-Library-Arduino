@@ -2,7 +2,6 @@
 #include <MemoryFree.h>
 
 namespace Chetch{
-
     
     //Constructors
     ArduinoBoard::ArduinoBoard() : frame(MessageFrame::FrameSchema::SMALL_SIMPLE_CHECKSUM, MAX_FRAME_PAYLOAD_SIZE), 
@@ -14,6 +13,7 @@ namespace Chetch{
         }
     }
 
+
     bool ArduinoBoard::begin(Stream* stream){
         if(stream == NULL)return false;
 
@@ -21,8 +21,13 @@ namespace Chetch{
         inboundMessage.clear();
         outboundMessage.clear();
 
+        for(int i = 0; i < deviceCount; i++){
+            devices[i]->begin();
+        }
+
         begun = true;
         //Note: could set up an outbound message here which will be sent on first loop
+        return begun;
     }
 
     void ArduinoBoard::addDevice(ArduinoDevice* device){
@@ -78,7 +83,7 @@ namespace Chetch{
         //ready for reuse
         outboundMessage.clear();
     }
-
+    
     void ArduinoBoard::setErrorInfo(ArduinoMessage* message, ErrorCode errorCode, byte errorSubCode){
         message->type = ArduinoMessage::TYPE_ERROR;
         message->add((byte)errorCode);
@@ -101,7 +106,7 @@ namespace Chetch{
 
             case ArduinoMessage::TYPE_STATUS_REQUEST:
                 response->type = ArduinoMessage::TYPE_STATUS_RESPONSE;
-                //response->add(BOARD_NAME);
+                response->add(BOARD_NAME);
                 response->add(millis());
                 response->add(deviceCount);
                 response->add(freeMemory());
@@ -211,4 +216,6 @@ namespace Chetch{
             sendMessage();
         }
     }
+
+    ArduinoBoard Board;
 }

@@ -6,7 +6,8 @@ namespace Chetch{
         //empty
     }
 
-    Ticker::Ticker(unsigned int highDuration, unsigned int lowDuration){
+    Ticker::Ticker(byte pin, unsigned int highDuration, unsigned int lowDuration){
+        this->pin = pin;
         setHighLowDuration(highDuration, lowDuration);
     }
 
@@ -17,18 +18,19 @@ namespace Chetch{
     }
 
     void Ticker::setReportInfo(ArduinoMessage* message){
+        Serial.println(tickCount);
         message->add(tickCount);
     }
 
 	void Ticker::loop(){
         ArduinoDevice::loop();
         
-
         if(pinState == LOW && millis() - pinLowStartedOn > pinLowDuration){
             pinState = HIGH;
             pinHighStartedOn = millis();
             tickCount++;
             digitalWrite(pin, pinState);
+            raiseEvent(EVENT_TICKED);
         } else if(pinState == HIGH && millis() - pinHighStartedOn > pinHighDuration){
             pinState = LOW;
             pinLowStartedOn = millis();

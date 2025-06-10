@@ -8,8 +8,8 @@
 namespace Chetch{
     class Ticker : public ArduinoDevice {
         public:
-            
-        
+            static const byte EVENT_TICKED = 1;
+
         private:
             byte pin = 0;
             unsigned int pinHighDuration = 0;
@@ -22,11 +22,13 @@ namespace Chetch{
         public: 
             
             Ticker();
-            Ticker(unsigned int highDuration, unsigned int lowDuration);
+            Ticker(byte pin, unsigned int highDuration, unsigned int lowDuration);
             void setHighLowDuration(unsigned int highDuration, unsigned int lowDuration);
 
             void setReportInfo(ArduinoMessage* message) override; 
             void loop() override;
+
+            unsigned long getTickCount(){ return tickCount; };
     }; //end class
 } //end namespae
 #endif

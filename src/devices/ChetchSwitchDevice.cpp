@@ -31,6 +31,8 @@ namespace Chetch{
     }
 
     void SwitchDevice::setStatusInfo(ArduinoMessage* message){
+        ArduinoDevice::setStatusInfo(message);
+        
         message->add(mode);
         message->add(pinState);
     }

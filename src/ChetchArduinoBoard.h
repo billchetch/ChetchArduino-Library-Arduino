@@ -66,6 +66,7 @@ namespace Chetch{
                 DEVICE_ERROR = 100, //To indicate this is an error from the device (not Board)
             };
 
+
         private:
             byte id = DEFAULT_BOARD_ID;
             ArduinoDevice* devices[MAX_DEVICES];
@@ -92,6 +93,7 @@ namespace Chetch{
 
             void addDevice(ArduinoDevice* device);
             ArduinoDevice* getDevice(byte id);
+            byte getDeviceCount(){ return deviceCount; };
 
             bool begin(Stream* stream); //will return false if fails to begin
             void loop();
@@ -109,6 +111,6 @@ namespace Chetch{
             bool isMessageQueueEmpty();
     };
 
-    static ArduinoBoard ArduinoBoard;
+    extern ArduinoBoard Board;
 }
 #endif
