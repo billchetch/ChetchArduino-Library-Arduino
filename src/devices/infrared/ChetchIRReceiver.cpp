@@ -28,14 +28,12 @@ namespace Chetch{
 
 		switch (command) {
 			case START:
-				irReceiver.resume();
-				recording = true;
+				record(true);
 				response->add(recording);
 				break;
 
 			case STOP:
-				irReceiver.resume();
-				recording = false;
+				record(false);
 				response->add(recording);
 				break;
 		}
@@ -43,12 +41,18 @@ namespace Chetch{
 		return true;
 	}
 
+	void IRReceiver::record(bool start){
+		irReceiver.resume();
+		recording = start;
+		raiseEvent(recording ? EVENT_START_RECORDING : EVENT_STOP_RECORDING);
+	}
+
 	void IRReceiver::populateOutboundMessage(ArduinoMessage* message, byte messageID) {
 		if (messageID == MESSAGE_ID_IRCODERECEIVED) {
 			message->type = ArduinoMessage::TYPE_DATA;
-			//message->add(irReceiver.decodedIRData.protocol); //Protocol
-			//message->add(irReceiver.decodedIRData.address); //Address
-			//message->add(irReceiver.decodedIRData.command); //Command
+			message->add(irReceiver.decodedIRData.protocol); //Protocol
+			message->add(irReceiver.decodedIRData.address); //Address
+			message->add(irReceiver.decodedIRData.command); //Command
 			
 			irReceiver.resume(); //ready for next result	
 		}
@@ -57,12 +61,11 @@ namespace Chetch{
 	void IRReceiver::loop() {
 		
 		static unsigned long elapsed = 0;
-		if ((millis() - elapsed > 100) && irReceiver.decode()) {
+		if (recording && (millis() - elapsed > 100) && irReceiver.decode()) {
 			elapsed = millis();
 			
 			raiseEvent(EVENT_IRCODERECEIVED);
 			enqueueMessageToSend(MESSAGE_ID_IRCODERECEIVED);
 		}
 	}
-
 } //end namespace

@@ -30,8 +30,8 @@ namespace Chetch{
 			if (millis() - lastSend < SEND_INTERVAL_THRESHOLD)return;
 
 			switch (protocol) {
-				case SAMSUNG: //17
-					//irSender.sendSamsung(address, command, 0);
+				case SAMSUNG: //20
+					irSender.sendSamsung(address, ircommand, 0);
 					break;
 
 				default:
@@ -41,18 +41,8 @@ namespace Chetch{
 
 			sendFlag = false;
 			lastSend = millis();
-		}
-		
-		if (repeatFlag) {
-			switch (protocol) {
-				case SAMSUNG: //17
-					if ( millis() - lastSend >= 60) {
-						//irSender.sendSamsungRepeat();
-						//irSender.sendSamsungLGRepeat(); //As of version 3.9.0
-						lastSend = millis();
-					}
-					break;
-			}
+
+			raiseEvent(EVENT_IRCODESENT);
 		}
 	}
 
@@ -62,36 +52,33 @@ namespace Chetch{
 
 		switch (command) {
 			case SEND:
-				//protocol = message->argumentAsUInt(getArgumentIndex(message, MessageField::PROTOCOL));
-				//address = message->argumentAsUInt(getArgumentIndex(message, MessageField::ADDRESS));
-				bool repeat = false; //message->argumentAsBool(getArgumentIndex(message, MessageField::USE_REPEAT));
-				if (repeatFlag && !repeat) { //so this is an end to repeating so we just set flags to false
-					sendFlag = false;
-					repeatFlag = false;
-				}
-				else { //otherwise here is a normal send or a send with repeat
-					switch (protocol) {
-					case SAMSUNG: //17
-						sendFlag = true;
-						break;
-
-					default:
-						setErrorInfo(response, ERROR_UNRECOGNISED_PROTOCOL);
-						return false;
-					}
-					repeatFlag = repeat;
-				}
+				send(message->get<unsigned int>(0), //protocol
+					message->get<unsigned int>(1), //address
+					message->get<unsigned int>(2)); //ircommand
 				
-				response->add(protocol);
-				response->add(address);
-				response->add(command);
-				response->add(sendFlag);
-				response->add(repeatFlag);
 				handled = true;
 				break;
 
 		} //end command  switch
 			
 		return handled;
+	}
+
+	bool IRTransmitter::send(unsigned int protocol, unsigned int address, unsigned int ircommand){
+
+		switch (protocol) {  //See IRProtocol.h and IRProtocol.hpp
+			case SAMSUNG: //20
+				sendFlag = true;
+				break;
+
+			default:
+				return false;
+			}
+
+		this->protocol = protocol;
+		this->address = address;
+		this->ircommand = ircommand;
+
+		return true;
 	}
 } //end namespace

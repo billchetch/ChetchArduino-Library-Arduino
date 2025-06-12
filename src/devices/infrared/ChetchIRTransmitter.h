@@ -11,16 +11,16 @@ namespace Chetch{
 		static const unsigned int SEND_INTERVAL_THRESHOLD = 250; 
 		static const byte ERROR_UNRECOGNISED_PROTOCOL = 1;
 
+		static const byte EVENT_IRCODESENT = 1;
+
 	private:
 		IRsend irSender;
 		byte transmitPin = 0; 
 		bool sendFlag = false;
-		bool repeatFlag = false;
 		unsigned int protocol = 0;
 		unsigned int address = 0;
-		unsigned int command = 0;
+		unsigned int ircommand = 0;
 		unsigned long lastSend = 0;
-		unsigned int repeatCount = 0;
 
 	public:
 		IRTransmitter(byte transmitPin);
@@ -29,7 +29,7 @@ namespace Chetch{
 		bool begin() override;
         void loop() override;
         bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
-            
+        bool send(unsigned int protocol, unsigned int address, unsigned int command);
 		void setStatusInfo(ArduinoMessage* message) override;
 	};
 } //end namespace	

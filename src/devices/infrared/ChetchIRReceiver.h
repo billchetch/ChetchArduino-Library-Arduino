@@ -17,6 +17,7 @@ namespace Chetch{
 			byte receivePin;
 			IRrecv irReceiver;
 			bool recording = false;
+			
 		
 		public:
 			IRReceiver(byte pin);
@@ -28,5 +29,8 @@ namespace Chetch{
 
 			void setStatusInfo(ArduinoMessage* message) override;
 			void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
+
+			void record(bool start);
+			IRData getDecodedData(){ return irReceiver.decodedIRData; };
   };
 } //end namespace	
