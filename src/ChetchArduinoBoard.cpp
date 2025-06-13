@@ -57,20 +57,25 @@ namespace Chetch{
                     //Frame is good so let's get the payload and try turn it into an adm message
                     //note: this clears the inbound message
                     if(inboundMessage.deserialize(frame.getPayload(), frame.getPayloadSize())){
-                        return true;
+                        return true; //BINGO! received a valid message
                     } else {
                         //an ArduinoMessage deserialization error
                         setErrorInfo(&outboundMessage, ErrorCode::MESSAGE_ERROR, (byte)inboundMessage.error);
+                        return false;
                     }
                 } else {
                     //a MessageFrame error
                     setErrorInfo(&outboundMessage, ErrorCode::MESSAGE_FRAME_ERROR, (byte)frame.error);
+                    return false;
                 } //end frame validate
 
                 //if we are here it must be an error so let the sender know
                 setResponseInfo(&outboundMessage, &inboundMessage, getID());
+                return false;
             }
         } //end stream read
+
+        //Not received a message OR stream was empty
         return false;
     }
 
@@ -167,7 +172,7 @@ namespace Chetch{
 
         //1. Receieve any message and possilbly reply (will get sent next loop)
         if(receiveMessage()){
-            //we have received a valid message ... so direct it then to the appropriate place for handling
+            //we have received a VALID message ... so direct it then to the appropriate place for handling
             outboundMessage.clear();
             switch(inboundMessage.target){
                 case ArduinoMessage::NO_TARGET:
@@ -198,7 +203,9 @@ namespace Chetch{
             if(!outboundMessage.isEmpty()){
                 sendMessage();
             }
-        } //end receive massage
+        } else if(!outboundMessage.isEmpty()){ //if the receiveMessage populated an outbound message
+            sendMessage();
+        }
 
         //2. Loop next device
         if(devices[currentdevice] != NULL){

@@ -42,9 +42,73 @@ namespace Chetch{
         }
 	}
 
-    void OLEDTextDisplay::displayBoardStats(unsigned int showFor){
-        display->setFont(u8x8_font_7x14_1x2_f);
+    void OLEDTextDisplay::loop(){
+        ArduinoDevice::loop();
+
+        if(isLocked() && millis() - lockedAt > lockDuration){
+            if(display != NULL){
+                display->setFont(defaultFont);
+                display->clearDisplay();
+            }
+            unlock();
+        }
+    }
+
+    bool OLEDTextDisplay::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
+        bool handled = ArduinoDevice::executeCommand(command, message, response);
+        
+        if(!handled)
+        {
+            switch(command){
+                case DIZPLAY:
+                    DisplayPreset preset = (DisplayPreset)message->get<DisplayPreset>(1); //DisplayPreset::BOARD_STATS; //this should come from message
+                    unsigned int lockFor = message->get<unsigned int>(2);
+                    displayPreset(preset, lockFor);
+                    handled = true;
+                    break;
+            }
+        }
+        return handled;
+    }
+    
+    void OLEDTextDisplay::lock(unsigned int lockFor){
+        lockDuration = lockFor;
+        lockedAt = millis();
+    }
+
+    void OLEDTextDisplay::unlock(){
+        lockDuration = 0;
+    }
+
+    void OLEDTextDisplay::displayPreset(DisplayPreset preset, unsigned int lockFor = 3000){
+         if(isLocked() || display == NULL)return;
+
+        switch(preset){
+            case BOARD_STATS:
+                displayBoardStats(lockFor);
+                break;
+
+            case HELLO_WORLD:
+                display->setFont(u8x8_font_7x14_1x2_f);
+                display->setCursor(0, 0);
+                display->print("Hello World!");
+                lock(lockFor);
+                break;
+
+            default:
+                display->setFont(u8x8_font_7x14_1x2_f);
+                display->setCursor(0, 0);
+                display->print("Preset not found");
+                lock(lockFor);
+                break;
+        }
+    }
+
+    void OLEDTextDisplay::displayBoardStats(unsigned int lockFor){
+        if(isLocked() || display == NULL)return;
+
         display->clearDisplay();
+        display->setFont(u8x8_font_7x14_1x2_f);
         display->setCursor(0, 0);
         display->print(BOARD_NAME);
         display->print(" ");
@@ -59,10 +123,8 @@ namespace Chetch{
         display->print(display->getCols());
         display->print("x");
         display->print(display->getRows());
-        if(showFor > 0){
-            delay(showFor);
-            display->clearDisplay();
+        if(lockFor > 0){
+            lock(lockFor);
         }
-        display->setFont(defaultFont);
     }
 }

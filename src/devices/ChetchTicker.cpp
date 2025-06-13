@@ -18,7 +18,6 @@ namespace Chetch{
     }
 
     void Ticker::setReportInfo(ArduinoMessage* message){
-        Serial.println(tickCount);
         message->add(tickCount);
     }
 
