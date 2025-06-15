@@ -32,6 +32,7 @@ namespace Chetch{
             ~OLEDTextDisplay();
 
             bool begin() override;
+            void setReportInfo(ArduinoMessage* message) override;
             void loop() override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 

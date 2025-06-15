@@ -29,9 +29,9 @@ namespace Chetch{
 		if (sendFlag) {
 			if (millis() - lastSend < SEND_INTERVAL_THRESHOLD)return;
 
-			switch (protocol) {
+			switch (ir2send.protocol) {
 				case SAMSUNG: //20
-					irSender.sendSamsung(address, ircommand, 0);
+					irSender.sendSamsung(ir2send.address, ir2send.command, 0);
 					break;
 
 				default:
@@ -52,12 +52,14 @@ namespace Chetch{
 
 		switch (command) {
 			case SEND:
-				send(message->get<unsigned int>(0), //protocol
-					message->get<unsigned int>(1), //address
-					message->get<unsigned int>(2)); //ircommand
-				
-				handled = true;
-				break;
+				if(send(message->get<unsigned int>(1), //protocol
+					message->get<unsigned int>(2), //address
+					message->get<unsigned int>(3))){ //command
+						return true;
+				} else {
+					setErrorInfo(response, ERROR_UNRECOGNISED_PROTOCOL);
+					return false;
+				}
 
 		} //end command  switch
 			
@@ -65,19 +67,19 @@ namespace Chetch{
 	}
 
 	bool IRTransmitter::send(unsigned int protocol, unsigned int address, unsigned int ircommand){
-
 		switch (protocol) {  //See IRProtocol.h and IRProtocol.hpp
 			case SAMSUNG: //20
 				sendFlag = true;
 				break;
 
 			default:
-				return false;
+				sendFlag = true; //remove
+				break;
 			}
 
-		this->protocol = protocol;
-		this->address = address;
-		this->ircommand = ircommand;
+		ir2send.protocol = protocol;
+		ir2send.address = address;
+		ir2send.command = ircommand;
 
 		return true;
 	}

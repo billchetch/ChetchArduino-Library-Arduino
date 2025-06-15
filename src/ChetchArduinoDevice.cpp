@@ -57,8 +57,8 @@ namespace Chetch{
         bool handled = false;
         switch(command){
             case SET_REPORT_INTERVAL:
-                //setReportInterval(message->argumentAsInt(argIdx));
-                //response->addInt(reportInterval);
+                setReportInterval(message->get<int>(1));
+                response->add(reportInterval);
                 handled = true;
                 break;
 

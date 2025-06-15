@@ -42,6 +42,20 @@ namespace Chetch{
         }
 	}
 
+    void OLEDTextDisplay::setReportInfo(ArduinoMessage* message){
+        if(!isLocked() && display != NULL){
+            display->setFont(u8x8_font_7x14_1x2_f);
+            display->setCursor(0, 0);
+            display->print(BOARD_NAME);
+            display->print(" ");
+            display->print(freeMemory());
+            display->print(" bytes");
+            display->setCursor(0, 2);
+            display->print(millis());
+            display->print(" ms");
+        }
+    }
+
     void OLEDTextDisplay::loop(){
         ArduinoDevice::loop();
 
