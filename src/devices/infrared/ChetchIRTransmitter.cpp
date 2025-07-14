@@ -34,6 +34,10 @@ namespace Chetch{
 					irSender.sendSamsung(ir2send.address, ir2send.command, 0);
 					break;
 
+				case SAMSUNGLG: //21
+					irSender.sendSamsungLG(ir2send.address, ir2send.command, 0);
+					break;
+
 				default:
 					break;
 
@@ -69,12 +73,12 @@ namespace Chetch{
 	bool IRTransmitter::send(unsigned int protocol, unsigned int address, unsigned int ircommand){
 		switch (protocol) {  //See IRProtocol.h and IRProtocol.hpp
 			case SAMSUNG: //20
+			case SAMSUNGLG: //21
 				sendFlag = true;
 				break;
 
 			default:
-				sendFlag = true; //remove
-				break;
+				return false;
 			}
 
 		ir2send.protocol = protocol;

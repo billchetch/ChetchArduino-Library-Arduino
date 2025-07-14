@@ -17,6 +17,10 @@ namespace Chetch{
         setReportInterval(1000); //default interval off 1 second
     }
 
+    bool Ticker::begin(){
+        pinMode(pin, OUTPUT);
+    }
+
     void Ticker::setReportInfo(ArduinoMessage* message){
         message->add(tickCount);
     }

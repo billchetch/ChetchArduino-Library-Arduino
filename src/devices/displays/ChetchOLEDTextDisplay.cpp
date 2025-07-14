@@ -41,27 +41,12 @@ namespace Chetch{
             return false;
         }
 	}
-
-    void OLEDTextDisplay::setReportInfo(ArduinoMessage* message){
-        if(!isLocked() && display != NULL){
-            display->setFont(u8x8_font_7x14_1x2_f);
-            display->setCursor(0, 0);
-            display->print(BOARD_NAME);
-            display->print(" ");
-            display->print(freeMemory());
-            display->print(" bytes");
-            display->setCursor(0, 2);
-            display->print(millis());
-            display->print(" ms");
-        }
-    }
-
+    
     void OLEDTextDisplay::loop(){
         ArduinoDevice::loop();
 
         if(isLocked() && millis() - lockedAt > lockDuration){
             if(display != NULL){
-                display->setFont(defaultFont);
                 display->clearDisplay();
             }
             unlock();
@@ -73,18 +58,38 @@ namespace Chetch{
         
         if(!handled)
         {
+            char text[32];
             switch(command){
                 case DIZPLAY:
-                    DisplayPreset preset = (DisplayPreset)message->get<DisplayPreset>(1); //DisplayPreset::BOARD_STATS; //this should come from message
-                    unsigned int lockFor = message->get<unsigned int>(2);
-                    displayPreset(preset, lockFor);
+                    displayPreset((DisplayPreset)message->get<DisplayPreset>(1),
+                                    message->get<unsigned int>(2));
                     handled = true;
                     break;
+
+                case PRINT:
+                    if(message->getArgumentSize(1) < 32){
+                        message->get(1, text);
+                        print(text, message->get<unsigned int>(2), message->get<unsigned int>(3));
+                    } else {
+                        //todo an error of sorts
+                    }
+                    handled = true;
+                    break;
+
+                case LOCK:
+                    //todo
+                    break;
+
+                default:
+                    handled = false;
+                    break;
+
             }
         }
         return handled;
     }
     
+    //Takes control of screen for period in question then clears it after use
     void OLEDTextDisplay::lock(unsigned int lockFor){
         lockDuration = lockFor;
         lockedAt = millis();
@@ -94,7 +99,15 @@ namespace Chetch{
         lockDuration = 0;
     }
 
-    void OLEDTextDisplay::displayPreset(DisplayPreset preset, unsigned int lockFor = 3000){
+    void OLEDTextDisplay::print(char* text, unsigned int cx, unsigned int cy){
+        if(isLocked() || display == NULL)return;
+
+        display->setFont(u8x8_font_7x14_1x2_f);
+        display->setCursor(cx, cy);
+        display->print(text);
+    }
+
+    void OLEDTextDisplay::displayPreset(DisplayPreset preset, unsigned int lockFor){
          if(isLocked() || display == NULL)return;
 
         switch(preset){
@@ -103,13 +116,20 @@ namespace Chetch{
                 break;
 
             case HELLO_WORLD:
+                display->clearDisplay();
                 display->setFont(u8x8_font_7x14_1x2_f);
                 display->setCursor(0, 0);
                 display->print("Hello World!");
                 lock(lockFor);
                 break;
 
+            case CLEAR:
+                display->clearDisplay();
+                lock(lockFor);
+                break;
+
             default:
+                display->clearDisplay();
                 display->setFont(u8x8_font_7x14_1x2_f);
                 display->setCursor(0, 0);
                 display->print("Preset not found");

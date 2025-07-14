@@ -25,6 +25,7 @@ namespace Chetch{
             Ticker(byte pin, unsigned int highDuration, unsigned int lowDuration);
             void setHighLowDuration(unsigned int highDuration, unsigned int lowDuration);
 
+            bool begin() override;
             void setReportInfo(ArduinoMessage* message) override; 
             void loop() override;
 

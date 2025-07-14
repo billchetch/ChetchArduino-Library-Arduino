@@ -88,6 +88,10 @@ namespace Chetch{
                 return retVal;
             }
 
+            template<typename T> T getLast(){
+                return get<T>(getArgumentCount() - 1);
+            }
+
             void get(byte argIdx, char* s){
                 if(hasArgument(argIdx)){
                     byte *arg = getArgument(argIdx);

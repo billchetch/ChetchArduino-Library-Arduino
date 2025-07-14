@@ -38,6 +38,8 @@ namespace Chetch{
                 RESUME,
                 ZERO,
                 ANALYSE,
+                LOCK,
+                UNLOCK
             };
 
         public:

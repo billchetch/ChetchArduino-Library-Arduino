@@ -94,6 +94,10 @@ namespace Chetch{
                         handled = false;
                     }
                     break;
+
+                default:
+                    handled = false;
+                    break;
             }
         }
                 

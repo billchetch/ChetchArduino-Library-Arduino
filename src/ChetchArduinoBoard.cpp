@@ -4,7 +4,7 @@
 namespace Chetch{
     
     //Constructors
-    ArduinoBoard::ArduinoBoard() : frame(MessageFrame::FrameSchema::SMALL_SIMPLE_CHECKSUM, MAX_FRAME_PAYLOAD_SIZE), 
+    ArduinoBoard::ArduinoBoard() : frame(MessageFrame::FrameSchema::SMALL_SIMPLE_CHECKSUM, MessageFrame::MessageEncoding::SYSTEM_DEFINED, MAX_FRAME_PAYLOAD_SIZE), 
                                 inboundMessage(MAX_FRAME_PAYLOAD_SIZE), 
                                 outboundMessage(MAX_FRAME_PAYLOAD_SIZE)
     {
@@ -80,13 +80,14 @@ namespace Chetch{
     }
 
     void ArduinoBoard::sendMessage(){
-        //TODO:??? maybe handle case of if oubound message is in an error state
+         //TODO:??? maybe handle case of if oubound message is in an error state
         frame.setPayload(outboundMessage.getBytes(), outboundMessage.getByteCount());
         frame.write(stream); //write bytes to stream
         frame.reset();
         
         //ready for reuse
         outboundMessage.clear();
+        
     }
     
     void ArduinoBoard::setErrorInfo(ArduinoMessage* message, ErrorCode errorCode, byte errorSubCode){
@@ -203,12 +204,12 @@ namespace Chetch{
             if(!outboundMessage.isEmpty()){
                 sendMessage();
             }
-        } else if(!outboundMessage.isEmpty()){ //if the receiveMessage populated an outbound message
+        } else if(!outboundMessage.isEmpty()){ //if the receiveMessage populated an outbound message (e.g. error)
             sendMessage();
         }
 
         //2. Loop next device
-        if(devices[currentdevice] != NULL){
+        if(deviceCount > 0 && devices[currentdevice] != NULL){
             devices[currentdevice]->loop(); //will update device state, possible set flags etc. to then pouplate outbound message
             currentdevice = (currentdevice + 1) % deviceCount;
         }

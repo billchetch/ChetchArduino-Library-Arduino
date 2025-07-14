@@ -5,6 +5,15 @@
 #include <ChetchArduinoDevice.h>
 #include <ChetchArduinoMessage.h>
 
+
+/*
+PIN REFERENCE FOR I2C LED:
+- 5V
+- GND
+- SDA = A4 (Nano/Arduino), 20 (Mega/Leonardo)
+- SCL = A5 (Nano/Arduino), 21 (Mega/Leonardo)
+*/
+
 namespace Chetch{
     class OLEDTextDisplay : public ArduinoDevice{
         public:
@@ -32,12 +41,12 @@ namespace Chetch{
             ~OLEDTextDisplay();
 
             bool begin() override;
-            void setReportInfo(ArduinoMessage* message) override;
             void loop() override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
-            void displayPreset(DisplayPreset preset, unsigned int lockFor = 3000);
-            void displayBoardStats(unsigned int lockFor = 3000);
+            void print(char* text, unsigned int cx = 0, unsigned int cy = 0);
+            void displayPreset(DisplayPreset preset, unsigned int lockFor);
+            void displayBoardStats(unsigned int lockFor);
             void lock(unsigned int lockFor); //set to 0 to remove lock, lockFor in ms
             void unlock();
             bool isLocked(){ return lockDuration > 0; };
