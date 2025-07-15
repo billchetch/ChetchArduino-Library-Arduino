@@ -74,12 +74,13 @@ namespace Chetch{
         
         if(!handled)
         {
+            bool currentPinState = false;
             switch(command){
                 case ON:
                 case OFF:
                     if(mode == SwitchMode::ACTIVE){
                         pinState = command == DeviceCommand::ON;
-                        bool currentPinState = digitalRead(pin);
+                        currentPinState = digitalRead(pin);
                         if(currentPinState != pinState){
                             //if there is a request to change of pin state then if we haven't started recording then we start
                             if(recording == 0)recording = millis();

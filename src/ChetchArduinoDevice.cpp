@@ -31,6 +31,11 @@ namespace Chetch{
                 setStatusInfo(response);
                 break;
 
+            case ArduinoMessage::TYPE_PING:
+                response->type = ArduinoMessage::TYPE_PING_RESPONSE;
+                response->add(millis());
+                break;
+
             case ArduinoMessage::TYPE_COMMAND:
                 DeviceCommand command = (DeviceCommand)message->get<DeviceCommand>(0);
                 if(executeCommand(command, message, response)){

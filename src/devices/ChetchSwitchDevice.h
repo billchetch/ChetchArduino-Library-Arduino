@@ -10,7 +10,7 @@ namespace Chetch{
         public:
             enum SwitchMode {
                 ACTIVE = 1,
-                PASSIVE = 2
+                PASSIVE = 2,
             };
 
             static const byte MESSAGE_ID_TRIGGERED = 100;
