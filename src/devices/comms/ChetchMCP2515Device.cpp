@@ -21,13 +21,17 @@ namespace Chetch{
         ArduinoDevice::loop();
 
         MCP2515::ERROR err = mcp2515.readMessage(&canInFrame);
+        ArduinoMessage msg(16);
         switch(err){
             case MCP2515::ERROR_OK:
+                //split out the ID and check
+
+                //Make the message
+
+                //Call a listener if we have a message
                 if(messageReceivedListener != NULL){
-                    messageReceivedListener(this, NULL);
+                    messageReceivedListener(this, &msg);
                 }
-                Serial.print("Received: ");
-                Serial.println(canInFrame.can_dlc);
                 break;
 
             default:
