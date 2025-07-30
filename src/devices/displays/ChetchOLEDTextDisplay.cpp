@@ -99,6 +99,11 @@ namespace Chetch{
         lockDuration = 0;
     }
 
+    void OLEDTextDisplay::clearDisplay(){
+        if(isLocked() || display == NULL)return;
+        display->clearDisplay();
+    }
+
     void OLEDTextDisplay::print(char* text, unsigned int cx, unsigned int cy){
         if(isLocked() || display == NULL)return;
 
