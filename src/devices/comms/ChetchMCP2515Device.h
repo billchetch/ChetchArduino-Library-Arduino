@@ -1,5 +1,6 @@
 #include <Arduino.h>
 
+#include <ChetchArduinoBoard.h>
 #include <ChetchArduinoDevice.h>
 #include <ChetchArduinoMessage.h>
 
@@ -59,8 +60,7 @@ Note that
 namespace Chetch{
     class MCP2515Device : public ArduinoDevice{
         public:
-            const byte CAN_NETWORK_BITS = 3;
-            const byte CAN_NODE_BITS = 5;
+            static  const byte ARDUINO_MESSAGE_SIZE = 16;
 
             enum CANMessageType{
                 CAN_TYPE_NONE = 0,
@@ -69,22 +69,22 @@ namespace Chetch{
                 CAN_TYPE_OTHER
             };
 
-            typedef bool (*MessageListener)(MCP2515Device*, ArduinoMessage*);
+            typedef bool (*MessageListener)(MCP2515Device*, byte, ArduinoMessage*);
             typedef bool (*ErrorListener)(MCP2515Device*, int errorCode);
-            MCP2515 mcp2515;
-            
+
         private:
-            
-            byte busAndNodeID = 0;
+            MCP2515 mcp2515;
             struct can_frame canInFrame;
             struct can_frame canOutFrame;
 
+            byte nodeID = 0;
+            
             MessageListener messageReceivedListener = NULL;
             MessageListener messageSentListener = NULL;
             ErrorListener errorListener = NULL;
             
         public:
-            MCP2515Device(byte busID = 0, byte nodeID = 0, int csPin = CAN_DEFAULT_CS_PIN);
+            MCP2515Device(byte nodeID = 0, int csPin = CAN_DEFAULT_CS_PIN);
             
             bool begin() override;
             void loop() override;

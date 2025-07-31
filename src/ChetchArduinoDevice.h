@@ -48,7 +48,7 @@ namespace Chetch{
             typedef bool (*EventListener)(ArduinoDevice*, byte);
 
         public:
-            ArduinoBoard* Board = NULL;
+            ArduinoBoard* Board = NULL; //TODO: this could be static to save space
             byte id = 0;
 
         private:

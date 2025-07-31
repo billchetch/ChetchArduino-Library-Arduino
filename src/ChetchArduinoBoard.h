@@ -38,7 +38,6 @@
 
 
 namespace Chetch{
-            
     class ArduinoBoard{
         public:
             static const byte DEFAULT_BOARD_ID = 1; //the target ID for messaging
@@ -80,7 +79,7 @@ namespace Chetch{
             int queueStart = 0;
             int queueCount = 0;
             MessageQueueItem messageQueue[MAX_QUEUE_SIZE];
-        
+
             bool begun = false;
             Stream* stream;
 

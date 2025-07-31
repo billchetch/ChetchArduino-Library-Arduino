@@ -80,7 +80,7 @@ namespace Chetch{
     }
 
     void ArduinoBoard::sendMessage(){
-         //TODO:??? maybe handle case of if oubound message is in an error state
+        //TODO:??? maybe handle case of if oubound message is in an error state
         frame.setPayload(outboundMessage.getBytes(), outboundMessage.getByteCount());
         frame.write(stream); //write bytes to stream
         frame.reset();
