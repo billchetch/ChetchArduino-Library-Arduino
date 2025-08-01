@@ -41,7 +41,7 @@ namespace Chetch{
     class ArduinoBoard{
         public:
             static const byte DEFAULT_BOARD_ID = 1; //the target ID for messaging
-            static const byte START_DEVICE_IDS_AT = 10;
+            static const byte START_DEVICE_IDS_AT = 8;
             static const int MAX_QUEUE_SIZE = MAX_DEVICES;
 
             struct MessageQueueItem{

@@ -60,8 +60,9 @@ Note that
 namespace Chetch{
     class MCP2515Device : public ArduinoDevice{
         public:
-            static  const byte ARDUINO_MESSAGE_SIZE = 16;
-
+            static const byte ARDUINO_MESSAGE_SIZE = 16;
+            static const int NO_FILTER = -1;
+            
             enum CANMessageType{
                 CAN_TYPE_NONE = 0,
                 CAN_TYPE_ERROR,
@@ -77,15 +78,26 @@ namespace Chetch{
             struct can_frame canInFrame;
             struct can_frame canOutFrame;
 
+            bool initialised = false;
+            
             byte nodeID = 0;
             
+            ArduinoMessage amsg;
             MessageListener messageReceivedListener = NULL;
             MessageListener messageSentListener = NULL;
             ErrorListener errorListener = NULL;
+
+            byte maskNum = 0; //max is 1
+            byte filterNum = 0; //max is 5 after regNum == 1 then maskNum increments
+            
+        private:
+            void init(); //Must be called after construtor but before configuring stuff hence why it's present in config type methods
             
         public:
             MCP2515Device(byte nodeID = 0, int csPin = CAN_DEFAULT_CS_PIN);
             
+            byte getNodeID(){ return nodeID; }
+            void reset();
             bool begin() override;
             void loop() override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
@@ -94,6 +106,12 @@ namespace Chetch{
             void addMessageSentListener(MessageListener listener){ messageSentListener = listener; }
             void addErrorListener(ErrorListener listener){ errorListener = listener; }
 
+            ArduinoMessage* getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType = ArduinoMessage::TYPE_DATA);
+            bool isMessageFromDevice(byte nodeID, byte deviceIdx, ArduinoMessage* message);
             bool sendMessage(ArduinoMessage *message);
+
+            uint32_t createFilterMask(bool checkNodeID, bool checkMessageType, bool checkSender);
+            uint32_t createFilter(int nodeID, int messageType, int sender);
+            bool addFilter(uint32_t mask, uint32_t filter);
     };
 } //end namespace
