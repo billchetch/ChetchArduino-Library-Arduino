@@ -18,9 +18,9 @@ namespace Chetch{
     byte ZMPT101B::currentInstance = 0; //current instance for reading ISR
     ZMPT101B* ZMPT101B::instances[ZMPT101B::MAX_INSTANCES];
     
-    ZMPT101B* ZMPT101B::create(byte id, byte cat, char *dn){
+    int ZMPT101B::addInstance(ZMPT101B* instance){
         if(instanceCount >= MAX_INSTANCES || TIMER_NUMBER <= 0){
-            return NULL;
+            return -1;
         } else {
             if(instanceCount == 0){
                 cli();
@@ -44,9 +44,6 @@ namespace Chetch{
                 }
             }
 
-            ZMPT101B* instance = new ZMPT101B(id, cat, dn);
-            instance->setInstanceIndex(idx);
-            instance->useTimer = true;
             instances[idx] = instance;
             instanceCount++;
 
@@ -58,7 +55,7 @@ namespace Chetch{
             Serial.print(m);
             Serial.println(" micros");*/
             timer->registerCallback(&ZMPT101B::handleTimerInterrupt, ISRTimer::LOWEST_PRIORITY, comp);
-            return instance;
+            return (int)idx;
         }
     }
 
@@ -78,89 +75,57 @@ namespace Chetch{
     }
 
 
-    ZMPT101B::ZMPT101B(byte id, byte cat, char *dn) : ArduinoDevice(id, cat, dn){
-        
+    ZMPT101B::ZMPT101B(byte pin){
+        voltagePin = pin;
+
         //clean to begin
         for(byte i = 0; i < BUFFER_SIZE; i++){
             buffer[i] = 0;
         }
+
+        instanceIndex = addInstance(this);
+        if(instanceIndex >= 0)useTimer = true;
     }
 
     ZMPT101B::~ZMPT101B(){
-        instances[instanceIndex] = NULL;
-        instanceCount--;
-        if(timer->isEnabled()){
-            timer->disable();
+        if(instanceIndex >= 0){
+            instances[instanceIndex] = NULL;
+            instanceCount--;
+            if(timer->isEnabled()){
+                timer->disable();
+            }
         }
     }
 
-    void ZMPT101B::setInstanceIndex(byte idx){
-        instanceIndex = idx;
-    }
-
-    void ZMPT101B::setVoltagePin(byte pin){
-        voltagePin = pin;
+    
+    bool ZMPT101B::begin(){
         pinMode(voltagePin, INPUT);
     }
 
-    bool ZMPT101B::configure(ADMMessage* message, ADMMessage* response){
-        if(!ArduinoDevice::configure(message, response))return false;
-
-        int argIdx = getArgumentIndex(message, MessageField::PIN);
-        setVoltagePin( message->argumentAsByte(argIdx));
-
-        argIdx = getArgumentIndex(message, MessageField::SAMPLE_SIZE);
-        sampleSize = message->argumentAsInt(argIdx);
-
-        target = (Target)message->argumentAsByte(getArgumentIndex(message, MessageField::TARGET));
-        if(target != Target::NONE){
-            setTargetParameters(
-                target,
-                message->argumentAsInt(getArgumentIndex(message, MessageField::TARGET_VALUE)),
-                message->argumentAsInt(getArgumentIndex(message, MessageField::TARGET_TOLERANCE)),
-                message->argumentAsInt(getArgumentIndex(message, MessageField::TARGET_LOWER_BOUND)),
-                message->argumentAsInt(getArgumentIndex(message, MessageField::TARGET_UPPER_BOUND))
-                );
-        }
-
-        
-        response->addByte(target);
-        response->addDouble(targetValue);
-
-        return true;
-    }
-
-    void ZMPT101B::status(ADMMessage *message, ADMMessage *response){
+    /*void ZMPT101B::status(ADMMessage *message, ADMMessage *response){
         ArduinoDevice::status(message, response);
 
         response->addByte(voltagePin);
-    }
-
-    int ZMPT101B::getArgumentIndex(ADMMessage *message, ZMPT101B::MessageField field){
-        switch(field){
-            default:
-                return (int)field;
-        }
     }
 
     void ZMPT101B::populateMessageToSend(byte messageID, ADMMessage* message){
         ArduinoDevice::populateMessageToSend(messageID, message);
 
         if(messageID == ArduinoDevice::MESSAGE_ID_REPORT){
-            message->addDouble(getVoltage());
-            message->addDouble(getHz());
-            message->addULong(val1);
-            message->addULong(val2);
-            message->addULong(val3);
-            message->addULong(val4);
-            message->addULong(val5);
+            message->add(getVoltage());
+            message->add(getHz());
+            message->add(val1);
+            message->add(val2);
+            message->add(val3);
+            message->add(val4);
+            message->add(val5);
         }
 
         if(messageID == MESSAGE_ID_ADJUSTMENT){
             populateMessage(ADMMessage::MessageType::TYPE_WARNING, message);
-            message->addDouble(adjustBy());
+            message->add(adjustBy());
         }
-    }
+    } */
 
 	void ZMPT101B::setTargetParameters(Target t, double tv, double tt, double tlb, double tub){
         target = t;
@@ -186,7 +151,7 @@ namespace Chetch{
     void ZMPT101B::loop(){
         ArduinoDevice::loop(); 
         
-        if(useTimer && !timer->isEnabled() && isReady()){
+        if(useTimer && !timer->isEnabled()){
             timer->enable();
             CADC::startRead(voltagePin);
             return;
@@ -423,5 +388,4 @@ namespace Chetch{
                 return -1;
         }
     }
-
 } //end namespace

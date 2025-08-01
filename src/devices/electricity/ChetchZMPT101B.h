@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include <ChetchArduinoDevice.h>
-#include <ChetchADMMessage.h>
+#include <ChetchArduinoMessage.h>
 #include <ChetchISRTimer.h>
 
 #if defined(ARDUINO_AVR_MEGA2560)
@@ -36,25 +36,13 @@ namespace Chetch{
                 Falling = 2,
             };
 
-            enum MessageField{
-                PIN = 2,
-                SAMPLE_SIZE,
-                TARGET,
-                TARGET_VALUE,
-                TARGET_TOLERANCE,
-                TARGET_LOWER_BOUND,
-                TARGET_UPPER_BOUND,
-                //SCALE_WAVEFORM,
-                //FINAL_OFFSET,
-            };
-
             static const byte MESSAGE_ID_ADJUSTMENT = 200;
-            static const byte BUFFER_SIZE = 128;
+            static const byte BUFFER_SIZE = 64;
             static const byte MAX_INSTANCES = 2;
-            static const int EVENT_NEW_RESULTS = 1;
-            static const int EVENT_TARGET_REACHED = 2;
-            static const int EVENT_TARGET_LOST = 3;
-            static const int EVENT_OUT_OF_TARGET_RANGE = 4;
+            static const byte EVENT_NEW_RESULTS = 1;
+            static const byte EVENT_TARGET_REACHED = 2;
+            static const byte EVENT_TARGET_LOST = 3;
+            static const byte EVENT_OUT_OF_TARGET_RANGE = 4;
 
         public: //TODO make private
             static ISRTimer* timer;
@@ -107,23 +95,24 @@ namespace Chetch{
             unsigned long val5 = 0;
 
         public: 
-            static ZMPT101B* create(byte id, byte cat, char *dn);
+            static int addInstance(ZMPT101B* instance);
             static void handleTimerInterrupt();
 
-            ZMPT101B(byte id, byte cat, char *dn);
-            ~ZMPT101B() override;
-            void setInstanceIndex(byte idx);
+            ZMPT101B(byte pin = A0);
+            ~ZMPT101B();
+            
+            bool begin() override;
+            void loop() override;
             
             //configure
-            int getArgumentIndex(ADMMessage *message, MessageField field);
-            bool configure(ADMMessage* message, ADMMessage* response) override;
-            void status(ADMMessage* message, ADMMessage* response) override;
-            void populateMessageToSend(byte messageID, ADMMessage* message) override;
-            void setVoltagePin(byte pin);
+            //int getArgumentIndex(ADMMessage *message, MessageField field);
+            //bool configure(ADMMessage* message, ADMMessage* response) override;
+            //void status(ADMMessage* message, ADMMessage* response) override;
+            //void populateMessageToSend(byte messageID, ADMMessage* message) override;
             void setTargetParameters(Target t, double tv, double tt, double tlb = 0.0, double tub = -1.0);
             void setHzThresholdVoltage(int threshold);
-            void loop() override;
 
+            
             //results
             void onAnalogRead(uint16_t v);
             void pauseSampling(bool reset);
