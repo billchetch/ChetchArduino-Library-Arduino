@@ -54,14 +54,26 @@ Byte 3 = 11 01 10 00
 Note that 
 */
 
-#define CAN_AS_LOOPBAck true
+#define CAN_AS_LOOPBAck false
 #define CAN_DEFAULT_CS_PIN 10
+#define CAN_DEFAULT_INDICATOR_PIN 9
 
 namespace Chetch{
     class MCP2515Device : public ArduinoDevice{
         public:
             static const byte ARDUINO_MESSAGE_SIZE = 16;
             static const int NO_FILTER = -1;
+
+            enum MCP2515ErrorCode{
+                NO_ERROR = 0,
+                UNKNOWN_RECEIVE_ERROR,
+                UNKNOWN_SEND_ERROR,
+                NO_MESSAGE,
+                INVALID_MESSAGE,
+                FAIL_TX,
+                ALL_TX_BUSY,
+                READ_FAIL
+            };
             
             enum CANMessageType{
                 CAN_TYPE_NONE = 0,
@@ -71,17 +83,20 @@ namespace Chetch{
             };
 
             typedef bool (*MessageListener)(MCP2515Device*, byte, ArduinoMessage*);
-            typedef bool (*ErrorListener)(MCP2515Device*, int errorCode);
+            typedef bool (*ErrorListener)(MCP2515Device*, MCP2515ErrorCode errorCode);
 
-        private:
             MCP2515 mcp2515;
+            
+        private:
             struct can_frame canInFrame;
             struct can_frame canOutFrame;
 
             bool initialised = false;
-            
+
             byte nodeID = 0;
-            
+            byte indicatorPin = CAN_DEFAULT_INDICATOR_PIN;
+            bool canTrySending = false; //is set to true if either a message is received or a certain period has elapsed
+
             ArduinoMessage amsg;
             MessageListener messageReceivedListener = NULL;
             MessageListener messageSentListener = NULL;
@@ -99,9 +114,11 @@ namespace Chetch{
             byte getNodeID(){ return nodeID; }
             void reset();
             bool begin() override;
+            void raiseError(MCP2515ErrorCode errorCode);
+            void indicate(bool on);
             void loop() override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
-
+            
             void addMessageReceivedListener(MessageListener listener){ messageReceivedListener = listener; }
             void addMessageSentListener(MessageListener listener){ messageSentListener = listener; }
             void addErrorListener(ErrorListener listener){ errorListener = listener; }

@@ -6,6 +6,12 @@ namespace Chetch{
         //empty
     }
 
+    Ticker::Ticker(byte pin, unsigned int duration){
+        this->pin = pin;
+        int hd = (unsigned int)(duration / 2);
+        setHighLowDuration(hd, duration - hd);
+    }
+
     Ticker::Ticker(byte pin, unsigned int highDuration, unsigned int lowDuration){
         this->pin = pin;
         setHighLowDuration(highDuration, lowDuration);

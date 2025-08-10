@@ -8,7 +8,7 @@
 namespace Chetch{
     class Ticker : public ArduinoDevice {
         public:
-            static const byte EVENT_TICKED = 1;
+            static const byte EVENT_TICKED = 100;
 
         private:
             byte pin = 0;
@@ -22,6 +22,7 @@ namespace Chetch{
         public: 
             
             Ticker();
+            Ticker::Ticker(byte pin, unsigned int duration);
             Ticker(byte pin, unsigned int highDuration, unsigned int lowDuration);
             void setHighLowDuration(unsigned int highDuration, unsigned int lowDuration);
 

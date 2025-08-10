@@ -15,8 +15,6 @@ namespace Chetch{
 
 
     bool ArduinoBoard::begin(Stream* stream){
-        if(stream == NULL)return false;
-
         this->stream = stream;
         inboundMessage.clear();
         outboundMessage.clear();
@@ -50,6 +48,8 @@ namespace Chetch{
     
     //returns true if received a valid message, false otherwise
     bool ArduinoBoard::receiveMessage(){
+        if(stream == NULL)return false;
+
         while(stream->available()){
             byte b = stream->read();
             if(frame.add(b)){
@@ -80,11 +80,12 @@ namespace Chetch{
     }
 
     void ArduinoBoard::sendMessage(){
-        //TODO:??? maybe handle case of if oubound message is in an error state
-        frame.setPayload(outboundMessage.getBytes(), outboundMessage.getByteCount());
-        frame.write(stream); //write bytes to stream
-        frame.reset();
-        
+        if(stream != NULL){
+            //TODO:??? maybe handle case of if oubound message is in an error state
+            frame.setPayload(outboundMessage.getBytes(), outboundMessage.getByteCount());
+            frame.write(stream); //write bytes to stream
+            frame.reset();
+        }
         //ready for reuse
         outboundMessage.clear();
         

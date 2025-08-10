@@ -104,10 +104,28 @@ namespace Chetch{
         display->clearDisplay();
     }
 
+    void OLEDTextDisplay::clearLine(byte lineNumber){
+        if(isLocked() || display == NULL)return;
+        display->clearLine(lineNumber);
+    }
+
+    void OLEDTextDisplay::setFontSize(DisplayOption displayOption){
+        switch(displayOption){
+            case LARGE_TEXT:
+                display->setFont(u8x8_font_7x14_1x2_f); 
+                break;
+            case SMALL_TEXT:
+                display->setFont(u8x8_font_chroma48medium8_r); 
+                break;
+            case XLARGE_TEXT:
+                display->setFont(u8x8_font_px437wyse700a_2x2_r);
+                break;
+        }
+    }
+
     void OLEDTextDisplay::print(char* text, unsigned int cx, unsigned int cy){
         if(isLocked() || display == NULL)return;
 
-        display->setFont(u8x8_font_7x14_1x2_f);
         display->setCursor(cx, cy);
         display->print(text);
     }

@@ -5,6 +5,9 @@
 #if defined(ARDUINO_AVR_MEGA2560)
     #define TIMER_NUMBER 4
     #define TIMER_PRESCALER 8 //'ticks'every 0.5 microseconds
+#elif defined(ARDUINO_AVR_NANO)
+    #define TIMER_NUMBER 1 //WARNING: Conflicts with Servo Library
+    #define TIMER_PRESCALER 8 //'ticks'every 0.5 microseconds
 #else
     #define TIMER_NUMBER 0
     #define TIMER_PRESCALER 0
@@ -106,26 +109,26 @@ namespace Chetch{
         ArduinoDevice::status(message, response);
 
         response->addByte(voltagePin);
-    }
+    }*/
 
-    void ZMPT101B::populateMessageToSend(byte messageID, ADMMessage* message){
-        ArduinoDevice::populateMessageToSend(messageID, message);
+    void ZMPT101B::populateOutboundMessage(ArduinoMessage* message, byte messageID){
+        ArduinoDevice::populateOutboundMessage(message, messageID);
 
         if(messageID == ArduinoDevice::MESSAGE_ID_REPORT){
             message->add(getVoltage());
             message->add(getHz());
-            message->add(val1);
+            /*message->add(val1);
             message->add(val2);
             message->add(val3);
             message->add(val4);
-            message->add(val5);
+            message->add(val5);*/
         }
 
         if(messageID == MESSAGE_ID_ADJUSTMENT){
-            populateMessage(ADMMessage::MessageType::TYPE_WARNING, message);
+            message->type = ArduinoMessage::MessageType::TYPE_WARNING;
             message->add(adjustBy());
         }
-    } */
+    }
 
 	void ZMPT101B::setTargetParameters(Target t, double tv, double tt, double tlb, double tub){
         target = t;

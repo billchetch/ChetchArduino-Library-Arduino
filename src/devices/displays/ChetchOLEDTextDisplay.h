@@ -45,6 +45,8 @@ namespace Chetch{
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
             void clearDisplay();
+            void clearLine(byte lineNumber);
+            void setFontSize(DisplayOption displayOption);
             void print(char* text, unsigned int cx = 0, unsigned int cy = 0);
             void displayPreset(DisplayPreset preset, unsigned int lockFor);
             void displayBoardStats(unsigned int lockFor);

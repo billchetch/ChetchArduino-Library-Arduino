@@ -29,19 +29,31 @@ namespace Chetch{
 #else
         mcp2515.setNormalMode();
 #endif
+        if(indicatorPin > 0){
+            pinMode(indicatorPin, OUTPUT);
+            indicate(false);
+        }
 	}
+
+    void MCP2515Device::indicate(bool on){
+        if(indicatorPin > 0)digitalWrite(indicatorPin, on ? HIGH : LOW);
+    }
+
+    void MCP2515Device::raiseError(MCP2515ErrorCode errorCode){
+        if(errorListener != NULL){
+            errorListener(this, errorCode);
+        }
+    }
     
     void MCP2515Device::loop(){
+        indicate(false);
         ArduinoDevice::loop();
 
         MCP2515::ERROR err = mcp2515.readMessage(&canInFrame);
         switch(err){
             case MCP2515::ERROR_OK:
-                /*Serial.println("CAN ID: ");
-                for (int i = (sizeof(canInFrame.can_id) * 8) - 1; i >= 0; i--) { // Loop from bit 7 (MSB) down to 0 (LSB)
-                    Serial.print(bitRead(canInFrame.can_id, i)); // Print the value of the i-th bit
-                    if(i % 8 == 0)Serial.println("----");
-                }*/
+                canTrySending = true;
+                indicate(true);
 
                 //Clear message and split out the ID
                 amsg.clear();
@@ -75,12 +87,24 @@ namespace Chetch{
                 }
                 break;
 
+            case MCP2515::ERROR_FAIL:
+                raiseError(READ_FAIL);
+                break;
+
+            case MCP2515::ERROR_NOMSG: //ignore
+                break;
+
             default:
                 //Serial.println("Received something weird");
+                raiseError(UNKNOWN_RECEIVE_ERROR);
                 break;
         }
-        
+    
+        if(!canTrySending && millis() > 2000){
+            canTrySending = true;
+        }
     }
+
 
     ArduinoMessage* MCP2515Device::getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType){
         amsg.clear();
@@ -90,7 +114,6 @@ namespace Chetch{
         return &amsg;
     }
 
-
     bool MCP2515Device::isMessageFromDevice(byte nodeID, byte deviceIdx, ArduinoMessage* message){
         if(nodeID != this->nodeID)return false; //coming from a different bus
         if(deviceIdx != message->sender)return false;
@@ -98,16 +121,22 @@ namespace Chetch{
     }
 
     bool MCP2515Device::sendMessage(ArduinoMessage* message){
+        if(!canTrySending)return false;
+
         if(message == NULL){
+            raiseError(NO_MESSAGE);
             return false; //ERROR!
         }
         if(message->getArgumentCount() > 4){
+            raiseError(INVALID_MESSAGE);
             return false; //ERROR ... can data of 8 bytes sets this limit
         }
         if(message->type > 31){
+            raiseError(INVALID_MESSAGE);
             return false; //ERROR .... type only has 5 bits available
         }
         if(message->sender > 7){
+            raiseError(INVALID_MESSAGE);
             return false; //ERROR .... sender only has 3 bits available
         }
 
@@ -151,10 +180,20 @@ namespace Chetch{
             }
         }
 
-        if(mcp2515.sendMessage(&canOutFrame) == MCP2515::ERROR_OK){
-            return true;
-        } else {
-            return false;
+        MCP2515::ERROR err = mcp2515.sendMessage(&canOutFrame);
+        switch(err){
+            case MCP2515::ERROR_OK:
+                indicate(true);
+                return true;
+            case MCP2515::ERROR_FAILTX:
+                raiseError(MCP2515ErrorCode::FAIL_TX);
+                return false;
+            case MCP2515::ERROR_ALLTXBUSY:
+                raiseError(MCP2515ErrorCode::ALL_TX_BUSY);
+                return false;
+            default:
+                raiseError(MCP2515ErrorCode::UNKNOWN_SEND_ERROR);
+                return false;
         }
     }
 

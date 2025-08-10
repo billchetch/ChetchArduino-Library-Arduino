@@ -108,7 +108,7 @@ namespace Chetch{
             //int getArgumentIndex(ADMMessage *message, MessageField field);
             //bool configure(ADMMessage* message, ADMMessage* response) override;
             //void status(ADMMessage* message, ADMMessage* response) override;
-            //void populateMessageToSend(byte messageID, ADMMessage* message) override;
+            void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
             void setTargetParameters(Target t, double tv, double tt, double tlb = 0.0, double tub = -1.0);
             void setHzThresholdVoltage(int threshold);
 
