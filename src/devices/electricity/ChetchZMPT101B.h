@@ -7,11 +7,17 @@
 #include <ChetchISRTimer.h>
 
 #if defined(ARDUINO_AVR_MEGA2560)
-#define TIMER_NUMBER 3
-#define TIMER_PRESCALER 8 //'ticks'every 0.5 microseconds
+    #define TIMER_NUMBER 3
+    #define TIMER_PRESCALER 8 //'ticks'every 0.5 microseconds
+#elif defined(ARDUINO_AVR_NANO)
+    #define TIMER_NUMBER 1 //WARNING: Conflicts with Servo Library
+    #define TIMER_PRESCALER 8 //'ticks'every 0.5 microseconds
+#elif defined(ARDUINO_AVR_UNO)
+    #define TIMER_NUMBER 1 //WARNING: Conflicts with Servo Library
+    #define TIMER_PRESCALER 8 //'ticks'every 0.5 microseconds
 #else
-#define TIMER_NUMBER 0
-#define TIMER_PRESCALER 0
+    #define TIMER_NUMBER 0
+    #define TIMER_PRESCALER 0
 #endif
 
 
@@ -96,7 +102,7 @@ namespace Chetch{
 
         public: 
             static int addInstance(ZMPT101B* instance);
-            static void handleTimerInterrupt();
+            static void handleTimerElapsed(uint8_t id);
 
             ZMPT101B(byte pin = A0);
             ~ZMPT101B();

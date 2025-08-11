@@ -22,7 +22,7 @@ namespace Chetch{
         public: 
             
             Ticker();
-            Ticker::Ticker(byte pin, unsigned int duration);
+            Ticker(byte pin, unsigned int duration);
             Ticker(byte pin, unsigned int highDuration, unsigned int lowDuration);
             void setHighLowDuration(unsigned int highDuration, unsigned int lowDuration);
 

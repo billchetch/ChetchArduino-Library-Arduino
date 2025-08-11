@@ -8,6 +8,9 @@
 #elif defined(ARDUINO_AVR_NANO)
     #define TIMER_NUMBER 1 //WARNING: Conflicts with Servo Library
     #define TIMER_PRESCALER 8 //'ticks'every 0.5 microseconds
+#elif defined(ARDUINO_AVR_UNO)
+    #define TIMER_NUMBER 1 //WARNING: Conflicts with Servo Library
+    #define TIMER_PRESCALER 8 //'ticks'every 0.5 microseconds
 #else
     #define TIMER_NUMBER 0
     #define TIMER_PRESCALER 0
@@ -57,12 +60,12 @@ namespace Chetch{
             Serial.print(" ticks = ");
             Serial.print(m);
             Serial.println(" micros");*/
-            timer->registerCallback(&ZMPT101B::handleTimerInterrupt, ISRTimer::LOWEST_PRIORITY, comp);
+            timer->addListener(idx, &ZMPT101B::handleTimerElapsed, ISRTimer::LOWEST_PRIORITY, comp);
             return (int)idx;
         }
     }
 
-    void ZMPT101B::handleTimerInterrupt(){
+    void ZMPT101B::handleTimerElapsed(uint8_t id){
         static ZMPT101B* zmpt = NULL;
         
         //free up other interrupts
@@ -221,7 +224,7 @@ namespace Chetch{
         if (sampleCount >= sampleSize) {
             //some analysis
             double newVoltage = sqrt((double)summedVoltages / (double)sampleCount); // *scaleWaveform) + finalOffset;
-            uint32_t duration = timer->interruptsToMicros(&ZMPT101B::handleTimerInterrupt, hzCountDuration);
+            uint32_t duration = timer->interruptsToMicros(instanceIndex, hzCountDuration);
             double newHz = (500000.0 * (double)hzCount) / (double)duration;
             val1 = hzCountDuration;
             val2 = timer->getCompareA();

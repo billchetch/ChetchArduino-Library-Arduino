@@ -20,11 +20,10 @@ namespace Chetch{
         outboundMessage.clear();
 
         for(int i = 0; i < deviceCount; i++){
-            devices[i]->begin();
+            if(!devices[i]->begin())return false;
         }
 
         begun = true;
-        //Note: could set up an outbound message here which will be sent on first loop
         return begun;
     }
 

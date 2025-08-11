@@ -57,8 +57,6 @@ namespace Chetch{
         protected:
             unsigned long lastMillis = 0;
             int reportInterval = -1; //measured in millis. negative or zero means no reporting
-            unsigned long timerInterval = 0; //in micros. set this to a positive value to register with timer events
-            int timerTicks = 0; //this is calculated and set by ADm based on timer Hz and timerInterval value
         
         public:
             void addEventListener(EventListener listener);

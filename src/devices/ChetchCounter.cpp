@@ -51,7 +51,7 @@ namespace Chetch{
 
     Counter::~Counter() {
         if (interruptMode != 0) {
-            CInterrupt::removeInterrupt(pin);
+            CInterrupt::removeInterruptListener(pin);
         }
         instances[instanceIndex] = NULL;
         instanceCount--;
@@ -73,7 +73,7 @@ namespace Chetch{
     bool Counter::setInterruptMode(byte mode){
         if (mode != 0 && interruptMode == 0) { //one time set
             interruptMode = mode;
-            return CInterrupt::addInterrupt(pin, instanceIndex, handleInterrupt, interruptMode);
+            return CInterrupt::addInterruptListener(pin, instanceIndex, handleInterrupt, interruptMode);
         }
         return true;
     }
