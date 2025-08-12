@@ -10,6 +10,7 @@ namespace Chetch{
         uint32_t interval = instance->getInterval();
 
         if(instanceCount >= MAX_INSTANCES || TIMER_NUMBER <= 0 || interval == 0){
+            lastError = TimerError::FAILED_TO_ADD_INSTANCE;
             return -1;
         } else {
             if(instanceCount == 0){
@@ -25,8 +26,11 @@ namespace Chetch{
             //validate this duration
             uint32_t comp = timer->microsToTicks(interval);
             if(comp > MAX_COMP_VALUE){
+                lastError = TimerError::INVALID_INTERVAL;
                 return -1; 
             }
+
+
 
             //get first available slot
             byte idx = 0;
@@ -40,7 +44,7 @@ namespace Chetch{
             instances[idx] = instance;
             instanceCount++;
 
-            Serial.print("Interval in micros is: ");
+            /*Serial.print("Interval in micros is: ");
             Serial.println(interval);
             Serial.print("We are prescaling by: ");
             Serial.println(TIMER_PRESCALE_BY);
@@ -49,9 +53,10 @@ namespace Chetch{
             Serial.print("So the timer will fire after this many ticks: ");
             Serial.println(comp);
             Serial.print("Now add a listener to the timer wiht ID (index + 1): ");
-            Serial.println(idx + 1);
+            Serial.println(idx + 1);*/
 
             if(!timer->addListener(idx + 1, &Timer::handleTimerElapsed, ISRTimer::LOWEST_PRIORITY, comp)){
+                lastError = TimerError::FAILED_TO_ADD_INSTANCE;
                 return -1;
             } else {
                 return (int)idx;
@@ -84,7 +89,6 @@ namespace Chetch{
     Timer::Timer(uint32_t interval){
         this->interval = interval;
 
-        resetTimerCountOn = 16;
     }
 
     Timer::~Timer(){
@@ -92,6 +96,8 @@ namespace Chetch{
     }
 
     bool Timer::begin(){
+
+
         if(addInstance(this) < 0){
             lastError = TimerError::FAILED_TO_ADD_INSTANCE;
             return false;
@@ -116,18 +122,10 @@ namespace Chetch{
             Serial.print("ms: ");
             Serial.println(millis() - ms);
             ms = millis();
-            //Serial.print("TC: ");
-            //Serial.println(timerCount);
         }
-
-        
     }
 
     void Timer::onTimer(){
-        timerCount++;
-        if(timerCount == resetTimerCountOn){
-            timerCount = 0;
-            elapsed = true;
-        }
+        elapsed = true;
     }
 } //end namespace

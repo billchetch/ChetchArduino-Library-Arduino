@@ -35,6 +35,7 @@ namespace Chetch{
             static const byte EVENT_TIMER_ELAPSED = 100;
             enum TimerError{
                 NO_ERROR,
+                INVALID_INTERVAL,
                 FAILED_TO_ADD_INSTANCE
             };
 
@@ -47,9 +48,7 @@ namespace Chetch{
 
             TimerError lastError = NO_ERROR;
             uint32_t interval = 0;
-            uint32_t resetTimerCountOn = 0;
             
-            volatile uint32_t timerCount = 0;
             volatile bool elapsed = false;
 
         public: 
