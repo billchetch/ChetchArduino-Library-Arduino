@@ -25,11 +25,10 @@ namespace Chetch{
 
             //validate this duration
             uint32_t comp = timer->microsToTicks(interval);
-            if(comp > MAX_COMP_VALUE){
+            if(comp > MAX_COMP_VALUE || compe == 0){
                 lastError = TimerError::INVALID_INTERVAL;
                 return -1; 
             }
-
 
 
             //get first available slot
@@ -96,10 +95,7 @@ namespace Chetch{
     }
 
     bool Timer::begin(){
-
-
         if(addInstance(this) < 0){
-            lastError = TimerError::FAILED_TO_ADD_INSTANCE;
             return false;
         }
         
