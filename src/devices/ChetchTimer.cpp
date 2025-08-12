@@ -10,7 +10,6 @@ namespace Chetch{
         uint32_t interval = instance->getInterval();
 
         if(instanceCount >= MAX_INSTANCES || TIMER_NUMBER <= 0 || interval == 0){
-            lastError = TimerError::FAILED_TO_ADD_INSTANCE;
             return -1;
         } else {
             if(instanceCount == 0){
@@ -25,9 +24,8 @@ namespace Chetch{
 
             //validate this duration
             uint32_t comp = timer->microsToTicks(interval);
-            if(comp > MAX_COMP_VALUE || compe == 0){
-                lastError = TimerError::INVALID_INTERVAL;
-                return -1; 
+            if(comp > MAX_COMP_VALUE || comp == 0){
+                return -2; 
             }
 
 
@@ -55,7 +53,6 @@ namespace Chetch{
             Serial.println(idx + 1);*/
 
             if(!timer->addListener(idx + 1, &Timer::handleTimerElapsed, ISRTimer::LOWEST_PRIORITY, comp)){
-                lastError = TimerError::FAILED_TO_ADD_INSTANCE;
                 return -1;
             } else {
                 return (int)idx;
@@ -95,8 +92,16 @@ namespace Chetch{
     }
 
     bool Timer::begin(){
-        if(addInstance(this) < 0){
-            return false;
+        int result = addInstance(this);
+        switch(result){
+            case -1:
+                lastError = Timer::FAILED_TO_ADD_INSTANCE; break;
+
+            case -2:
+                lastError = Timer::INVALID_INTERVAL; break;
+
+            default:
+                lastError = Timer::NO_ERROR; break;
         }
         
         return true;
@@ -105,19 +110,13 @@ namespace Chetch{
     void Timer::loop(){
         ArduinoDevice::loop();
 
-        static unsigned long ms = 0;    
-
         if(!timer->isEnabled()){
             timer->enable();
-            ms = millis();
         }
 
         if(elapsed){
             elapsed = false;
             raiseEvent(EVENT_TIMER_ELAPSED);
-            Serial.print("ms: ");
-            Serial.println(millis() - ms);
-            ms = millis();
         }
     }
 
