@@ -23,7 +23,7 @@ namespace Chetch{
             }
 
             //validate this duration
-            uint32_t comp = timer->microsToTicks(interval);
+            uint32_t comp = timer->microsToTicks(interval) - 1;
             if(comp > MAX_COMP_VALUE || comp == 0){
                 return -2; 
             }
@@ -41,21 +41,20 @@ namespace Chetch{
             instances[idx] = instance;
             instanceCount++;
 
-            /*Serial.print("Interval in micros is: ");
-            Serial.println(interval);
-            Serial.print("We are prescaling by: ");
-            Serial.println(TIMER_PRESCALE_BY);
-            Serial.print("One timer tick in micros is thus: ");
-            Serial.println(timer->ticksToMicros(1));
-            Serial.print("So the timer will fire after this many ticks: ");
-            Serial.println(comp);
-            Serial.print("Now add a listener to the timer wiht ID (index + 1): ");
-            Serial.println(idx + 1);*/
-
-            if(!timer->addListener(idx + 1, &Timer::handleTimerElapsed, ISRTimer::LOWEST_PRIORITY, comp)){
-                return -1;
-            } else {
+            if(timer->addListener(idx + 1, &Timer::handleTimerElapsed, ISRTimer::LOWEST_PRIORITY, comp)){
+                Serial.print("Interval in micros is: ");
+                Serial.println(interval);
+                Serial.print("We are prescaling by: ");
+                Serial.println(TIMER_PRESCALE_BY);
+                Serial.print("One timer tick in micros is thus: ");
+                Serial.println(timer->ticksToMicros(1));
+                Serial.print("So the timer will fire after every following ticks: ");
+                Serial.println(comp + 1);
+                Serial.print("Which is exactly this many micros: ");
+                Serial.println(timer->ticksToMicros(comp + 1));
                 return (int)idx;
+            } else {
+                return -1;
             }
         }
     }
@@ -84,7 +83,6 @@ namespace Chetch{
 
     Timer::Timer(uint32_t interval){
         this->interval = interval;
-
     }
 
     Timer::~Timer(){
@@ -103,8 +101,12 @@ namespace Chetch{
             default:
                 lastError = Timer::NO_ERROR; break;
         }
-        
-        return true;
+
+        if(lastError == Timer::NO_ERROR){
+            return true;
+        } else {
+            return false;
+        }
     }
 
     void Timer::loop(){
@@ -122,5 +124,10 @@ namespace Chetch{
 
     void Timer::onTimer(){
         elapsed = true;
+        if(timerListener != NULL){
+            //NOTE: be aware that this is executing in an interrupt vector
+            //also be aware of the possible need for SEI (noInterrupts) and CLI (interrupts)
+            timerListener();
+        }
     }
 } //end namespace

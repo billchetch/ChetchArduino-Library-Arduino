@@ -39,6 +39,7 @@ namespace Chetch{
                 FAILED_TO_ADD_INSTANCE
             };
 
+            typedef void (*TimerListener)();
 
         private:
             static ISRTimer* timer; //the underlying timer
@@ -48,19 +49,22 @@ namespace Chetch{
 
             TimerError lastError = NO_ERROR;
             uint32_t interval = 0;
+            TimerListener timerListener = NULL;
             
             volatile bool elapsed = false;
 
         public: 
-            static unsigned long elaspedCount;
             static int addInstance(Timer* instance);
             static void removeInstance(Timer* instance);
             static void handleTimerElapsed(uint8_t id);
 
-            TimerError getLastError(){ return lastError; }
-            uint32_t getInterval(){ return interval; }
             Timer(uint32_t interval);
             ~Timer();
+
+            TimerError getLastError(){ return lastError; }
+            uint32_t getInterval(){ return interval; }
+            
+            void addTimerListener(TimerListener listener){ timerListener = listener; }
 
             bool begin() override;
             void loop() override;

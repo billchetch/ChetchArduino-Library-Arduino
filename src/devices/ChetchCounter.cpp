@@ -6,8 +6,7 @@
 namespace Chetch{
     byte Counter::instanceCount = 0;
     Counter* Counter::instances[];
-    volatile unsigned long Counter::handleInterruptCount = 0;
-
+    
     void Counter::handleInterrupt(uint8_t pin, uint8_t tag) {
         //handleInterruptCount++;
         if(instanceCount > tag){
@@ -15,9 +14,9 @@ namespace Chetch{
         }
     }
 
-    bool Counter::addInstance(Counter* instance) {
+    int Counter::addInstance(Counter* instance) {
         if (instanceCount >= MAX_INSTANCES) {
-            return false;
+            return -1;
         } else {
             if (instanceCount == 0) {
                 for (byte i = 0; i < MAX_INSTANCES; i++) {
@@ -31,21 +30,21 @@ namespace Chetch{
                     break;
                 }
             }
-            instance->setInstanceIndex(idx);
             instances[idx] = instance;
             instanceCount++;
-            return true;
+            return idx;
         }
     }
 
-    Counter::Counter(byte pin, byte interruptMode, unsigned long tolerance, bool pinStateToCount) : ArduinoDevice(){
-        setPin(pin);
+    Counter::Counter(byte pin, byte interruptMode, unsigned long assignValuesAfter, unsigned long tolerance, bool pinStateToCount) : ArduinoDevice(){
+        //setPin(pin);
+        this->pin = pin;
+        this->interruptMode = interruptMode;
+        this->assignValuesAfter = assignValuesAfter;
+        this->pinStateToCount = pinStateToCount; //only relevant if interruptMode = 0
 
-        setInterruptMode(interruptMode);
-        
         this->tolerance = tolerance; 
-        this->pinStateToCount = pinStateToCount;
-
+        
         addInstance(this);
     }
 
@@ -57,78 +56,107 @@ namespace Chetch{
         instanceCount--;
     }
 
-    void Counter::setInstanceIndex(byte idx){
-        instanceIndex = idx;
-    }
-
-    void Counter::setPin(byte pin){
-        this->pin = pin;
-        pinMode(this->pin, INPUT); 
-        
+    bool Counter::begin(){
+        //Set the pin
+        pinMode(pin, INPUT);         
         bitMask = digitalPinToBitMask(pin);
         inreg = portInputRegister(digitalPinToPort(pin));
         pinState = digitalRead(pin);
-    }
 
-    bool Counter::setInterruptMode(byte mode){
-        if (mode != 0 && interruptMode == 0) { //one time set
-            interruptMode = mode;
-            return CInterrupt::addInterruptListener(pin, instanceIndex, handleInterrupt, interruptMode);
+        //if we are using interrupts then set accordingly here
+        if(interruptMode != 0){
+            //keep track of instances
+            int idx = addInstance(this);
+            if(idx < 0){
+                return false;
+            }
+            instanceIndex = (byte)idx;
+            if(!CInterrupt::addInterruptListener(pin, instanceIndex, &Counter::handleInterrupt, interruptMode)){
+                return false;
+            }
         }
         return true;
+    }
+
+    void Counter::assignValues(){
+        //setting this to false means the interrupt handler won't assign values to the vars below (single byte no cli/sei needed)
+        countStarted = false;
+        lastCount = count;
+        lastDuration = count > 1 ? lastCountOn - firstCountOn : 0;
+        resetCount();
+    }
+
+    double Counter::getHz(){
+        if(lastCount <= 1){
+            return 0.0f;
+        } else {
+            return (double)(lastCount - 1) * (1000000.0 / (double)lastDuration);
+        }
     }
 
     void Counter::populateOutboundMessage(ArduinoMessage* message, byte messageID){
         ArduinoDevice::populateOutboundMessage(message, messageID);
 
-        /*if(messageID == ArduinoDevice::MESSAGE_ID_REPORT){
-            //setting this to false means the interrupt handler won't assign values to the vars below (single byte no cli/sei needed)
-            countStarted = false;
-
-            //assign to 
-            message->addULong(count);
-            unsigned long duration = micros() - countStartedOn;
-            message->addULong(duration);
-            duration = count > 1 ? lastCountOn - firstCountOn : 0;
-            message->addULong(duration);
-        }*/
+        if(messageID == ArduinoDevice::MESSAGE_ID_REPORT){
+            //assign to message
+            message->add(lastCount);
+            message->add(lastDuration);
+            
+        }
     }
-
 
     void Counter::loop(){
         ArduinoDevice::loop(); 
         
         if(!countStarted){
-            count = 0;
-            countStartedOn = micros();
-            firstCountOn = 0;
-            lastCountOn = 0;
-
-            //make sure this is at the end .. this way we don't need cli/sei
-            countStarted = true;
+            resetCount();
+        } else {
+            if(assignValuesAfter > 0 && (millis() - countStartedOn > assignValuesAfter)){
+                assignValues();
+                raiseEvent(EVENT_ASSIGNED_VALUES);
+            }
         }
 
+        //in case we don't want to use an interrupt then we have this
         if(interruptMode == 0 && ((bitMask & *inreg) == bitMask) != pinState){ //not using interrupts
-            onInterrupt();
+            unsigned long mcs = micros();
+            if(tolerance > 0 && count > 0 && mcs - countedOn < tolerance){
+                pinState  = (bitMask & *inreg) == bitMask;
+                if(pinState == pinStateToCount){
+                    countedOn = mcs;
+                    if(count == 0){
+                        firstCountOn = countedOn;
+                    } else {
+                        lastCountOn = countedOn;
+                    }
+                    count++;
+                }
+            }
         } //end no interrupt condition
+    }
+
+    void Counter::resetCount(){
+        count = 0;
+        countStartedOn = millis();
+        firstCountOn = 0;
+        lastCountOn = 0;
+
+        countStarted = true;
     }
 
     void Counter::onInterrupt(){
         if(countStarted){
             unsigned long mcs = micros();
-            if(count > 0 && mcs - countedOn < tolerance)return;
+            if(tolerance > 0 && count > 0 && mcs - countedOn < tolerance)return;
 
-            pinState  = (bitMask & *inreg) == bitMask;
-            if(pinState == pinStateToCount){
-                countedOn = mcs;
-                if(count == 0){
-                    firstCountOn = countedOn;
-                } else {
-                    lastCountOn = countedOn;
-                }
-                count++;
+            pinState  = (bitMask & *inreg) == bitMask; //if interrupt is set to CHANGING this will vary
+            countedOn = mcs;
+            if(count == 0){
+                firstCountOn = countedOn;
+            } else {
+                lastCountOn = countedOn;
             }
-            
+            count++;
         }
     }
 

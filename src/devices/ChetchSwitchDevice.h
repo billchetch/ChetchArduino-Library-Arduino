@@ -35,6 +35,7 @@ namespace Chetch{
             void loop() override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
             virtual void trigger();
+            void turn(bool on);
             bool isOn();
 
             void setStatusInfo(ArduinoMessage* message) override;
