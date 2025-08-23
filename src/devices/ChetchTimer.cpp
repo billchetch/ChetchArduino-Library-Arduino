@@ -42,7 +42,7 @@ namespace Chetch{
             instanceCount++;
 
             if(timer->addListener(idx + 1, &Timer::handleTimerElapsed, ISRTimer::LOWEST_PRIORITY, comp)){
-                Serial.print("Interval in micros is: ");
+                /*Serial.print("Interval in micros is: ");
                 Serial.println(interval);
                 Serial.print("We are prescaling by: ");
                 Serial.println(TIMER_PRESCALE_BY);
@@ -51,7 +51,7 @@ namespace Chetch{
                 Serial.print("So the timer will fire after every following ticks: ");
                 Serial.println(comp + 1);
                 Serial.print("Which is exactly this many micros: ");
-                Serial.println(timer->ticksToMicros(comp + 1));
+                Serial.println(timer->ticksToMicros(comp + 1));*/
                 return (int)idx;
             } else {
                 return -1;

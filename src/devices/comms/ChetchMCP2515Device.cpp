@@ -92,6 +92,7 @@ namespace Chetch{
             message->copy(&fmsg);
             //IMPORTANT: we identify forwarded messages as having the INFO type (original type is recorded as last parameter)
             message->type = ArduinoMessage::MessageType::TYPE_INFO;
+            message->tag = MESSAGE_ID_FORWARD_RECEIVED;
         }
     #endif
     #if CAN_REPORT_ERRORS
@@ -191,7 +192,6 @@ namespace Chetch{
                 fmsg.add(canInFrame.can_id);
                 fmsg.add((byte)canInFrame.can_dlc);
                 fmsg.add(fmsg.type);
-                fmsg.tag = MESSAGE_ID_FORWARD_RECEIVED;
                 enqueueMessageToSend(MESSAGE_ID_FORWARD_RECEIVED);
 #endif
                 break;
