@@ -3,7 +3,13 @@
 
 
 namespace Chetch{
-    MCP2515Device::MCP2515Device(byte nodeID, int csPin) : mcp2515(csPin), amsg(ARDUINO_MESSAGE_SIZE) {
+    MCP2515Device::MCP2515Device(byte nodeID, int csPin) : 
+                                    mcp2515(csPin), 
+                                    amsg(ARDUINO_MESSAGE_SIZE)
+#if CAN_FORWARD_MESSAGES 
+                                    , fmsg(ARDUINO_MESSAGE_SIZE + 6) //Add 6 bytes for can ID (=4), can DLC (=1) and orig message type (=1)
+#endif
+    {
         this->nodeID = nodeID;
 
     }
@@ -17,14 +23,20 @@ namespace Chetch{
     void MCP2515Device::init(){
         if(!initialised){
             reset();
+            randomSeed(getNodeID() + analogRead(A0));
             initialised = true;
         }
     }
 
     bool MCP2515Device::begin(){
+        if(nodeID < MIN_NODE_ID || nodeID > MAX_NODE_ID){
+            begun = false;
+            return begun;
+        }
+
         init();
         mcp2515.setBitrate(CAN_125KBPS);
-#if CAN_AS_LOOPBAck 
+#if CAN_AS_LOOPBACK 
         mcp2515.setLoopbackMode();
 #else
         mcp2515.setNormalMode();
@@ -33,6 +45,8 @@ namespace Chetch{
             pinMode(indicatorPin, OUTPUT);
             indicate(false);
         }
+        begun = true;
+        return begun;
 	}
 
     void MCP2515Device::indicate(bool on){
@@ -40,27 +54,102 @@ namespace Chetch{
     }
 
     void MCP2515Device::raiseError(MCP2515ErrorCode errorCode){
+        lastError = errorCode;
         if(errorListener != NULL){
             errorListener(this, errorCode);
         }
+   #if CAN_REPORT_ERRORS      
+        enqueueMessageToSend(MESSAGE_ID_REPORT_ERROR);
+    #endif
     }
-    
+
+    void MCP2515Device::setStatusInfo(ArduinoMessage* message){
+        ArduinoDevice::setStatusInfo(message);
+        message->add(CAN_FORWARD_MESSAGES);
+        message->add(CAN_REPORT_ERRORS);
+        message->add(getNodeID());
+        message->add((byte)mcp2515.getStatus());
+        message->add((byte)mcp2515.getErrorFlags());
+        message->add((byte)mcp2515.errorCountTX());
+        message->add((byte)mcp2515.errorCountRX());
+    }
+
+    void MCP2515Device::setReportInfo(ArduinoMessage* message){
+        ArduinoDevice::setReportInfo(message);
+
+        message->add((byte)mcp2515.getStatus());
+        message->add((byte)mcp2515.getErrorFlags());
+        message->add((byte)mcp2515.errorCountTX());
+        message->add((byte)mcp2515.errorCountRX());
+    }
+
+    void MCP2515Device::populateOutboundMessage(ArduinoMessage* message, byte messageID){
+        ArduinoDevice::populateOutboundMessage(message, messageID);
+
+
+    #if CAN_FORWARD_MESSAGES
+        if(messageID == MESSAGE_ID_FORWARD_RECEIVED){
+            message->copy(&fmsg);
+            //IMPORTANT: we identify forwarded messages as having the INFO type (original type is recorded as last parameter)
+            message->type = ArduinoMessage::MessageType::TYPE_INFO;
+        }
+    #endif
+    #if CAN_REPORT_ERRORS
+        if(messageID == MESSAGE_ID_REPORT_ERROR){
+            setErrorInfo(message, lastError);
+            message->add((byte)mcp2515.getErrorFlags());
+            message->add((byte)mcp2515.errorCountTX());
+            message->add((byte)mcp2515.errorCountRX());
+        }
+    #endif
+    }
+
     void MCP2515Device::loop(){
         indicate(false);
         ArduinoDevice::loop();
 
+        readMessage();    
+    
+        if(!canTrySending && millis() > 2000){
+            canTrySending = true;
+        }
+    }
+
+
+    ArduinoMessage* MCP2515Device::getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType){
+        amsg.clear();
+        amsg.type = messageType;
+        amsg.sender = device->id - ArduinoBoard::START_DEVICE_IDS_AT;
+
+        return &amsg;
+    }
+
+    void MCP2515Device::readMessage(){
         MCP2515::ERROR err = mcp2515.readMessage(&canInFrame);
         switch(err){
             case MCP2515::ERROR_OK:
-                canTrySending = true;
-                indicate(true);
-
                 //Clear message and split out the ID
                 amsg.clear();
-                byte nodeID = (canInFrame.can_id >> 16) & 0xFF;
-                byte messageTypeAndSender = (canInFrame.can_id >> 8) & 0xFF;
-                amsg.type = (messageTypeAndSender & 0b11111000) >> 3;
-                amsg.sender = messageTypeAndSender & 0b00000111;
+                CANMessagePriority priority = (CANMessagePriority)(canInFrame.can_id >> 24) & 0b00001111;
+                amsg.type = (canInFrame.can_id >> 16) & 0xFF;
+                byte nodeIDAndSender = (canInFrame.can_id >> 8) & 0xFF;
+                amsg.sender = nodeIDAndSender & 0b00001111; //last 4 bits make the sender
+                byte remoteNodeID = nodeIDAndSender >> 4; //first 4 bits are used for the remote node ID
+
+                if((byte)priority < (byte)CANMessagePriority::CAN_PRIORITY_CRITICAL || (byte)priority > (byte)CANMessagePriority::CAN_PRIORITY_LOW){
+                    raiseError(INVALID_MESSAGE);
+                    break; //ERROR.... 
+                }
+
+                if(remoteNodeID < MIN_NODE_ID || remoteNodeID > MAX_NODE_ID){
+                    raiseError(INVALID_MESSAGE);
+                    break; //ERROR....
+                }
+
+                if(amsg.type < 1 || amsg.type > 31){
+                    raiseError(INVALID_MESSAGE);
+                    break; //ERROR....
+                }
 
                 //Add message arguments
                 if(canInFrame.can_dlc > 0){
@@ -81,10 +170,30 @@ namespace Chetch{
                     }
                 }
 
+                /*
+                Serial.println("Received ID: ");
+                for (int i = (sizeof(canInFrame.can_id) * 8) - 1; i >= 0; i--) { // Loop from bit 7 (MSB) down to 0 (LSB)
+                    Serial.print(bitRead(canInFrame.can_id, i)); // Print the value of the i-th bit
+                    if(i % 8 == 0)Serial.println("----");
+                }*/
+                
+                canTrySending = true;
+                indicate(true);
+
                 //Call a listener if we have a message
                 if(messageReceivedListener != NULL){
-                    messageReceivedListener(this, nodeID, &amsg);
+                    messageReceivedListener(this, priority, remoteNodeID, &amsg);
                 }
+
+#if CAN_FORWARD_MESSAGES
+                fmsg.clear();
+                fmsg.copy(&amsg);
+                fmsg.add(canInFrame.can_id);
+                fmsg.add((byte)canInFrame.can_dlc);
+                fmsg.add(fmsg.type);
+                fmsg.tag = MESSAGE_ID_FORWARD_RECEIVED;
+                enqueueMessageToSend(MESSAGE_ID_FORWARD_RECEIVED);
+#endif
                 break;
 
             case MCP2515::ERROR_FAIL:
@@ -99,28 +208,9 @@ namespace Chetch{
                 raiseError(UNKNOWN_RECEIVE_ERROR);
                 break;
         }
-    
-        if(!canTrySending && millis() > 2000){
-            canTrySending = true;
-        }
     }
 
-
-    ArduinoMessage* MCP2515Device::getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType){
-        amsg.clear();
-        amsg.type = messageType;
-        amsg.sender= device->id - ArduinoBoard::START_DEVICE_IDS_AT;
-
-        return &amsg;
-    }
-
-    bool MCP2515Device::isMessageFromDevice(byte nodeID, byte deviceIdx, ArduinoMessage* message){
-        if(nodeID != this->nodeID)return false; //coming from a different bus
-        if(deviceIdx != message->sender)return false;
-        return true;
-    }
-
-    bool MCP2515Device::sendMessage(ArduinoMessage* message){
+    bool MCP2515Device::sendMessage(ArduinoMessage* message, CANMessagePriority messagePriority){
         if(!canTrySending)return false;
 
         if(message == NULL){
@@ -131,19 +221,26 @@ namespace Chetch{
             raiseError(INVALID_MESSAGE);
             return false; //ERROR ... can data of 8 bytes sets this limit
         }
-        if(message->type > 31){
+        if(message->type > 31 || message->type < 1){
             raiseError(INVALID_MESSAGE);
-            return false; //ERROR .... type only has 5 bits available
+            return false; //ERROR .... not a valid message type
         }
-        if(message->sender > 7){
+        if(message->sender > 15){
             raiseError(INVALID_MESSAGE);
-            return false; //ERROR .... sender only has 3 bits available
+            return false; //ERROR .... sender only has 4 bits available
+        }
+        if((byte)messagePriority > (byte)CANMessagePriority::CAN_PRIORITY_LOW){
+            raiseError(INVALID_MESSAGE);
+            return false; //ERROR .... priority not valid
         }
 
         canOutFrame.can_dlc = 0;
         byte messageStructure = 0;
         if(message->getArgumentCount() <= 1){
             canOutFrame.can_dlc = message->getArgumentCount() == 0 ? 0 : message->getArgumentSize(0);
+            if(canOutFrame.can_dlc > CAN_MAX_DLC){
+                return false; //ERROR ... can data of 8 bytes sets this limit
+            }
         } else {
             byte shiftLeft = 6;
             messageStructure = ((message->getArgumentCount() - 1) << shiftLeft);
@@ -152,7 +249,7 @@ namespace Chetch{
                     return false; //ERROR ... to keep structures representable by one byte we don't allow multi argument messages to have a single argument over 4 bytes
                 }
                 canOutFrame.can_dlc += message->getArgumentSize(i);
-                if(canOutFrame.can_dlc > 8){
+                if(canOutFrame.can_dlc > CAN_MAX_DLC){
                     return false; //ERROR ... can data of 8 bytes sets this limit
                 }
                 if(i < 3){
@@ -162,9 +259,16 @@ namespace Chetch{
             }
         }
         
-        byte messageTypeAndSenderID = (message->type << 3 ) | (message->sender & 0b00000111);
-        canOutFrame.can_id = (unsigned long)nodeID << 16 | (unsigned long)messageTypeAndSenderID << 8 | (unsigned long)messageStructure;
-        /*Serial.println("Bits of the byte: ");
+        byte priority = 0; 
+        if(messagePriority == CANMessagePriority::CAN_PRIORITY_RANDOM){
+            priority = (byte)random(CANMessagePriority::CAN_PRIORITY_HIGH, CANMessagePriority::CAN_PRIORITY_LOW + 1);
+        } else {
+            priority = (byte)messagePriority;
+        }
+        priority = 0b00001111 & priority;
+        byte nodeIDAndSender = (nodeID << 4 ) | (message->sender & 0b000001111);
+        canOutFrame.can_id = (unsigned long)priority << 24 | (unsigned long)message->type << 16 | (unsigned long)nodeIDAndSender << 8 | (unsigned long)messageStructure;
+        /*Serial.println("Sending ID: ");
         for (int i = (sizeof(canOutFrame.can_id) * 8) - 1; i >= 0; i--) { // Loop from bit 7 (MSB) down to 0 (LSB)
             Serial.print(bitRead(canOutFrame.can_id, i)); // Print the value of the i-th bit
             if(i % 8 == 0)Serial.println("----");

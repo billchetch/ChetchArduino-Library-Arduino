@@ -103,10 +103,11 @@ namespace Chetch{
         }
 
         if(lastError == Timer::NO_ERROR){
-            return true;
+            begun = true;
         } else {
-            return false;
+            begun = false;
         }
+        return begun;
     }
 
     void Timer::loop(){

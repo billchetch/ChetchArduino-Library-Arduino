@@ -91,8 +91,10 @@ namespace Chetch{
             void setID(byte id){ this->id = id; }
 
             void addDevice(ArduinoDevice* device);
-            ArduinoDevice* getDevice(byte id);
+            ArduinoDevice* getDeviceByID(byte id);
+            ArduinoDevice* getDeviceAt(byte idx);
             byte getDeviceCount(){ return deviceCount; };
+            int getFreeMemory();
 
             bool begin(Stream* stream); //will return false if fails to begin
             void loop();

@@ -53,24 +53,29 @@ namespace Chetch{
             instances[idx] = instance;
             instanceCount++;
 
-            unsigned int m = 500;
-            unsigned int comp = timer->microsToTicks(m);
-            /*Serial.print("Setting ZMPT101B timer comp to ");
-            Serial.print(comp);
-            Serial.print(" ticks = ");
-            Serial.print(m);
-            Serial.println(" micros");*/
-            timer->addListener(idx, &ZMPT101B::handleTimerElapsed, ISRTimer::LOWEST_PRIORITY, comp);
-            return (int)idx;
+            unsigned int interval = 500;
+            uint32_t comp = timer->microsToTicks(interval) - 1;
+            if(timer->addListener(idx, &ZMPT101B::handleTimerElapsed, ISRTimer::LOWEST_PRIORITY, comp)){
+                Serial.print("Interval in micros is: ");
+                Serial.println(interval);
+                Serial.print("We are prescaling by: ");
+                Serial.println(TIMER_PRESCALER);
+                Serial.print("One timer tick in micros is thus: ");
+                Serial.println(timer->ticksToMicros(1));
+                Serial.print("So the timer will fire after every following ticks: ");
+                Serial.println(comp + 1);
+                Serial.print("Which is exactly this many micros: ");
+                Serial.println(timer->ticksToMicros(comp + 1));
+                return (int)idx;
+            } else {
+                return -1;
+            }
         }
     }
 
     void ZMPT101B::handleTimerElapsed(uint8_t id){
         static ZMPT101B* zmpt = NULL;
         
-        //free up other interrupts
-        //sei();
-
         zmpt = instances[currentInstance];
         
         if (!CADC::isReading()) {
@@ -80,7 +85,6 @@ namespace Chetch{
         
     }
 
-
     ZMPT101B::ZMPT101B(byte pin){
         voltagePin = pin;
 
@@ -89,8 +93,6 @@ namespace Chetch{
             buffer[i] = 0;
         }
 
-        instanceIndex = addInstance(this);
-        if(instanceIndex >= 0)useTimer = true;
     }
 
     ZMPT101B::~ZMPT101B(){
@@ -103,16 +105,15 @@ namespace Chetch{
         }
     }
 
-    
     bool ZMPT101B::begin(){
         pinMode(voltagePin, INPUT);
+        instanceIndex = addInstance(this);
+        if(instanceIndex >= 0){
+            useTimer = true;
+        } else {
+            return false;
+        }
     }
-
-    /*void ZMPT101B::status(ADMMessage *message, ADMMessage *response){
-        ArduinoDevice::status(message, response);
-
-        response->addByte(voltagePin);
-    }*/
 
     void ZMPT101B::populateOutboundMessage(ArduinoMessage* message, byte messageID){
         ArduinoDevice::populateOutboundMessage(message, messageID);

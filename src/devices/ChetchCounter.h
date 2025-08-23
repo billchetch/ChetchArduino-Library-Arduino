@@ -30,19 +30,15 @@ namespace Chetch{
             volatile bool countStarted = false;
             unsigned long countStartedOn = 0; //in micros as when count started
             unsigned long assignValuesAfter = 0; //time for which to assign values
-            
+            //These store the values at reportInteval moments so as to be refernced rather than the 'hot' values which will rapidly change
+            unsigned long lastCount = 0;
+            unsigned long lastDuration = 0;
+
             volatile unsigned long firstCountOn = 0; //in micros when the first interrupt fired
             volatile unsigned long lastCountOn = 0; //in micros when the last interrupt fired
             volatile unsigned long count = 0;
             volatile unsigned long countedOn = 0;
             volatile bool pinState = LOW;
-
-
-
-        public:
-            //These store the values at reportInteval moments so as to be refernced rather than the 'hot' values which will rapidly change
-            unsigned long lastCount = 0;
-            unsigned long lastDuration = 0;
 
         private:
             void resetCount();
@@ -58,13 +54,13 @@ namespace Chetch{
 
             void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
             virtual void assignValues(); //make virtual so we can override for functionality like RPM
+            unsigned long getCount();
             double getHz();
 
             bool begin() override;
             void loop() override;
             
             void onInterrupt();
-            unsigned long getCount();
     }; //end class
 } //end namespae
 #endif

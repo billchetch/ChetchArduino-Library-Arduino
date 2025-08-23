@@ -68,14 +68,17 @@ namespace Chetch{
             //keep track of instances
             int idx = addInstance(this);
             if(idx < 0){
-                return false;
+                begun = false;
+                return begun;
             }
             instanceIndex = (byte)idx;
             if(!CInterrupt::addInterruptListener(pin, instanceIndex, &Counter::handleInterrupt, interruptMode)){
-                return false;
+                begun = false;
+                return begun;
             }
         }
-        return true;
+        begun = true;
+        return begun;
     }
 
     void Counter::assignValues(){
@@ -84,6 +87,10 @@ namespace Chetch{
         lastCount = count;
         lastDuration = count > 1 ? lastCountOn - firstCountOn : 0;
         resetCount();
+    }
+
+    unsigned long Counter::getCount(){
+        return lastCount;
     }
 
     double Counter::getHz(){
@@ -99,9 +106,8 @@ namespace Chetch{
 
         if(messageID == ArduinoDevice::MESSAGE_ID_REPORT){
             //assign to message
-            message->add(lastCount);
-            message->add(lastDuration);
-            
+            message->add(getCount());
+            message->add(getHz());
         }
     }
 
@@ -160,9 +166,7 @@ namespace Chetch{
         }
     }
 
-    unsigned long Counter::getCount(){
-        return count;
-    }
+    
 
     
 } //end namespace

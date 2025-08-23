@@ -7,15 +7,14 @@ namespace Chetch{
         //empty
     }    
     SwitchDevice::SwitchDevice(SwitchMode mode, byte pin, int tolerance, bool pinState){
-        configure(mode, pin, tolerance, pinState);
-    }    
-
-    void SwitchDevice::configure(SwitchMode mode, byte pin, int tolerance, bool pinState){
         this->mode = mode;
         this->pin = pin;
         this->tolerance = tolerance;
-        this->pinState = pinState;
+        this->pinState = pinState;        
+    }    
 
+    bool SwitchDevice::begin(){
+        
         switch (mode) {
         case SwitchMode::PASSIVE:
             pinMode(pin, INPUT);
@@ -28,6 +27,8 @@ namespace Chetch{
         }
 
         on = pinState == HIGH;
+        begun = true;
+        return begun;
     }
 
     void SwitchDevice::setStatusInfo(ArduinoMessage* message){

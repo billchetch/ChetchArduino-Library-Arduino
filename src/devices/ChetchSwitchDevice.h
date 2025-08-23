@@ -31,7 +31,7 @@ namespace Chetch{
             SwitchDevice();
             SwitchDevice(SwitchMode mode, byte pin, int tolerance, bool pinState = LOW);
 
-            void configure(SwitchMode mode, byte pin, int tolerance, bool pinState = LOW);
+            bool begin() override;
             void loop() override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
             virtual void trigger();

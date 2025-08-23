@@ -25,6 +25,8 @@ namespace Chetch{
 
     bool Ticker::begin(){
         pinMode(pin, OUTPUT);
+        begun = true;
+        return begun;
     }
 
     void Ticker::setReportInfo(ArduinoMessage* message){

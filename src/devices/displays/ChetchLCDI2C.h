@@ -1,13 +1,24 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <U8x8lib.h>
+#include <LiquidCrystal_I2C.h>
 
 #include <ChetchArduinoDevice.h>
 #include <ChetchArduinoMessage.h>
 
 
+#if defined(ARDUINO_AVR_MEGA2560)
+    #define DEFAULT_I2C_ADDRESS 0
+#elif defined(ARDUINO_AVR_NANO)
+    #define DEFAULT_I2C_ADDRESS 0x27 //other common addresses are: 0x3F
+#elif defined(ARDUINO_AVR_UNO)
+    #define DEFAULT_I2C_ADDRESS 0x27 //other common addresses are: 0x3F
+#else
+    #define I2C_ADDRESS 0
+#endif
+
+
 /*
-PIN REFERENCE FOR I2C OLED:
+PIN REFERENCE FOR I2C:
 - 5V
 - GND
 - SDA = A4 (Nano/Arduino), 20 (Mega/Leonardo)
@@ -15,13 +26,13 @@ PIN REFERENCE FOR I2C OLED:
 */
 
 namespace Chetch{
-    class OLEDTextDisplay : public ArduinoDevice{
+    class LCDI2C : public ArduinoDevice{
         public:
-            enum DisplayOption{
+            /*enum DisplayOption{
                 LARGE_TEXT,
                 SMALL_TEXT,
                 XLARGE_TEXT
-            };
+            };*/
 
             enum DisplayPreset{
                 CLEAR = 0,
@@ -30,37 +41,28 @@ namespace Chetch{
             };
 
         private:
-            #if defined(OLED_128x32_I2C)
-                U8X8_SSD1306_128X32_UNIVISION_HW_I2C display;
-            #elif defined(OLED_128x64_I2C)
-                U8X8_SSD1306_128X64_NONAME_HW_I2C display;
-            #else //default
-                U8X8_SSD1306_128X32_UNIVISION_HW_I2C display;
-            #endif
+            LiquidCrystal_I2C display;
 
-            
-            uint8_t *defaultFont;
-            DisplayOption displayOption;
+            //DisplayOption displayOption;
             unsigned int lockDuration = 0;
             unsigned long lockedAt = 0;
 
         public:
-            OLEDTextDisplay(DisplayOption displayOption = DisplayOption::LARGE_TEXT);
-            ~OLEDTextDisplay();
-
+            LCDI2C(byte cols, byte rows);
+            
             bool begin() override;
             void loop() override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
             void clearDisplay();
-            void clearLine(byte lineNumber);
+            /*void clearLine(byte lineNumber);
             void setFontSize(DisplayOption displayOption);
             void print(char* text, unsigned int cx = 0, unsigned int cy = 0);
             void displayPreset(DisplayPreset preset, unsigned int lockFor);
-            void displayBoardStats(unsigned int lockFor);
+            void displayBoardStats(unsigned int lockFor);*/
             void lock(unsigned int lockFor); //set to 0 to remove lock, lockFor in ms
             void unlock();
             bool isLocked(){ return lockDuration > 0; };
-            U8X8* getDisplay(){ return isLocked() ? NULL : &display; };
+            LiquidCrystal_I2C* getDisplay(){ return isLocked() ? NULL : &display; };
     };
 } //end namespace

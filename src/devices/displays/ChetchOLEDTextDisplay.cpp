@@ -1,18 +1,19 @@
 #include "ChetchUtils.h"
 #include "ChetchOLEDTextDisplay.h"
 #include "ChetchArduinoBoard.h"
-#include <MemoryFree.h>
 
 
 namespace Chetch{
-    OLEDTextDisplay::OLEDTextDisplay(DisplayOption displayOption){
+    OLEDTextDisplay::OLEDTextDisplay(DisplayOption displayOption) : 
 #if defined(OLED_128x32_I2C)
-      display = new U8X8_SSD1306_128X32_UNIVISION_HW_I2C(/* reset=*/ U8X8_PIN_NONE, /* clock=*/ SCL, /* data=*/ SDA);
+      display(/* reset=*/ U8X8_PIN_NONE, /* clock=*/ SCL, /* data=*/ SDA)
 #elif defined(OLED_128x64_I2C)
-      display = new U8X8_SSD1306_128X64_NONAME_HW_I2C (/* reset=*/ U8X8_PIN_NONE); 
-#else //default
-      display = new U8X8_SSD1306_128X32_UNIVISION_HW_I2C(/* reset=*/ U8X8_PIN_NONE, /* clock=*/ SCL, /* data=*/ SDA);
+      display (/* reset=*/ U8X8_PIN_NONE)
+#else //default 128x32_I2C
+      display(/* reset=*/ U8X8_PIN_NONE, /* clock=*/ SCL, /* data=*/ SDA)
 #endif
+
+    {
 
         this->displayOption = displayOption;
 
@@ -30,25 +31,25 @@ namespace Chetch{
     }
 
     OLEDTextDisplay::~OLEDTextDisplay(){
-        if(display != NULL)delete display;
+        //nohting
     } 
     
 	bool OLEDTextDisplay::begin(){
-        if(display != NULL && display->begin()){
-            display->setPowerSave(0);
-            display->setFont(defaultFont);
+        if(display.begin()){
+            display.setPowerSave(0);
+            display.setFont(defaultFont);
+            begun = true;
         } else {
-            return false;
+            begun = false;
         }
+        return begun;
 	}
     
     void OLEDTextDisplay::loop(){
         ArduinoDevice::loop();
 
         if(isLocked() && millis() - lockedAt > lockDuration){
-            if(display != NULL){
-                display->clearDisplay();
-            }
+            display.clearDisplay();
             unlock();
         }
     }
@@ -100,38 +101,38 @@ namespace Chetch{
     }
 
     void OLEDTextDisplay::clearDisplay(){
-        if(isLocked() || display == NULL)return;
-        display->clearDisplay();
+        if(isLocked())return;
+        display.clearDisplay();
     }
 
     void OLEDTextDisplay::clearLine(byte lineNumber){
-        if(isLocked() || display == NULL)return;
-        display->clearLine(lineNumber);
+        if(isLocked())return;
+        display.clearLine(lineNumber);
     }
 
     void OLEDTextDisplay::setFontSize(DisplayOption displayOption){
         switch(displayOption){
             case LARGE_TEXT:
-                display->setFont(u8x8_font_7x14_1x2_f); 
+                display.setFont(u8x8_font_7x14_1x2_f); 
                 break;
             case SMALL_TEXT:
-                display->setFont(u8x8_font_chroma48medium8_r); 
+                display.setFont(u8x8_font_chroma48medium8_r); 
                 break;
             case XLARGE_TEXT:
-                display->setFont(u8x8_font_px437wyse700a_2x2_r);
+                display.setFont(u8x8_font_px437wyse700a_2x2_r);
                 break;
         }
     }
 
     void OLEDTextDisplay::print(char* text, unsigned int cx, unsigned int cy){
-        if(isLocked() || display == NULL)return;
+        if(isLocked())return;
 
-        display->setCursor(cx, cy);
-        display->print(text);
+        display.setCursor(cx, cy);
+        display.print(text);
     }
 
     void OLEDTextDisplay::displayPreset(DisplayPreset preset, unsigned int lockFor){
-         if(isLocked() || display == NULL)return;
+         if(isLocked())return;
 
         switch(preset){
             case BOARD_STATS:
@@ -139,47 +140,47 @@ namespace Chetch{
                 break;
 
             case HELLO_WORLD:
-                display->clearDisplay();
-                display->setFont(u8x8_font_7x14_1x2_f);
-                display->setCursor(0, 0);
-                display->print("Hello World!");
+                display.clearDisplay();
+                display.setFont(u8x8_font_7x14_1x2_f);
+                display.setCursor(0, 0);
+                display.print("Hello World!");
                 lock(lockFor);
                 break;
 
             case CLEAR:
-                display->clearDisplay();
+                display.clearDisplay();
                 lock(lockFor);
                 break;
 
             default:
-                display->clearDisplay();
-                display->setFont(u8x8_font_7x14_1x2_f);
-                display->setCursor(0, 0);
-                display->print("Preset not found");
+                display.clearDisplay();
+                display.setFont(u8x8_font_7x14_1x2_f);
+                display.setCursor(0, 0);
+                display.print("Preset not found");
                 lock(lockFor);
                 break;
         }
     }
 
     void OLEDTextDisplay::displayBoardStats(unsigned int lockFor){
-        if(isLocked() || display == NULL)return;
+        if(isLocked())return;
 
-        display->clearDisplay();
-        display->setFont(u8x8_font_7x14_1x2_f);
-        display->setCursor(0, 0);
-        display->print(BOARD_NAME);
-        display->print(" ");
-        display->print(freeMemory());
-        display->print(" bytes");
-        display->setFont(u8x8_font_chroma48medium8_r);
-        display->setCursor(0, 2);
-        display->print("Devices: ");
-        display->print(Board->getDeviceCount());
-        display->setCursor(0, 3);
-        display->print("Display: ");
-        display->print(display->getCols());
-        display->print("x");
-        display->print(display->getRows());
+        display.clearDisplay();
+        display.setFont(u8x8_font_7x14_1x2_f);
+        display.setCursor(0, 0);
+        display.print(BOARD_NAME);
+        display.print(" ");
+        display.print(Board->getFreeMemory());
+        display.print(" bytes");
+        display.setFont(u8x8_font_chroma48medium8_r);
+        display.setCursor(0, 2);
+        display.print("Devices: ");
+        display.print(Board->getDeviceCount());
+        display.setCursor(0, 3);
+        display.print("Display: ");
+        display.print(display.getCols());
+        display.print("x");
+        display.print(display.getRows());
         if(lockFor > 0){
             lock(lockFor);
         }

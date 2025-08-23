@@ -55,6 +55,7 @@ namespace Chetch{
             EventListener eventListener = NULL;
 
         protected:
+            bool begun = false;
             unsigned long lastMillis = 0;
             int reportInterval = -1; //measured in millis. negative or zero means no reporting
         
@@ -70,12 +71,13 @@ namespace Chetch{
             virtual void populateOutboundMessage(ArduinoMessage* message, byte messageID);
             
             void setErrorInfo(ArduinoMessage* message, byte errorSubCode);
-            virtual void setReportInfo(ArduinoMessage* message){};
+            virtual void setReportInfo(ArduinoMessage* message){}; //a hook
             virtual void setStatusInfo(ArduinoMessage* message);
 
             virtual bool executeCommand(DeviceCommand command, ArduinoMessage* message, ArduinoMessage* response);
 
-            virtual bool begin(){ return true; }; //a hook
+            virtual bool begin() = 0;
+            bool hasBegun(){ return begun; }
             virtual void loop();
     };
 } //end namespace scope

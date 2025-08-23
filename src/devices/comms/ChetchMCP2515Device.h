@@ -51,18 +51,65 @@ Byte 3 = 10 11 01 00
 DLC = 8
 Byte 3 = 11 01 10 00
 
-Note that 
+ERROR FLAGS (Bits in the byte read from the EFLG register)
+
+e.g. from autowp library there are these defined flags
+EFLG_RX1OVR = (1<<7),
+EFLG_RX0OVR = (1<<6),
+EFLG_TXBO   = (1<<5),
+EFLG_TXEP   = (1<<4),
+EFLG_RXEP   = (1<<3),
+EFLG_TXWAR  = (1<<2),
+EFLG_RXWAR  = (1<<1),
+EFLG_EWARN  = (1<<0)
+
+D7: RX1OVRF (Receive Buffer 1 Overflow Flag):
+    Set when a new valid message is received in Receive Buffer 1, but the buffer is already full.
+D6: RX0OVRF (Receive Buffer 0 Overflow Flag):
+    Set when a new valid message is received in Receive Buffer 0, but the buffer is already full.
+D5: TXBO (Bus-Off Flag):
+    Set when the Transmit Error Counter (TEC) exceeds 255, indicating that the device has entered a Bus-Off state.
+D4: TXBP (Transmit Error Passive Flag):
+    Set when the TEC exceeds 127, indicating that the device has entered an Error Passive state for transmission.
+D3: RXBP (Receive Error Passive Flag):
+    Set when the Receive Error Counter (REC) exceeds 127, indicating that the device has entered an Error Passive state for reception.
+D2: TXWAR (Transmit Error Warning Flag):
+    Set when the TEC exceeds 96, indicating a warning level for transmit errors.
+D1: RXWAR (Receive Error Warning Flag):
+    Set when the REC exceeds 96, indicating a warning level for receive errors.
+D0: EWARN (Error Warning Flag):
+    Set when either TXWAR or RXWAR is set, providing a general error warning indication
+
+STATUS FLAGS (Bits in the byte read from the ? register)
+
+D7: Transmit Buffer-2-Empty Interrupt Flag bit
+D6: Buffer 2, Message-Transmit-Request bit
+D5: Transmit Buffer-1-Empty Interrupt Flag bit
+D4: Buffer 1, Message-Transmit-Request bit
+D3: Transmit Buffer-0-Empty Interrupt Flag bit
+D2: Buffer 0, Message-Transmit-Request bit
+D1: Receive-Buffer-1-Full Interrupt Flag
+D0: Receive-Buffer-0-Full Interrupt Flag
 */
 
-#define CAN_AS_LOOPBAck false
+#define CAN_AS_LOOPBACK false
 #define CAN_DEFAULT_CS_PIN 10
 #define CAN_DEFAULT_INDICATOR_PIN 9
+#define CAN_FORWARD_MESSAGES true
+#define CAN_REPORT_ERRORS true
+
 
 namespace Chetch{
     class MCP2515Device : public ArduinoDevice{
         public:
             static const byte ARDUINO_MESSAGE_SIZE = 16;
+            static const byte MAX_NODE_ID = 15;
+            static const byte MIN_NODE_ID = 1;
             static const int NO_FILTER = -1;
+            
+            static const byte MESSAGE_ID_FORWARD_RECEIVED = 100;
+            static const byte MESSAGE_ID_REPORT_ERROR = 102;
+
 
             enum MCP2515ErrorCode{
                 NO_ERROR = 0,
@@ -75,14 +122,15 @@ namespace Chetch{
                 READ_FAIL
             };
             
-            enum CANMessageType{
-                CAN_TYPE_NONE = 0,
-                CAN_TYPE_ERROR,
-                CAN_TYPE_DATA,
-                CAN_TYPE_OTHER
+            enum CANMessagePriority{
+                CAN_PRIORITY_RANDOM = 0,
+                CAN_PRIORITY_CRITICAL,
+                CAN_PRIORITY_HIGH,
+                CAN_PRIORITY_NORMAL,
+                CAN_PRIORITY_LOW
             };
 
-            typedef bool (*MessageListener)(MCP2515Device*, byte, ArduinoMessage*);
+            typedef bool (*MessageListener)(MCP2515Device*, CANMessagePriority, byte, ArduinoMessage*);
             typedef bool (*ErrorListener)(MCP2515Device*, MCP2515ErrorCode errorCode);
 
             MCP2515 mcp2515;
@@ -92,12 +140,17 @@ namespace Chetch{
             struct can_frame canOutFrame;
 
             bool initialised = false;
+            MCP2515ErrorCode lastError = MCP2515ErrorCode::NO_ERROR;
 
             byte nodeID = 0;
             byte indicatorPin = CAN_DEFAULT_INDICATOR_PIN;
             bool canTrySending = false; //is set to true if either a message is received or a certain period has elapsed
 
             ArduinoMessage amsg;
+#if CAN_FORWARD_MESSAGES 
+            ArduinoMessage fmsg;
+#endif
+
             MessageListener messageReceivedListener = NULL;
             MessageListener messageSentListener = NULL;
             ErrorListener errorListener = NULL;
@@ -117,6 +170,9 @@ namespace Chetch{
             void raiseError(MCP2515ErrorCode errorCode);
             void indicate(bool on);
             void loop() override;
+            void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
+            void setStatusInfo(ArduinoMessage* response) override;
+            void setReportInfo(ArduinoMessage* message) override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
             
             void addMessageReceivedListener(MessageListener listener){ messageReceivedListener = listener; }
@@ -124,8 +180,8 @@ namespace Chetch{
             void addErrorListener(ErrorListener listener){ errorListener = listener; }
 
             ArduinoMessage* getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType = ArduinoMessage::TYPE_DATA);
-            bool isMessageFromDevice(byte nodeID, byte deviceIdx, ArduinoMessage* message);
-            bool sendMessage(ArduinoMessage *message);
+            bool sendMessage(ArduinoMessage *message, CANMessagePriority messagePriority = CANMessagePriority::CAN_PRIORITY_RANDOM);
+            void readMessage();
 
             uint32_t createFilterMask(bool checkNodeID, bool checkMessageType, bool checkSender);
             uint32_t createFilter(int nodeID, int messageType, int sender);

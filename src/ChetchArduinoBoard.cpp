@@ -20,7 +20,9 @@ namespace Chetch{
         outboundMessage.clear();
 
         for(int i = 0; i < deviceCount; i++){
-            if(!devices[i]->begin())return false;
+            if(!devices[i]->begin() || !devices[i]->hasBegun()){ //in case we forget to set the begun flag
+                return false;
+            }
         }
 
         begun = true;
@@ -37,12 +39,24 @@ namespace Chetch{
         }
     }
 
-    ArduinoDevice* ArduinoBoard::getDevice(byte id){
+    ArduinoDevice* ArduinoBoard::getDeviceByID(byte id){
         if(id >= START_DEVICE_IDS_AT && id < deviceCount + START_DEVICE_IDS_AT){
             return devices[id - START_DEVICE_IDS_AT];
         } else {
             return NULL;
         }
+    }
+
+    ArduinoDevice* ArduinoBoard::getDeviceAt(byte idx){
+        if(idx >= 0 && idx < deviceCount){
+            return devices[idx];
+        } else {
+            return NULL;
+        }
+    }
+
+    int ArduinoBoard::getFreeMemory(){
+        return freeMemory();
     }
     
     //returns true if received a valid message, false otherwise
@@ -115,7 +129,7 @@ namespace Chetch{
                 response->add(BOARD_NAME);
                 response->add(millis());
                 response->add(deviceCount);
-                response->add(freeMemory());
+                response->add(getFreeMemory());
                 setResponseInfo(response, message, getID());
                 break;
 
@@ -188,7 +202,7 @@ namespace Chetch{
                         setErrorInfo(&outboundMessage, ErrorCode::TARGET_NOT_VALID, inboundMessage.target);
                         setResponseInfo(&outboundMessage, &inboundMessage, getID());
                     } else { //intending a device
-                        ArduinoDevice* device = getDevice(inboundMessage.target);
+                        ArduinoDevice* device = getDeviceByID(inboundMessage.target);
                         if(device != NULL){
                             device->handleInboundMessage(&inboundMessage, &outboundMessage);
                             setResponseInfo(&outboundMessage, &inboundMessage, device->id);
