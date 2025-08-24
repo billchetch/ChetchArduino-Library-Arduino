@@ -49,6 +49,12 @@ namespace Chetch{
 
     void ArduinoMessage::copy(ArduinoMessage *message){
         clear();
+
+        type = message->type;
+        tag = message->tag;
+        target = message->target;
+        sender = message->sender;
+        
         byte *mbytes = message->getBytes();
         for(int i = 0; i < message->getByteCount(); i++){
             bytes[i] = mbytes[i];

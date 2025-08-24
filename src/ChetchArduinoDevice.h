@@ -39,7 +39,8 @@ namespace Chetch{
                 ZERO,
                 ANALYSE,
                 LOCK,
-                UNLOCK
+                UNLOCK,
+                REQUEST
             };
 
         public:
@@ -65,7 +66,7 @@ namespace Chetch{
 
             void setReportInterval(int interval) { reportInterval = interval; }
             
-            bool enqueueMessageToSend(byte messageID);
+            bool enqueueMessageToSend(byte messageID, byte messageTag = 0);
             
             virtual void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response);
             virtual void populateOutboundMessage(ArduinoMessage* message, byte messageID);

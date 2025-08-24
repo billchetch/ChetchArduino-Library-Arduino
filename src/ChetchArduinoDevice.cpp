@@ -54,8 +54,8 @@ namespace Chetch{
         }        
     }
 
-    bool ArduinoDevice::enqueueMessageToSend(byte messageID){
-        return Board->enqueueMessageToSend(this, messageID);
+    bool ArduinoDevice::enqueueMessageToSend(byte messageID, byte messageTag){
+        return Board->enqueueMessageToSend(this, messageID, messageTag);
     }
 
     bool ArduinoDevice::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){

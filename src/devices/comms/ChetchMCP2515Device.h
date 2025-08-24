@@ -107,8 +107,16 @@ namespace Chetch{
             static const byte MIN_NODE_ID = 1;
             static const int NO_FILTER = -1;
             
+            static const byte EVENT_READTY_TO_SEND = 1;
+
+#if CAN_FORWARD_MESSAGES 
             static const byte MESSAGE_ID_FORWARD_RECEIVED = 100;
-            static const byte MESSAGE_ID_REPORT_ERROR = 102;
+            static const byte MESSAGE_ID_FORWARD_SENT = 101;
+            static const byte MESSAGE_ID_READY_TO_SEND = 102;
+#endif
+#if CAN_REPORT_ERRORS 
+            static const byte MESSAGE_ID_REPORT_ERROR = 110;
+#endif
 
 
             enum MCP2515ErrorCode{
@@ -148,7 +156,8 @@ namespace Chetch{
 
             ArduinoMessage amsg;
 #if CAN_FORWARD_MESSAGES 
-            ArduinoMessage fmsg;
+            ArduinoMessage frecvmsg;
+            ArduinoMessage fsendmsg;
 #endif
 
             MessageListener messageReceivedListener = NULL;
@@ -167,19 +176,23 @@ namespace Chetch{
             byte getNodeID(){ return nodeID; }
             void reset();
             bool begin() override;
+            void allowSending();
             void raiseError(MCP2515ErrorCode errorCode);
             void indicate(bool on);
             void loop() override;
+            
+#if CAN_FORWARD_MESSAGES || CAN_REPORT_ERRORS
             void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
             void setStatusInfo(ArduinoMessage* response) override;
             void setReportInfo(ArduinoMessage* message) override;
+#endif
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
             
             void addMessageReceivedListener(MessageListener listener){ messageReceivedListener = listener; }
             void addMessageSentListener(MessageListener listener){ messageSentListener = listener; }
             void addErrorListener(ErrorListener listener){ errorListener = listener; }
 
-            ArduinoMessage* getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType = ArduinoMessage::TYPE_DATA);
+            ArduinoMessage* getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType = ArduinoMessage::TYPE_DATA, byte tag = 0);
             bool sendMessage(ArduinoMessage *message, CANMessagePriority messagePriority = CANMessagePriority::CAN_PRIORITY_RANDOM);
             void readMessage();
 
