@@ -6,13 +6,8 @@ namespace Chetch{
     MCP2515Device::MCP2515Device(byte nodeID, int csPin) : 
                                     mcp2515(csPin), 
                                     amsg(ARDUINO_MESSAGE_SIZE)
-#if CAN_FORWARD_MESSAGES 
-                                    , frecvmsg(ARDUINO_MESSAGE_SIZE + 12) //Add 12 bytes to allow for additional 'meta' data
-                                    , fsendmsg(ARDUINO_MESSAGE_SIZE + 12) //Add 12 bytes to allow for additional 'meta' data
-#endif
     {
         this->nodeID = nodeID;
-
     }
 
     void MCP2515Device::reset(){
@@ -59,54 +54,7 @@ namespace Chetch{
         if(errorListener != NULL){
             errorListener(this, errorCode);
         }
-    #if CAN_REPORT_ERRORS      
-        enqueueMessageToSend(MESSAGE_ID_REPORT_ERROR, MESSAGE_ID_REPORT_ERROR);
-    #endif
     }
-
-    
-#if CAN_FORWARD_MESSAGES || CAN_REPORT_ERRORS
-    void MCP2515Device::setStatusInfo(ArduinoMessage* message){
-        ArduinoDevice::setStatusInfo(message);
-        message->add(CAN_FORWARD_MESSAGES);
-        message->add(CAN_REPORT_ERRORS);
-        message->add(getNodeID());
-        message->add((byte)mcp2515.getStatus());
-        message->add((byte)mcp2515.getErrorFlags());
-        message->add((byte)mcp2515.errorCountTX());
-        message->add((byte)mcp2515.errorCountRX());
-        message->add(canSend);
-    }
-
-    void MCP2515Device::populateOutboundMessage(ArduinoMessage* message, byte messageID){
-        ArduinoDevice::populateOutboundMessage(message, messageID);
-
-
-    #if CAN_FORWARD_MESSAGES
-        if(messageID == MESSAGE_ID_FORWARD_RECEIVED){
-            message->copy(&frecvmsg);
-            //IMPORTANT: we identify forwarded messages as having the INFO type (original type is recorded as last parameter)
-            message->type = ArduinoMessage::MessageType::TYPE_INFO;
-            message->tag = MESSAGE_ID_FORWARD_RECEIVED;
-        } else if(messageID == MESSAGE_ID_FORWARD_SENT){
-            message->copy(&fsendmsg);
-            //IMPORTANT: we identify forwarded messages as having the INFO type (original type is recorded as last parameter)
-            message->type = ArduinoMessage::MessageType::TYPE_INFO;
-            message->tag = MESSAGE_ID_FORWARD_SENT;
-        } else if(messageID == MESSAGE_ID_READY_TO_SEND){
-            message->type = ArduinoMessage::MessageType::TYPE_NOTIFICATION;
-        }
-    #endif
-    #if CAN_REPORT_ERRORS
-        if(messageID == MESSAGE_ID_REPORT_ERROR){
-            setErrorInfo(message, lastError);
-            message->add((byte)mcp2515.getErrorFlags());
-            message->add((byte)mcp2515.errorCountTX());
-            message->add((byte)mcp2515.errorCountRX());
-        }
-    #endif
-    }
-#endif
 
     void MCP2515Device::loop(){
         indicate(false);
@@ -119,14 +67,13 @@ namespace Chetch{
         }
     }
 
-    void MCP2515Device::allowSending(){
+    bool MCP2515Device::allowSending(){
         if(!canSend){
             canSend = true;
             raiseEvent(EVENT_READTY_TO_SEND);
-
-#if CAN_FORWARD_MESSAGES 
-            enqueueMessageToSend(MESSAGE_ID_READY_TO_SEND, MESSAGE_ID_READY_TO_SEND);
-#endif
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -151,7 +98,7 @@ namespace Chetch{
                 amsg.tag = typeAndTag & 0x03;
                 byte nodeIDAndSender = (canInFrame.can_id >> 8) & 0xFF;
                 amsg.sender = nodeIDAndSender & 0b00001111; //last 4 bits make the sender
-                byte remoteNodeID = nodeIDAndSender >> 4; //first 4 bits are used for the remote node ID
+                byte sourceNodeID = nodeIDAndSender >> 4; //first 4 bits are used for the remote node ID
 
                 //Do some basic validationg
                 if((byte)priority < (byte)CANMessagePriority::CAN_PRIORITY_CRITICAL || (byte)priority > (byte)CANMessagePriority::CAN_PRIORITY_LOW){
@@ -159,7 +106,7 @@ namespace Chetch{
                     break; //ERROR.... 
                 }
 
-                if(remoteNodeID < MIN_NODE_ID || remoteNodeID > MAX_NODE_ID){
+                if(sourceNodeID < MIN_NODE_ID || sourceNodeID > MAX_NODE_ID){
                     raiseError(INVALID_MESSAGE);
                     break; //ERROR....
                 }
@@ -204,36 +151,7 @@ namespace Chetch{
                 allowSending();
                 indicate(true);
 
-#if CAN_FORWARD_MESSAGES
-                //Make sure we take a copy of this message if we are forwarding stuff
-                frecvmsg.clear();
-                frecvmsg.copy(&amsg);
-                frecvmsg.add(canInFrame.can_id);
-                frecvmsg.add((byte)canInFrame.can_dlc);
-                frecvmsg.add(frecvmsg.type);
-                enqueueMessageToSend(MESSAGE_ID_FORWARD_RECEIVED, MESSAGE_ID_FORWARD_RECEIVED);
-#endif
-
-                //check the message type in case we need to handle messages directed to this device specifically
-                switch(amsg.type){
-                    case ArduinoMessage::TYPE_STATUS_REQUEST:
-                        byte tag = amsg.tag;
-                        amsg.clear();
-                        getMessageForDevice(this, ArduinoMessage::TYPE_STATUS_RESPONSE, tag);
-                        amsg.add(mcp2515.getStatus());
-                        amsg.add(mcp2515.getErrorFlags());
-                        amsg.add(mcp2515.errorCountTX());
-                        amsg.add(mcp2515.errorCountRX());
-                        sendMessage(&amsg, CAN_PRIORITY_LOW);
-                        break;
-
-                    default:
-                        //Call a listener if we have a message
-                        if(messageReceivedListener != NULL){
-                            messageReceivedListener(this, priority, remoteNodeID, &amsg);
-                        }
-                        break;
-                }
+                handleReceivedMessage(priority, sourceNodeID, &amsg);
                 break;
 
             case MCP2515::ERROR_FAIL:
@@ -247,6 +165,39 @@ namespace Chetch{
                 //Serial.println("Received something weird");
                 raiseError(UNKNOWN_RECEIVE_ERROR);
                 break;
+        }
+    }
+
+    void MCP2515Device::handleReceivedMessage(CANMessagePriority messagePriority, byte sourceNodeID, ArduinoMessage* message){
+            
+        //The concern here is that a messageReceivedListener will often send out a message
+        //This would then potentially cause problems with correct forwarding of messages in the case of a master nod
+        //For now we use the flag 'handled' to determine whether a message listener is called or not.
+        bool handled = false;
+
+        //check the message type in case we need to handle messages directed to this device specifically
+        switch(message->type){
+            case ArduinoMessage::TYPE_STATUS_REQUEST:
+                byte tag = message->tag;
+                ArduinoMessage* msg = getMessageForDevice(this, ArduinoMessage::TYPE_STATUS_RESPONSE, tag);
+                msg->add(mcp2515.getStatus());
+                msg->add(mcp2515.getErrorFlags());
+                msg->add(mcp2515.errorCountTX());
+                msg->add(mcp2515.errorCountRX());
+                
+                //NOTE: We are sending out a message during a possible readMessage execution
+                sendMessage(msg, CAN_PRIORITY_LOW);
+                handled = true;
+                break;
+
+            default:
+                //Call a listener if we have a message
+                handled = false;
+                break;
+        }
+
+        if(!handled && messageReceivedListener != NULL){
+            messageReceivedListener(this, messagePriority, sourceNodeID, message);
         }
     }
 
@@ -333,15 +284,6 @@ namespace Chetch{
         switch(err){
             case MCP2515::ERROR_OK:
                 indicate(true);
-#if CAN_FORWARD_MESSAGES
-                //Make sure we take a copy of this message if we are forwarding stuff
-                fsendmsg.clear();
-                fsendmsg.copy(message);
-                fsendmsg.add(canOutFrame.can_id);
-                fsendmsg.add((byte)canOutFrame.can_dlc);
-                fsendmsg.add(message->type);
-                enqueueMessageToSend(MESSAGE_ID_FORWARD_SENT, MESSAGE_ID_FORWARD_SENT);
-#endif                
                 return true;
             case MCP2515::ERROR_FAILTX:
                 raiseError(MCP2515ErrorCode::FAIL_TX);
@@ -430,21 +372,5 @@ namespace Chetch{
         if(filterNum == 2)maskNum = 1;
 
         return true;
-    }
-
-    bool MCP2515Device::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
-        bool handled = ArduinoDevice::executeCommand(command, message, response);
-        
-        if(!handled)
-        {
-            switch(command){
-                case ArduinoDevice::REQUEST: //Message from outside BUS .. all nodes should respond to this
-                    ArduinoMessage* msg = getMessageForDevice(this, ArduinoMessage::TYPE_STATUS_REQUEST, 1);
-                    sendMessage(msg, MCP2515Device::CAN_PRIORITY_LOW);
-                    handled = true;
-                    break;
-            }
-        }
-        return handled;
     }
 }

@@ -1,0 +1,29 @@
+#ifndef CHETCH_MCP2515_NODE_H
+#define CHETCH_MCP2515_NODE_H
+
+#include <Arduino.h>
+
+#include <ChetchArduinoBoard.h>
+#include <ChetchArduinoDevice.h>
+#include <ChetchArduinoMessage.h>
+
+
+#include "ChetchMCP2515Device.h"
+
+/*
+See base class for full info
+*/
+
+namespace Chetch{
+    class MCP2515Node : public MCP2515Device{
+        public:
+            
+        private:
+            
+        public:
+            MCP2515Node(byte nodeID = 0, int csPin = CAN_DEFAULT_CS_PIN);
+
+            bool begin() override;
+    };
+} //end namespace
+#endif //end prevent multiple inclusion

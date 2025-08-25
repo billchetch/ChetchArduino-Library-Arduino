@@ -1,3 +1,6 @@
+#ifndef CHETCH_MCP2515_DEVICE_H
+#define CHETCH_MCP2515_DEVICE_H
+
 #include <Arduino.h>
 
 #include <ChetchArduinoBoard.h>
@@ -96,29 +99,17 @@ D0: Receive-Buffer-0-Full Interrupt Flag
 #define CAN_AS_LOOPBACK false
 #define CAN_DEFAULT_CS_PIN 10
 #define CAN_DEFAULT_INDICATOR_PIN 9
-#define CAN_FORWARD_MESSAGES true
-#define CAN_REPORT_ERRORS true
-
 
 namespace Chetch{
     class MCP2515Device : public ArduinoDevice{
         public:
             static const byte ARDUINO_MESSAGE_SIZE = 16;
+            static const byte MASTER_NODE_ID = 1;
             static const byte MAX_NODE_ID = 15;
             static const byte MIN_NODE_ID = 1;
             static const int NO_FILTER = -1;
             
             static const byte EVENT_READTY_TO_SEND = 1;
-
-#if CAN_FORWARD_MESSAGES 
-            static const byte MESSAGE_ID_FORWARD_RECEIVED = 100;
-            static const byte MESSAGE_ID_FORWARD_SENT = 101;
-            static const byte MESSAGE_ID_READY_TO_SEND = 102;
-#endif
-#if CAN_REPORT_ERRORS 
-            static const byte MESSAGE_ID_REPORT_ERROR = 110;
-#endif
-
 
             enum MCP2515ErrorCode{
                 NO_ERROR = 0,
@@ -145,21 +136,12 @@ namespace Chetch{
             MCP2515 mcp2515;
             
         private:
-            struct can_frame canInFrame;
-            struct can_frame canOutFrame;
-
             bool initialised = false;
-            MCP2515ErrorCode lastError = MCP2515ErrorCode::NO_ERROR;
-
+            
             byte nodeID = 0;
             byte indicatorPin = CAN_DEFAULT_INDICATOR_PIN;
-            bool canSend = false; //is set to true if either a message is received or a certain period has elapsed
 
             ArduinoMessage amsg;
-#if CAN_FORWARD_MESSAGES 
-            ArduinoMessage frecvmsg;
-            ArduinoMessage fsendmsg;
-#endif
 
             MessageListener messageReceivedListener = NULL;
             MessageListener messageSentListener = NULL;
@@ -167,6 +149,12 @@ namespace Chetch{
 
             byte maskNum = 0; //max is 1
             byte filterNum = 0; //max is 5 after regNum == 1 then maskNum increments
+
+        protected:
+            MCP2515ErrorCode lastError = MCP2515ErrorCode::NO_ERROR;
+            bool canSend = false; //is set to true if either a message is received or a certain period has elapsed
+            struct can_frame canInFrame;
+            struct can_frame canOutFrame;
             
         private:
             void init(); //Must be called after construtor but before configuring stuff hence why it's present in config type methods
@@ -177,27 +165,26 @@ namespace Chetch{
             byte getNodeID(){ return nodeID; }
             void reset();
             bool begin() override;
-            void allowSending();
-            void raiseError(MCP2515ErrorCode errorCode);
+            virtual bool allowSending();
+            virtual void raiseError(MCP2515ErrorCode errorCode);
             void indicate(bool on);
             void loop() override;
             
 #if CAN_FORWARD_MESSAGES || CAN_REPORT_ERRORS
-            void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
-            void setStatusInfo(ArduinoMessage* response) override;
-#endif
-            bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
             
+#endif            
             void addMessageReceivedListener(MessageListener listener){ messageReceivedListener = listener; }
             void addMessageSentListener(MessageListener listener){ messageSentListener = listener; }
             void addErrorListener(ErrorListener listener){ errorListener = listener; }
 
             ArduinoMessage* getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType = ArduinoMessage::TYPE_DATA, byte tag = 0);
-            bool sendMessage(ArduinoMessage *message, CANMessagePriority messagePriority = CANMessagePriority::CAN_PRIORITY_RANDOM);
+            virtual bool sendMessage(ArduinoMessage *message, CANMessagePriority messagePriority = CANMessagePriority::CAN_PRIORITY_RANDOM);
             void readMessage();
+            virtual void handleReceivedMessage(CANMessagePriority messagePriority, byte sourceNodeID, ArduinoMessage *message);
 
             uint32_t createFilterMask(bool checkNodeID, bool checkMessageType, bool checkSender);
             uint32_t createFilter(int nodeID, int messageType, int sender);
             bool addFilter(uint32_t mask, uint32_t filter);
     };
 } //end namespace
+#endif //end prevent multiple inclusions
