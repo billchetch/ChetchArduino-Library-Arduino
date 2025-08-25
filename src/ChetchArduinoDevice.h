@@ -40,7 +40,8 @@ namespace Chetch{
                 ANALYSE,
                 LOCK,
                 UNLOCK,
-                REQUEST
+                REQUEST,
+                SYNCHRONISE
             };
 
         public:

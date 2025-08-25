@@ -60,7 +60,7 @@ namespace Chetch{
             errorListener(this, errorCode);
         }
     #if CAN_REPORT_ERRORS      
-        enqueueMessageToSend(MESSAGE_ID_REPORT_ERROR);
+        enqueueMessageToSend(MESSAGE_ID_REPORT_ERROR, MESSAGE_ID_REPORT_ERROR);
     #endif
     }
 
@@ -75,15 +75,7 @@ namespace Chetch{
         message->add((byte)mcp2515.getErrorFlags());
         message->add((byte)mcp2515.errorCountTX());
         message->add((byte)mcp2515.errorCountRX());
-    }
-
-    void MCP2515Device::setReportInfo(ArduinoMessage* message){
-        ArduinoDevice::setReportInfo(message);
-
-        message->add((byte)mcp2515.getStatus());
-        message->add((byte)mcp2515.getErrorFlags());
-        message->add((byte)mcp2515.errorCountTX());
-        message->add((byte)mcp2515.errorCountRX());
+        message->add(canSend);
     }
 
     void MCP2515Device::populateOutboundMessage(ArduinoMessage* message, byte messageID){
@@ -122,18 +114,20 @@ namespace Chetch{
 
         readMessage();    
     
-        if(!canTrySending && millis() > 2000){
+        if(!canSend && millis() > 2000){
             allowSending();
         }
     }
 
     void MCP2515Device::allowSending(){
-        canTrySending = true;
-        raiseEvent(EVENT_READTY_TO_SEND);
+        if(!canSend){
+            canSend = true;
+            raiseEvent(EVENT_READTY_TO_SEND);
 
 #if CAN_FORWARD_MESSAGES 
-        enqueueMessageToSend(MESSAGE_ID_READY_TO_SEND, MESSAGE_ID_READY_TO_SEND);
+            enqueueMessageToSend(MESSAGE_ID_READY_TO_SEND, MESSAGE_ID_READY_TO_SEND);
 #endif
+        }
     }
 
     ArduinoMessage* MCP2515Device::getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType, byte tag){
@@ -257,7 +251,7 @@ namespace Chetch{
     }
 
     bool MCP2515Device::sendMessage(ArduinoMessage* message, CANMessagePriority messagePriority){
-        if(!canTrySending)return false;
+        if(!canSend)return false;
 
         if(message == NULL){
             raiseError(NO_MESSAGE);
@@ -446,7 +440,8 @@ namespace Chetch{
             switch(command){
                 case ArduinoDevice::REQUEST: //Message from outside BUS .. all nodes should respond to this
                     ArduinoMessage* msg = getMessageForDevice(this, ArduinoMessage::TYPE_STATUS_REQUEST, 1);
-                    sendMessage(msg);
+                    sendMessage(msg, MCP2515Device::CAN_PRIORITY_LOW);
+                    handled = true;
                     break;
             }
         }

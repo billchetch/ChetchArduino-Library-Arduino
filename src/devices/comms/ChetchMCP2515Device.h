@@ -25,11 +25,12 @@ Wrapping MCP2515 device
 Currently using the autowp library but this could change...
 
 Message Conversion
-The key to this is using the extended ID (so 29 bit) ID value as follows:
+The key to this is using the extended ID (so 29 bit) ID value as follows (reading left to right with 1 on the left):
 
-- Byte 1 = 3 bits for numbering the particular bus and 5 bits for the node.  This allows for 8 separate buses each with 32 max nodes.
-- Byte 2 = 3 bits to indicate a type used to translate to the Arduino Message Type and 5 bits to prpresent a sender ID (hence 8 types 32 possible senders
-- Byte 3 = Message structure:  2 bits for argument length, then 2 bits for arg 1 length, 2 bits for arg2 length and 2 bits for arg 3 length.
+- Byte 1 = First 4 bits specify message priority
+- Byte 2 = Type and Tag: 5 bits for Type, 3 bits for Tag
+- Byte 3 = Node and Sender: 4 bits for Node (can Node), 5 bits for sender (arduino device) .. effectively a location this
+- Byte 4 = Message structure:  2 bits for argument count, then 2 bits for arg 1 length, 2 bits for arg2 length and 2 bits for arg 3 length. Argument 4 length is inferred.  Note finally bit values are all 1 less than the intended value.
 
 More on the message structure... in conjuntion with the can frame DLC value, Byte 3 allows for 4 possible arguments with each argument being of max 4 bytes. 
 This corresponds to arduino basic types (float, int, long, byte etc.) It also allows for a varilable length argument if there is only 1 arg as we can use the DLC
@@ -37,19 +38,19 @@ value to determine
 
 Free single argument example:
 DLC = 0 to 8
-Byte 3 = 00 00 00 00 00
+Byte = 00 00 00 00 : so the first two bits are 00 => 1 argument and the length is provided by the DLC value
 
 2 arguments example (4 bytes and 2 bytes)
 DLC = 6
-Byte 3 = 01 11 01 00
+Byte  = 01 (11 01 00)
 
 3 arguments example (3 bytes and 4 bytes 1 byte)
-DLC = 6
-Byte 3 = 10 11 01 00
+DLC = 8
+Byte = 10 (11 01 00)
 
 4 arguments example (2 bytes and 3 bytes 1 byte 2 byte)
 DLC = 8
-Byte 3 = 11 01 10 00
+Byte = 11 (01 10 00) (note 2 bytes is inferred as the last argument as 8 - (2 + 3 + 1) = 2)
 
 ERROR FLAGS (Bits in the byte read from the EFLG register)
 
@@ -152,7 +153,7 @@ namespace Chetch{
 
             byte nodeID = 0;
             byte indicatorPin = CAN_DEFAULT_INDICATOR_PIN;
-            bool canTrySending = false; //is set to true if either a message is received or a certain period has elapsed
+            bool canSend = false; //is set to true if either a message is received or a certain period has elapsed
 
             ArduinoMessage amsg;
 #if CAN_FORWARD_MESSAGES 
@@ -184,7 +185,6 @@ namespace Chetch{
 #if CAN_FORWARD_MESSAGES || CAN_REPORT_ERRORS
             void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
             void setStatusInfo(ArduinoMessage* response) override;
-            void setReportInfo(ArduinoMessage* message) override;
 #endif
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
             
