@@ -82,6 +82,7 @@ namespace Chetch{
                     msg->add((byte)command);
                     sendMessage(msg, MCP2515Device::CAN_PRIORITY_HIGH);
 
+                    //We call this as it will trigger the commandListener if one is present
                     MCP2515Device::handleReceivedMessage(MCP2515Device::CAN_PRIORITY_HIGH, getNodeID(), msg);
                     
                     handled = true;
