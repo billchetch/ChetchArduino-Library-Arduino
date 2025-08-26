@@ -17,16 +17,11 @@ namespace Chetch{
         
         bytes = new byte[maxBytes];
         argumentIndices = new byte[(maxBytes - HEADER_SIZE) / 2];
-        newID();
     };
 
     ArduinoMessage::~ArduinoMessage() {
         delete[] bytes;
         delete[] argumentIndices;
-    }
-
-    void ArduinoMessage::newID(){
-        id = millis();
     }
 
     void ArduinoMessage::clear(){
@@ -40,7 +35,6 @@ namespace Chetch{
 
         byteCount = ArduinoMessage::HEADER_SIZE;
         argumentCount = 0;
-        newID();
     }
 
     bool ArduinoMessage::isEmpty(){

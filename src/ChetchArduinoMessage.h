@@ -68,7 +68,7 @@ namespace Chetch{
             static ErrorCode error;
             static bool hasError();
             
-            unsigned long id = 0; 
+            //unsigned long id = 0;  //removed cos not ever used
             byte type = 0; //should take messsage type value
             byte tag = 0; //tagging data sent from computer ... can be re-used to send back to make comms linked
             byte target = 0; //used to select a 'device'
@@ -128,10 +128,6 @@ namespace Chetch{
             bool deserialize(byte* source, byte bCount);
             byte serialize(byte *destination = NULL);
             byte *getBytes();
-          
-
-        private:
-            void newID();
     };
 }  //end namepace
 

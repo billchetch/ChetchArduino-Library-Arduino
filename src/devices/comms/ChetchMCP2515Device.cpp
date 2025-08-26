@@ -176,10 +176,12 @@ namespace Chetch{
         bool handled = false;
 
         //check the message type in case we need to handle messages directed to this device specifically
+        ArduinoDevice::DeviceCommand command;
+        ArduinoMessage* msg;
+
         switch(message->type){
             case ArduinoMessage::TYPE_STATUS_REQUEST:
-                byte tag = message->tag;
-                ArduinoMessage* msg = getMessageForDevice(this, ArduinoMessage::TYPE_STATUS_RESPONSE, tag);
+                msg = getMessageForDevice(this, ArduinoMessage::TYPE_STATUS_RESPONSE, message->tag);
                 msg->add(mcp2515.getStatus());
                 msg->add(mcp2515.getErrorFlags());
                 msg->add(mcp2515.errorCountTX());
@@ -190,8 +192,17 @@ namespace Chetch{
                 handled = true;
                 break;
 
+            case ArduinoMessage::TYPE_COMMAND:
+                if(commandListener != NULL && message->getArgumentCount() > 0){
+                    command = message->get<ArduinoDevice::DeviceCommand>(0);
+                    commandListener(this, sourceNodeID, command, message);
+                    handled = true;
+                } else {
+                    handled = false;
+                }
+                break;
+
             default:
-                //Call a listener if we have a message
                 handled = false;
                 break;
         }

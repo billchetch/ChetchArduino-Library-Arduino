@@ -131,6 +131,7 @@ namespace Chetch{
             };
 
             typedef bool (*MessageListener)(MCP2515Device*, CANMessagePriority, byte, ArduinoMessage*);
+            typedef bool (*CommandListener)(MCP2515Device*, byte, ArduinoDevice::DeviceCommand, ArduinoMessage*);
             typedef bool (*ErrorListener)(MCP2515Device*, MCP2515ErrorCode errorCode);
 
             MCP2515 mcp2515;
@@ -144,6 +145,7 @@ namespace Chetch{
             ArduinoMessage amsg;
 
             MessageListener messageReceivedListener = NULL;
+            CommandListener commandListener = NULL;
             MessageListener messageSentListener = NULL;
             ErrorListener errorListener = NULL;
 
@@ -170,10 +172,8 @@ namespace Chetch{
             void indicate(bool on);
             void loop() override;
             
-#if CAN_FORWARD_MESSAGES || CAN_REPORT_ERRORS
-            
-#endif            
             void addMessageReceivedListener(MessageListener listener){ messageReceivedListener = listener; }
+            void addCommandListener(CommandListener listener){ commandListener = listener; }
             void addMessageSentListener(MessageListener listener){ messageSentListener = listener; }
             void addErrorListener(ErrorListener listener){ errorListener = listener; }
 
