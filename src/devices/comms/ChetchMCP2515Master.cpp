@@ -27,8 +27,8 @@ namespace Chetch{
         }
     }
 
-    void MCP2515Master::raiseError(MCP2515ErrorCode errorCode){
-        MCP2515Device::raiseError(errorCode);
+    void MCP2515Master::raiseError(MCP2515ErrorCode errorCode, unsigned int errorData){
+        MCP2515Device::raiseError(errorCode, errorData);
 
         enqueueMessageToSend(MESSAGE_ID_REPORT_ERROR, MESSAGE_ID_REPORT_ERROR);
     }
@@ -61,6 +61,7 @@ namespace Chetch{
             message->add((byte)mcp2515.getErrorFlags());
             message->add((byte)mcp2515.errorCountTX());
             message->add((byte)mcp2515.errorCountRX());
+            message->add(lastErrorData);
         }
     }
 
@@ -73,17 +74,24 @@ namespace Chetch{
             switch(command){
                 case ArduinoDevice::REQUEST: //Message from outside BUS .. all nodes should respond to this
                     msg = getMessageForDevice(this, ArduinoMessage::TYPE_STATUS_REQUEST, 1);
-                    sendMessage(msg, MCP2515Device::CAN_PRIORITY_LOW);
+                    sendMessage(msg);
                     handled = true;
                     break;
 
-                case ArduinoDevice::SYNCHRONISE: //Message from outside BUS .. all nodes should respond to this
+                default: //Message from outside BUS .. all nodes should respond to this
                     msg = getMessageForDevice(this, ArduinoMessage::TYPE_COMMAND, 1);
                     msg->add((byte)command);
-                    sendMessage(msg, MCP2515Device::CAN_PRIORITY_HIGH);
+                    int byteTotal = 1;
+                    for(byte i = 0; i < min(message->getArgumentCount(), 4) - 1; i++){
+                        byte bytec = message->getArgumentSize(i + 1);
+                        byteTotal += bytec;
+                        if(byteTotal >= CAN_MAX_DLC)break;
+                        msg->addBytes(message->getArgument(i + 1), bytec);
+                    }
+                    sendMessage(msg);
 
                     //We call this as it will trigger the commandListener if one is present
-                    MCP2515Device::handleReceivedMessage(MCP2515Device::CAN_PRIORITY_HIGH, getNodeID(), msg);
+                    MCP2515Device::handleReceivedMessage(0, getNodeID(), msg);
                     
                     handled = true;
                     break;
@@ -91,14 +99,23 @@ namespace Chetch{
         }
         return handled;
     }
-
-    bool MCP2515Master::sendMessage(ArduinoMessage *message, CANMessagePriority messagePriority){
-        if(MCP2515Device::sendMessage(message, messagePriority)){
+    
+    bool MCP2515Master::sendMessage(ArduinoMessage *message, byte header){
+        if(MCP2515Device::sendMessage(message, header)){
             fsendmsg.clear();
             fsendmsg.copy(message);
             fsendmsg.add(canOutFrame.can_id);
             fsendmsg.add((byte)canOutFrame.can_dlc);
             fsendmsg.add(message->type);
+
+            //temp
+            byte bitTrace = 0;
+            for(int i = 0; i < canOutFrame.can_dlc; i++){
+                bitTrace += (canOutFrame.data[i] & 0x1) << i;
+            }
+            fsendmsg.add(bitTrace);
+            //end temp
+
             enqueueMessageToSend(MESSAGE_ID_FORWARD_SENT, MESSAGE_ID_FORWARD_SENT);
             return true;
         } else {
@@ -106,7 +123,9 @@ namespace Chetch{
         }
     }
 
-    void MCP2515Master::handleReceivedMessage(CANMessagePriority messagePriority, byte sourceNodeID, ArduinoMessage *message){
+    void MCP2515Master::handleReceivedMessage(byte header, byte sourceNodeID, ArduinoMessage *message){
+        //TODO: check first if we have set any forwarding message filters
+        
         //Make sure we take a copy of this message if we are forwarding stuff
         frecvmsg.clear();
         frecvmsg.copy(message);
@@ -114,8 +133,15 @@ namespace Chetch{
         frecvmsg.add((byte)canInFrame.can_dlc);
         frecvmsg.add(message->type);
 
+        //temp
+        byte bitTrace = 0;
+        for(int i = 0; i < canInFrame.can_dlc; i++){
+            bitTrace += (canInFrame.data[i] & 0x1) << i;
+        }
+        frecvmsg.add(bitTrace);
+        //end temp
         enqueueMessageToSend(MESSAGE_ID_FORWARD_RECEIVED, MESSAGE_ID_FORWARD_RECEIVED);
 
-        MCP2515Device::handleReceivedMessage(messagePriority, sourceNodeID, message);
+        MCP2515Device::handleReceivedMessage(header, sourceNodeID, message);
     }
 }

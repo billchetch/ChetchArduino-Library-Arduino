@@ -30,7 +30,7 @@ Currently using the autowp library but this could change...
 Message Conversion
 The key to this is using the extended ID (so 29 bit) ID value as follows (reading left to right with 1 on the left):
 
-- Byte 1 = First 4 bits specify message priority
+- Byte 1 = First 5 bits are a header (can be used for priority in arbitration of for additional data for debugging)
 - Byte 2 = Type and Tag: 5 bits for Type, 3 bits for Tag
 - Byte 3 = Node and Sender: 4 bits for Node (can Node), 5 bits for sender (arduino device) .. effectively a location this
 - Byte 4 = Message structure:  2 bits for argument count, then 2 bits for arg 1 length, 2 bits for arg2 length and 2 bits for arg 3 length. Argument 4 length is inferred.  Note finally bit values are all 1 less than the intended value.
@@ -113,29 +113,28 @@ namespace Chetch{
 
             enum MCP2515ErrorCode{
                 NO_ERROR = 0,
-                UNKNOWN_RECEIVE_ERROR,
-                UNKNOWN_SEND_ERROR,
-                NO_MESSAGE,
-                INVALID_MESSAGE,
-                FAIL_TX,
-                ALL_TX_BUSY,
-                READ_FAIL
+                UNKNOWN_RECEIVE_ERROR, //RX error
+                UNKNOWN_SEND_ERROR, //TX error
+                NO_MESSAGE, //RX error (but fires when readMessage is called and nothing is on the buffer)
+                INVALID_MESSAGE, //Message format error
+                FAIL_TX, //TX error
+                ALL_TX_BUSY, //TX error
+                READ_FAIL, //RX error
+                DEBUG_ASSERT, //For debug purposes
             };
             
-            enum CANMessagePriority{
-                CAN_PRIORITY_RANDOM = 0,
-                CAN_PRIORITY_CRITICAL,
-                CAN_PRIORITY_HIGH,
-                CAN_PRIORITY_NORMAL,
-                CAN_PRIORITY_LOW
-            };
+            typedef void (*MessageListener)(MCP2515Device*, byte, byte, ArduinoMessage*);
+            typedef void (*CommandListener)(MCP2515Device*, byte, ArduinoDevice::DeviceCommand, ArduinoMessage*);
+            typedef void (*ErrorListener)(MCP2515Device*, MCP2515ErrorCode);
 
-            typedef bool (*MessageListener)(MCP2515Device*, CANMessagePriority, byte, ArduinoMessage*);
-            typedef bool (*CommandListener)(MCP2515Device*, byte, ArduinoDevice::DeviceCommand, ArduinoMessage*);
-            typedef bool (*ErrorListener)(MCP2515Device*, MCP2515ErrorCode errorCode);
 
-            MCP2515 mcp2515;
+            MCP2515 mcp2515; //should be moved to private
             
+            //temp
+            typedef bool (*SendValidator)(byte, can_frame*, ArduinoMessage*);
+            SendValidator sendValidator = NULL;
+            //end temp
+
         private:
             bool initialised = false;
             
@@ -154,12 +153,19 @@ namespace Chetch{
 
         protected:
             MCP2515ErrorCode lastError = MCP2515ErrorCode::NO_ERROR;
+            unsigned int lastErrorData = 0;
+
             bool canSend = false; //is set to true if either a message is received or a certain period has elapsed
+            
+        public: //temp:  should be protected this
             struct can_frame canInFrame;
             struct can_frame canOutFrame;
             
         private:
             void init(); //Must be called after construtor but before configuring stuff hence why it's present in config type methods
+            
+        protected:
+            virtual bool allowSending();
             
         public:
             MCP2515Device(byte nodeID = 0, int csPin = CAN_DEFAULT_CS_PIN);
@@ -167,8 +173,7 @@ namespace Chetch{
             byte getNodeID(){ return nodeID; }
             void reset();
             bool begin() override;
-            virtual bool allowSending();
-            virtual void raiseError(MCP2515ErrorCode errorCode);
+            virtual void raiseError(MCP2515ErrorCode errorCode, unsigned int errorData = 0);
             void indicate(bool on);
             void loop() override;
             
@@ -178,9 +183,9 @@ namespace Chetch{
             void addErrorListener(ErrorListener listener){ errorListener = listener; }
 
             ArduinoMessage* getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType = ArduinoMessage::TYPE_DATA, byte tag = 0);
-            virtual bool sendMessage(ArduinoMessage *message, CANMessagePriority messagePriority = CANMessagePriority::CAN_PRIORITY_RANDOM);
+            virtual bool sendMessage(ArduinoMessage *message, byte header = 0);
             void readMessage();
-            virtual void handleReceivedMessage(CANMessagePriority messagePriority, byte sourceNodeID, ArduinoMessage *message);
+            virtual void handleReceivedMessage(byte header, byte sourceNodeID, ArduinoMessage *message);
 
             uint32_t createFilterMask(bool checkNodeID, bool checkMessageType, bool checkSender);
             uint32_t createFilter(int nodeID, int messageType, int sender);

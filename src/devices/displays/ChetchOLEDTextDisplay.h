@@ -17,6 +17,13 @@ PIN REFERENCE FOR I2C OLED:
 namespace Chetch{
     class OLEDTextDisplay : public ArduinoDevice{
         public:
+            enum RefreshRate
+            {
+                REFRESH_1HZ = 1000,
+                REFRESH_10HZ = 100,
+                REFRESH_50Hz = 20
+            };
+
             enum DisplayOption{
                 LARGE_TEXT,
                 SMALL_TEXT,
@@ -29,6 +36,7 @@ namespace Chetch{
                 HELLO_WORLD
             };
 
+            typedef bool (*DisplayHandler)(OLEDTextDisplay*, byte tag); 
         private:
             #if defined(OLED_128x32_I2C)
                 U8X8_SSD1306_128X32_UNIVISION_HW_I2C display;
@@ -43,15 +51,23 @@ namespace Chetch{
             DisplayOption displayOption;
             unsigned int lockDuration = 0;
             unsigned long lockedAt = 0;
-
+            
+            DisplayHandler displayHandler = NULL;
+            RefreshRate refreshRate = RefreshRate::REFRESH_50Hz;
+            unsigned long lastUpdated = 0;
+            bool update = false;
+            byte updateTag = 0;
+            
         public:
-            OLEDTextDisplay(DisplayOption displayOption = DisplayOption::LARGE_TEXT);
+            OLEDTextDisplay(DisplayOption displayOption = DisplayOption::LARGE_TEXT, RefreshRate refreshRate = RefreshRate::REFRESH_10HZ);
             ~OLEDTextDisplay();
 
             bool begin() override;
             void loop() override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
+            void updateDisplay(byte tag = 0);
+            void addDisplayHandler(DisplayHandler handler){ displayHandler = handler; }
             void clearDisplay();
             void clearLine(byte lineNumber);
             void setFontSize(DisplayOption displayOption);

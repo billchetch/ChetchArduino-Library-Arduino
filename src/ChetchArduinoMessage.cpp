@@ -42,21 +42,8 @@ namespace Chetch{
     }
 
     void ArduinoMessage::copy(ArduinoMessage *message){
-        clear();
-
-        type = message->type;
-        tag = message->tag;
-        target = message->target;
-        sender = message->sender;
-        
-        byte *mbytes = message->getBytes();
-        for(int i = 0; i < message->getByteCount(); i++){
-            bytes[i] = mbytes[i];
-        }
-        argumentCount = message->getArgumentCount();
-        byteCount = message->getByteCount();
+        deserialize(message->getBytes(), message->getByteCount());
     }
-
 
     byte ArduinoMessage::getArgumentCount(){
         return argumentCount;

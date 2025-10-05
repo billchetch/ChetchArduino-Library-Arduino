@@ -41,7 +41,7 @@ namespace Chetch{
                 LOCK,
                 UNLOCK,
                 REQUEST,
-                SYNCHRONISE
+                SYNCHRONISE,
             };
 
         public:

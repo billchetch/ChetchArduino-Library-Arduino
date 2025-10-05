@@ -22,8 +22,6 @@ namespace Chetch{
             
         public:
             MCP2515Node(byte nodeID = 0, int csPin = CAN_DEFAULT_CS_PIN);
-
-            bool begin() override;
     };
 } //end namespace
 #endif //end prevent multiple inclusion

@@ -4,7 +4,7 @@
 
 namespace Chetch{
     MCP2515Device::MCP2515Device(byte nodeID, int csPin) : 
-                                    mcp2515(csPin), 
+                                    mcp2515(csPin), //4000000), 
                                     amsg(ARDUINO_MESSAGE_SIZE)
     {
         this->nodeID = nodeID;
@@ -49,8 +49,9 @@ namespace Chetch{
         if(indicatorPin > 0)digitalWrite(indicatorPin, on ? HIGH : LOW);
     }
 
-    void MCP2515Device::raiseError(MCP2515ErrorCode errorCode){
+    void MCP2515Device::raiseError(MCP2515ErrorCode errorCode, unsigned int errorData){
         lastError = errorCode;
+        lastErrorData = errorData;
         if(errorListener != NULL){
             errorListener(this, errorCode);
         }
@@ -92,20 +93,15 @@ namespace Chetch{
             case MCP2515::ERROR_OK:
                 //Clear message and split out the ID
                 amsg.clear();
-                CANMessagePriority priority = (CANMessagePriority)(canInFrame.can_id >> 24) & 0b00001111;
+                byte header = (canInFrame.can_id >> 24) & 0x1F; //first 5 bytes
                 byte typeAndTag = (canInFrame.can_id >> 16) & 0xFF;
                 amsg.type = (typeAndTag >> 3) & 0x1F;
-                amsg.tag = typeAndTag & 0x03;
+                amsg.tag = typeAndTag & 0x07;
                 byte nodeIDAndSender = (canInFrame.can_id >> 8) & 0xFF;
                 amsg.sender = nodeIDAndSender & 0b00001111; //last 4 bits make the sender
                 byte sourceNodeID = nodeIDAndSender >> 4; //first 4 bits are used for the remote node ID
 
                 //Do some basic validationg
-                if((byte)priority < (byte)CANMessagePriority::CAN_PRIORITY_CRITICAL || (byte)priority > (byte)CANMessagePriority::CAN_PRIORITY_LOW){
-                    raiseError(INVALID_MESSAGE);
-                    break; //ERROR.... 
-                }
-
                 if(sourceNodeID < MIN_NODE_ID || sourceNodeID > MAX_NODE_ID){
                     raiseError(INVALID_MESSAGE);
                     break; //ERROR....
@@ -149,9 +145,9 @@ namespace Chetch{
                 
                 //By here we have received and successfully parsed an ArduinoMessage
                 allowSending();
-                indicate(true);
+                indicate(true); 
 
-                handleReceivedMessage(priority, sourceNodeID, &amsg);
+                handleReceivedMessage(header, sourceNodeID, &amsg);
                 break;
 
             case MCP2515::ERROR_FAIL:
@@ -168,7 +164,7 @@ namespace Chetch{
         }
     }
 
-    void MCP2515Device::handleReceivedMessage(CANMessagePriority messagePriority, byte sourceNodeID, ArduinoMessage* message){
+    void MCP2515Device::handleReceivedMessage(byte header, byte sourceNodeID, ArduinoMessage* message){
             
         //The concern here is that a messageReceivedListener will often send out a message
         //This would then potentially cause problems with correct forwarding of messages in the case of a master nod
@@ -188,7 +184,7 @@ namespace Chetch{
                 msg->add(mcp2515.errorCountRX());
                 
                 //NOTE: We are sending out a message during a possible readMessage execution
-                sendMessage(msg, CAN_PRIORITY_LOW);
+                sendMessage(msg, 0x10);
                 handled = true;
                 break;
 
@@ -208,11 +204,11 @@ namespace Chetch{
         }
 
         if(!handled && messageReceivedListener != NULL){
-            messageReceivedListener(this, messagePriority, sourceNodeID, message);
+            messageReceivedListener(this, header, sourceNodeID, message);
         }
     }
 
-    bool MCP2515Device::sendMessage(ArduinoMessage* message, CANMessagePriority messagePriority){
+    bool MCP2515Device::sendMessage(ArduinoMessage* message, byte header){
         if(!canSend)return false;
 
         if(message == NULL){
@@ -235,16 +231,14 @@ namespace Chetch{
             raiseError(INVALID_MESSAGE);
             return false; //ERROR .... sender only has 4 bits available
         }
-        if((byte)messagePriority > (byte)CANMessagePriority::CAN_PRIORITY_LOW){
-            raiseError(INVALID_MESSAGE);
-            return false; //ERROR .... priority not valid
-        }
-
+        
+        //Determine data length and message structure from original message
         canOutFrame.can_dlc = 0;
         byte messageStructure = 0;
         if(message->getArgumentCount() <= 1){
             canOutFrame.can_dlc = message->getArgumentCount() == 0 ? 0 : message->getArgumentSize(0);
             if(canOutFrame.can_dlc > CAN_MAX_DLC){
+                raiseError(INVALID_MESSAGE);
                 return false; //ERROR ... can data of 8 bytes sets this limit
             }
         } else {
@@ -252,10 +246,12 @@ namespace Chetch{
             messageStructure = ((message->getArgumentCount() - 1) << shiftLeft);
             for(int i = 0; i < message->getArgumentCount(); i++){
                 if(message->getArgumentSize(i) > 4){
+                    raiseError(INVALID_MESSAGE);
                     return false; //ERROR ... to keep structures representable by one byte we don't allow multi argument messages to have a single argument over 4 bytes
                 }
                 canOutFrame.can_dlc += message->getArgumentSize(i);
                 if(canOutFrame.can_dlc > CAN_MAX_DLC){
+                    raiseError(INVALID_MESSAGE);
                     return false; //ERROR ... can data of 8 bytes sets this limit
                 }
                 if(i < 3){
@@ -265,32 +261,42 @@ namespace Chetch{
             }
         }
         
-        byte priority = 0; 
-        if(messagePriority == CANMessagePriority::CAN_PRIORITY_RANDOM){
-            priority = (byte)random(CANMessagePriority::CAN_PRIORITY_HIGH, CANMessagePriority::CAN_PRIORITY_LOW + 1);
-        } else {
-            priority = (byte)messagePriority;
-        }
-        priority = 0b00001111 & priority;
-        byte typeAndTag = (message->type << 3) | (message->tag & 0b00000111);
-        byte nodeIDAndSender = (nodeID << 4 ) | (message->sender & 0b000001111);
-        canOutFrame.can_id = (unsigned long)priority << 24 | (unsigned long)typeAndTag << 16 | (unsigned long)nodeIDAndSender << 8 | (unsigned long)messageStructure;
-        /*Serial.println("Sending ID: ");
-        for (int i = (sizeof(canOutFrame.can_id) * 8) - 1; i >= 0; i--) { // Loop from bit 7 (MSB) down to 0 (LSB)
-            Serial.print(bitRead(canOutFrame.can_id, i)); // Print the value of the i-th bit
-            if(i % 8 == 0)Serial.println("----");
-        }  
-        Serial.println("----");*/
-        
-        canOutFrame.can_id |= CAN_EFF_FLAG;
+        //copy message bytes to data array
+        int constructedHeader = 0; //temp
         int n = 0;
         for(int i = 0; i < message->getArgumentCount(); i++){
             byte* b = message->getArgument(i);
             for(int j = 0; j < message->getArgumentSize(i); j++){
                 canOutFrame.data[n++] = b[j];
+                //temp
+                if(n <= 4){
+                    constructedHeader += (int)(b[j] & 0x03) << 2*(n - 1);
+                }
+                //end temp
             }
         }
+        if(header == 0){
+            header = (byte)(constructedHeader & 0x1F); //temp
+        }
 
+
+        //create the message ID
+        header = 0x1F & header;
+        byte typeAndTag = (message->type << 3) | (message->tag & 0b00000111);
+        byte nodeIDAndSender = (nodeID << 4 ) | (message->sender & 0b000001111);
+        canOutFrame.can_id = (unsigned long)header << 24 | (unsigned long)typeAndTag << 16 | (unsigned long)nodeIDAndSender << 8 | (unsigned long)messageStructure;
+        canOutFrame.can_id |= CAN_EFF_FLAG;
+
+        //temp validate
+        if(sendValidator != NULL){
+            if(!sendValidator(header, &canOutFrame, message)){
+                raiseError(MCP2515ErrorCode::DEBUG_ASSERT);
+                return false;
+            }
+        }
+        //end tenp
+
+        //Send the message and handle the response
         MCP2515::ERROR err = mcp2515.sendMessage(&canOutFrame);
         switch(err){
             case MCP2515::ERROR_OK:

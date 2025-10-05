@@ -23,7 +23,7 @@ namespace Chetch{
             static const byte MESSAGE_ID_FORWARD_RECEIVED = 100;
             static const byte MESSAGE_ID_FORWARD_SENT = 101;
             static const byte MESSAGE_ID_READY_TO_SEND = 102;
-            static const byte MESSAGE_ID_REPORT_ERROR = 110;
+            static const byte MESSAGE_ID_REPORT_ERROR = 110; 
 
         private:
             ArduinoMessage frecvmsg;
@@ -34,14 +34,14 @@ namespace Chetch{
 
             bool begin() override;
             bool allowSending() override;
-            void raiseError(MCP2515ErrorCode errorCode) override;
+            void raiseError(MCP2515ErrorCode errorCode, unsigned int errorData) override;
 
             void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
             void setStatusInfo(ArduinoMessage* response) override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
-            bool sendMessage(ArduinoMessage *message, CANMessagePriority messagePriority = CANMessagePriority::CAN_PRIORITY_RANDOM) override;
-            void handleReceivedMessage(CANMessagePriority messagePriority, byte sourceNodeID, ArduinoMessage *message) override;
+            bool sendMessage(ArduinoMessage *message, byte header = 0) override;
+            void handleReceivedMessage(byte header, byte sourceNodeID, ArduinoMessage *message) override;
     };
 } //end namespace
 #endif //end prevent multiple inclusion

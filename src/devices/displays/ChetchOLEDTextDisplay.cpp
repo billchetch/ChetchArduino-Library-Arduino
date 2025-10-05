@@ -4,7 +4,7 @@
 
 
 namespace Chetch{
-    OLEDTextDisplay::OLEDTextDisplay(DisplayOption displayOption) : 
+    OLEDTextDisplay::OLEDTextDisplay(DisplayOption displayOption, RefreshRate refreshRate) : 
 #if defined(OLED_128x32_I2C)
       display(/* reset=*/ U8X8_PIN_NONE, /* clock=*/ SCL, /* data=*/ SDA)
 #elif defined(OLED_128x64_I2C)
@@ -16,6 +16,7 @@ namespace Chetch{
     {
 
         this->displayOption = displayOption;
+        this->refreshRate = refreshRate;
 
         switch(displayOption){
             case LARGE_TEXT:
@@ -45,12 +46,27 @@ namespace Chetch{
         return begun;
 	}
     
+    void OLEDTextDisplay::updateDisplay(byte tag){
+        if(isLocked() || (update && tag == 0))return;
+        update = true; 
+        updateTag = tag; 
+    }
+
     void OLEDTextDisplay::loop(){
         ArduinoDevice::loop();
 
         if(isLocked() && millis() - lockedAt > lockDuration){
             display.clearDisplay();
             unlock();
+        }
+
+        if(update && (millis()- lastUpdated > (int)refreshRate)){
+            update = false;
+            lastUpdated = millis();
+            if(displayHandler != NULL){
+                displayHandler(this, updateTag);
+            }
+            updateTag = 0;
         }
     }
 
