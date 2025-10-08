@@ -4,7 +4,7 @@
 
 namespace Chetch{
     MCP2515Device::MCP2515Device(byte nodeID, int csPin) : 
-                                    mcp2515(csPin), //4000000), 
+                                    mcp2515(csPin, 4000000), 
                                     amsg(ARDUINO_MESSAGE_SIZE)
     {
         this->nodeID = nodeID;
@@ -52,6 +52,7 @@ namespace Chetch{
     void MCP2515Device::raiseError(MCP2515ErrorCode errorCode, unsigned int errorData){
         lastError = errorCode;
         lastErrorData = errorData;
+
         if(errorListener != NULL){
             errorListener(this, errorCode);
         }
@@ -66,6 +67,21 @@ namespace Chetch{
         if(!canSend && millis() > 2000){
             allowSending();
         }
+
+        if(lastError != MCP2515ErrorCode::NO_ERROR){
+            //send error message
+            ArduinoMessage* msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_ERROR, 1);
+            msg->add(lastError);
+            msg->add(lastErrorData);
+            msg->add(mcp2515.getErrorFlags());
+            msg->add(mcp2515.getStatus());
+
+            sendMessage(msg);
+
+            //reset code
+            lastError = MCP2515ErrorCode::NO_ERROR;
+            lastErrorData = 0;
+        }
     }
 
     bool MCP2515Device::allowSending(){
@@ -76,6 +92,24 @@ namespace Chetch{
         } else {
             return false;
         }
+    }
+
+    byte MCP2515Device::crc5(byte* data, byte len){
+        static byte generator = (0b00110101 & 0x1F) << 3; //x^5 + x^4 + x^2 + 1 ...
+        //static byte generator = 0b00100101; //x^5 + x^2 + 1 ... 
+        byte crc = 0;
+        for (byte i = 0; i < len; i++) {
+            crc ^= data[i];
+            for (byte k = 0; k < 8; k++) {
+                crc = crc & 0x80 ? (crc << 1) ^ generator : crc << 1;
+            }
+        }
+        crc >>= 3;
+        return crc & 0x1F;
+    }
+
+    bool MCP2515Device::vcrc5(byte crc, byte* data, byte len){
+        return crc  == crc5(data, len);
     }
 
     ArduinoMessage* MCP2515Device::getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType, byte tag){
@@ -93,28 +127,34 @@ namespace Chetch{
             case MCP2515::ERROR_OK:
                 //Clear message and split out the ID
                 amsg.clear();
-                byte header = (canInFrame.can_id >> 24) & 0x1F; //first 5 bytes
-                byte typeAndTag = (canInFrame.can_id >> 16) & 0xFF;
-                amsg.type = (typeAndTag >> 3) & 0x1F;
-                amsg.tag = typeAndTag & 0x07;
-                byte nodeIDAndSender = (canInFrame.can_id >> 8) & 0xFF;
-                amsg.sender = nodeIDAndSender & 0b00001111; //last 4 bits make the sender
-                byte sourceNodeID = nodeIDAndSender >> 4; //first 4 bits are used for the remote node ID
+                byte messageType = (canInFrame.can_id >> 24) & 0x1F; //first 5 bits
+                byte nodeIDAndSender = (canInFrame.can_id >> 16) & 0xFF; //whole byte split 4 | 4
+                byte tagAndCRC = (canInFrame.can_id >> 8) & 0xFF; //whole byte split 3 | 5
+                if(!vcrc5(tagAndCRC & 0x1F, canInFrame.data, canInFrame.can_dlc)){
+                    //data error
+                    raiseError(CRC_ERROR, tagAndCRC & 0x1F);
+                    return;
+                }
+
+                amsg.type = messageType;
+                amsg.tag = (tagAndCRC >> 5) & 0x07;
+                amsg.sender = nodeIDAndSender & 0x0F; //last 4 bits make the sender
+                byte sourceNodeID = nodeIDAndSender >> 4 & 0x0F; //first 4 bits are used for the remote node ID
 
                 //Do some basic validationg
                 if(sourceNodeID < MIN_NODE_ID || sourceNodeID > MAX_NODE_ID){
                     raiseError(INVALID_MESSAGE);
-                    break; //ERROR....
+                    return; //ERROR....
                 }
 
                 if(amsg.type < 1 || amsg.type > 31){
                     raiseError(INVALID_MESSAGE);
-                    break; //ERROR....
+                    return; //ERROR....
                 }
 
                 if(amsg.tag > 7){
                     raiseError(INVALID_MESSAGE);
-                    break; //ERROR....
+                    return; //ERROR....
                 }
 
                 //Add message arguments
@@ -147,7 +187,7 @@ namespace Chetch{
                 allowSending();
                 indicate(true); 
 
-                handleReceivedMessage(header, sourceNodeID, &amsg);
+                handleReceivedMessage(sourceNodeID, &amsg);
                 break;
 
             case MCP2515::ERROR_FAIL:
@@ -164,7 +204,7 @@ namespace Chetch{
         }
     }
 
-    void MCP2515Device::handleReceivedMessage(byte header, byte sourceNodeID, ArduinoMessage* message){
+    void MCP2515Device::handleReceivedMessage(byte sourceNodeID, ArduinoMessage* message){
             
         //The concern here is that a messageReceivedListener will often send out a message
         //This would then potentially cause problems with correct forwarding of messages in the case of a master nod
@@ -184,7 +224,7 @@ namespace Chetch{
                 msg->add(mcp2515.errorCountRX());
                 
                 //NOTE: We are sending out a message during a possible readMessage execution
-                sendMessage(msg, 0x10);
+                sendMessage(msg);
                 handled = true;
                 break;
 
@@ -204,11 +244,11 @@ namespace Chetch{
         }
 
         if(!handled && messageReceivedListener != NULL){
-            messageReceivedListener(this, header, sourceNodeID, message);
+            messageReceivedListener(this, sourceNodeID, message);
         }
     }
 
-    bool MCP2515Device::sendMessage(ArduinoMessage* message, byte header){
+    bool MCP2515Device::sendMessage(ArduinoMessage* message){
         if(!canSend)return false;
 
         if(message == NULL){
@@ -261,40 +301,11 @@ namespace Chetch{
             }
         }
         
-        //copy message bytes to data array
-        int constructedHeader = 0; //temp
-        int n = 0;
-        for(int i = 0; i < message->getArgumentCount(); i++){
-            byte* b = message->getArgument(i);
-            for(int j = 0; j < message->getArgumentSize(i); j++){
-                canOutFrame.data[n++] = b[j];
-                //temp
-                if(n <= 4){
-                    constructedHeader += (int)(b[j] & 0x03) << 2*(n - 1);
-                }
-                //end temp
-            }
-        }
-        if(header == 0){
-            header = (byte)(constructedHeader & 0x1F); //temp
-        }
-
-
-        //create the message ID
-        header = 0x1F & header;
-        byte typeAndTag = (message->type << 3) | (message->tag & 0b00000111);
-        byte nodeIDAndSender = (nodeID << 4 ) | (message->sender & 0b000001111);
-        canOutFrame.can_id = (unsigned long)header << 24 | (unsigned long)typeAndTag << 16 | (unsigned long)nodeIDAndSender << 8 | (unsigned long)messageStructure;
+        byte messageType = message->type & 0x1F;
+        byte nodeIDAndSender = (nodeID << 4 ) | (message->sender & 0x0F);
+        byte tagAndCRC = (message->tag << 3) | crc5(canOutFrame.data, canOutFrame.can_dlc);
+        canOutFrame.can_id = (unsigned long)messageType << 24 | (unsigned long)nodeIDAndSender << 16 | (unsigned long)tagAndCRC << 8 | (unsigned long)messageStructure;
         canOutFrame.can_id |= CAN_EFF_FLAG;
-
-        //temp validate
-        if(sendValidator != NULL){
-            if(!sendValidator(header, &canOutFrame, message)){
-                raiseError(MCP2515ErrorCode::DEBUG_ASSERT);
-                return false;
-            }
-        }
-        //end tenp
 
         //Send the message and handle the response
         MCP2515::ERROR err = mcp2515.sendMessage(&canOutFrame);

@@ -85,15 +85,15 @@ D0: EWARN (Error Warning Flag):
     Set when either TXWAR or RXWAR is set, providing a general error warning indication
 
 STATUS FLAGS (Bits in the byte read from the ? register)
-
-D7: Transmit Buffer-2-Empty Interrupt Flag bit
-D6: Buffer 2, Message-Transmit-Request bit
-D5: Transmit Buffer-1-Empty Interrupt Flag bit
-D4: Buffer 1, Message-Transmit-Request bit
-D3: Transmit Buffer-0-Empty Interrupt Flag bit
-D2: Buffer 0, Message-Transmit-Request bit
-D1: Receive-Buffer-1-Full Interrupt Flag
-D0: Receive-Buffer-0-Full Interrupt Flag
+(Source: MCP2515-Stand-Alone-CAN-Controller-with-SPI-20001801J.pdf)
+D0: RX0IF (CANINTF[0]) Receive-Buffer-0-Full Interrupt Flag
+D1: RX1IF (CANINTF[1]) Receive-Buffer-1-Full Interrupt Flag
+D2: TXREQ (TXB0CNTRL[3]) Buffer 0, Message-Transmit-Request bit
+D3: TX0IF (CANINTF[2]) Transmit Buffer-0-Empty Interrupt Flag bit
+D4: TXREQ (TXB1CNTRL[3]) Buffer 1, Message-Transmit-Request bit
+D5: TX1IF (CANINTF[3]) Transmit Buffer-1-Empty Interrupt Flag bit
+D6: TXREQ (TXB2CNTRL[3]) Buffer 2, Message-Transmit-Request bit
+D7: TX2IF (CANINTF[4]) Transmit Buffer-2-Empty Interrupt Flag bit
 */
 
 #define CAN_AS_LOOPBACK false
@@ -120,21 +120,16 @@ namespace Chetch{
                 FAIL_TX, //TX error
                 ALL_TX_BUSY, //TX error
                 READ_FAIL, //RX error
+                CRC_ERROR, //RX error (probably from SPI issues but who knows.. ba)
                 DEBUG_ASSERT, //For debug purposes
             };
             
-            typedef void (*MessageListener)(MCP2515Device*, byte, byte, ArduinoMessage*);
+            typedef void (*MessageListener)(MCP2515Device*, byte, ArduinoMessage*);
             typedef void (*CommandListener)(MCP2515Device*, byte, ArduinoDevice::DeviceCommand, ArduinoMessage*);
             typedef void (*ErrorListener)(MCP2515Device*, MCP2515ErrorCode);
 
-
             MCP2515 mcp2515; //should be moved to private
-            
-            //temp
-            typedef bool (*SendValidator)(byte, can_frame*, ArduinoMessage*);
-            SendValidator sendValidator = NULL;
-            //end temp
-
+        
         private:
             bool initialised = false;
             
@@ -166,6 +161,8 @@ namespace Chetch{
             
         protected:
             virtual bool allowSending();
+            byte crc5(byte* data, byte len);
+            bool vcrc5(byte crc, byte* data, byte len);
             
         public:
             MCP2515Device(byte nodeID = 0, int csPin = CAN_DEFAULT_CS_PIN);
@@ -183,9 +180,9 @@ namespace Chetch{
             void addErrorListener(ErrorListener listener){ errorListener = listener; }
 
             ArduinoMessage* getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType = ArduinoMessage::TYPE_DATA, byte tag = 0);
-            virtual bool sendMessage(ArduinoMessage *message, byte header = 0);
+            virtual bool sendMessage(ArduinoMessage *message);
             void readMessage();
-            virtual void handleReceivedMessage(byte header, byte sourceNodeID, ArduinoMessage *message);
+            virtual void handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message);
 
             uint32_t createFilterMask(bool checkNodeID, bool checkMessageType, bool checkSender);
             uint32_t createFilter(int nodeID, int messageType, int sender);

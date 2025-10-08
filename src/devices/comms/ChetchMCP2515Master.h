@@ -23,8 +23,7 @@ namespace Chetch{
             static const byte MESSAGE_ID_FORWARD_RECEIVED = 100;
             static const byte MESSAGE_ID_FORWARD_SENT = 101;
             static const byte MESSAGE_ID_READY_TO_SEND = 102;
-            static const byte MESSAGE_ID_REPORT_ERROR = 110; 
-
+            
         private:
             ArduinoMessage frecvmsg;
             ArduinoMessage fsendmsg;
@@ -40,8 +39,8 @@ namespace Chetch{
             void setStatusInfo(ArduinoMessage* response) override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
-            bool sendMessage(ArduinoMessage *message, byte header = 0) override;
-            void handleReceivedMessage(byte header, byte sourceNodeID, ArduinoMessage *message) override;
+            bool sendMessage(ArduinoMessage *message) override;
+            void handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message) override;
     };
 } //end namespace
 #endif //end prevent multiple inclusion
