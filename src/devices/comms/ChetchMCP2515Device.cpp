@@ -96,7 +96,7 @@ namespace Chetch{
 
     byte MCP2515Device::crc5(byte* data, byte len){
         if(len == 0)return 0;
-        
+
         static byte generator = (0b00110101 & 0x1F) << 3; //x^5 + x^4 + x^2 + 1 ...
         //static byte generator = 0b00100101; //x^5 + x^2 + 1 ... 
         byte crc = 0;
@@ -308,6 +308,15 @@ namespace Chetch{
         byte tagAndCRC = (message->tag << 5) | crc5(canOutFrame.data, canOutFrame.can_dlc);
         canOutFrame.can_id = (unsigned long)messageType << 24 | (unsigned long)nodeIDAndSender << 16 | (unsigned long)tagAndCRC << 8 | (unsigned long)messageStructure;
         canOutFrame.can_id |= CAN_EFF_FLAG;
+
+        //copy message bytes to data array
+        int n = 0;
+        for(int i = 0; i < message->getArgumentCount(); i++){
+            byte* b = message->getArgument(i);
+            for(int j = 0; j < message->getArgumentSize(i); j++){
+                canOutFrame.data[n++] = b[j];
+            }
+        }
 
         //Send the message and handle the response
         MCP2515::ERROR err = mcp2515.sendMessage(&canOutFrame);
