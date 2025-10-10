@@ -28,12 +28,12 @@ Wrapping MCP2515 device
 Currently using the autowp library but this could change...
 
 Message Conversion
-The key to this is using the extended ID (so 29 bit) ID value as follows (reading left to right with 1 on the left):
+The key to this is using the extended ID (so 29 bit) ID value as follows (reading left to right with 4 on the left):
 
-- Byte 1 = First 5 bits are a header (can be used for priority in arbitration of for additional data for debugging)
-- Byte 2 = Type and Tag: 5 bits for Type, 3 bits for Tag
-- Byte 3 = Node and Sender: 4 bits for Node (can Node), 5 bits for sender (arduino device) .. effectively a location this
-- Byte 4 = Message structure:  2 bits for argument count, then 2 bits for arg 1 length, 2 bits for arg2 length and 2 bits for arg 3 length. Argument 4 length is inferred.  Note finally bit values are all 1 less than the intended value.
+- Byte 4 = First 5 bits are the message type (allowing the type to determin priority)
+- Byte 3 = Node and sender 4 bits + 4 bits so 16 nodes and each node can have 16 senders (allowing node and device to determin priority)
+- Byte 2 = Tag and CRC: 3 bits for tag and 5 bits for CRC which ic calculated over the data and is provided to guard against SPI issues mainly)
+- Byte 1 = Message structure:  2 bits for argument count, then 2 bits for arg 1 length, 2 bits for arg2 length and 2 bits for arg 3 length. Argument 4 length is inferred.  Note finally bit values are all 1 less than the intended value.
 
 More on the message structure... in conjuntion with the can frame DLC value, Byte 3 allows for 4 possible arguments with each argument being of max 4 bytes. 
 This corresponds to arduino basic types (float, int, long, byte etc.) It also allows for a varilable length argument if there is only 1 arg as we can use the DLC
@@ -121,6 +121,7 @@ namespace Chetch{
                 ALL_TX_BUSY, //TX error
                 READ_FAIL, //RX error
                 CRC_ERROR, //RX error (probably from SPI issues but who knows.. ba)
+                CUSTOM_ERROR, //For individual applications
                 DEBUG_ASSERT, //For debug purposes
             };
             
@@ -160,7 +161,6 @@ namespace Chetch{
             void init(); //Must be called after construtor but before configuring stuff hence why it's present in config type methods
             
         protected:
-            virtual bool allowSending();
             byte crc5(byte* data, byte len);
             bool vcrc5(byte crc, byte* data, byte len);
             
@@ -170,6 +170,8 @@ namespace Chetch{
             byte getNodeID(){ return nodeID; }
             void reset();
             bool begin() override;
+            virtual bool allowSending();
+        
             virtual void raiseError(MCP2515ErrorCode errorCode, unsigned int errorData = 0);
             void indicate(bool on);
             void loop() override;

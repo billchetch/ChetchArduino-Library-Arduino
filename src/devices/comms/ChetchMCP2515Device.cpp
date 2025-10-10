@@ -95,6 +95,8 @@ namespace Chetch{
     }
 
     byte MCP2515Device::crc5(byte* data, byte len){
+        if(len == 0)return 0;
+        
         static byte generator = (0b00110101 & 0x1F) << 3; //x^5 + x^4 + x^2 + 1 ...
         //static byte generator = 0b00100101; //x^5 + x^2 + 1 ... 
         byte crc = 0;
@@ -109,7 +111,7 @@ namespace Chetch{
     }
 
     bool MCP2515Device::vcrc5(byte crc, byte* data, byte len){
-        return crc  == crc5(data, len);
+        return crc == crc5(data, len);
     }
 
     ArduinoMessage* MCP2515Device::getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType, byte tag){
@@ -303,7 +305,7 @@ namespace Chetch{
         
         byte messageType = message->type & 0x1F;
         byte nodeIDAndSender = (nodeID << 4 ) | (message->sender & 0x0F);
-        byte tagAndCRC = (message->tag << 3) | crc5(canOutFrame.data, canOutFrame.can_dlc);
+        byte tagAndCRC = (message->tag << 5) | crc5(canOutFrame.data, canOutFrame.can_dlc);
         canOutFrame.can_id = (unsigned long)messageType << 24 | (unsigned long)nodeIDAndSender << 16 | (unsigned long)tagAndCRC << 8 | (unsigned long)messageStructure;
         canOutFrame.can_id |= CAN_EFF_FLAG;
 

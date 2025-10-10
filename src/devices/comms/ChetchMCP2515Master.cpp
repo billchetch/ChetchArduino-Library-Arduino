@@ -26,13 +26,6 @@ namespace Chetch{
             return false;
         }
     }
-
-    void MCP2515Master::raiseError(MCP2515ErrorCode errorCode, unsigned int errorData){
-        MCP2515Device::raiseError(errorCode, errorData);
-
-        enqueueMessageToSend(MESSAGE_ID_REPORT_ERROR, MESSAGE_ID_REPORT_ERROR);
-    }
-
     void MCP2515Master::setStatusInfo(ArduinoMessage* message){
         ArduinoDevice::setStatusInfo(message);
         message->add(getNodeID());
@@ -56,12 +49,6 @@ namespace Chetch{
             message->type = ArduinoMessage::MessageType::TYPE_INFO;
         } else if(messageID == MESSAGE_ID_READY_TO_SEND){
             message->type = ArduinoMessage::MessageType::TYPE_NOTIFICATION;
-        } else if(messageID == MESSAGE_ID_REPORT_ERROR){
-            setErrorInfo(message, lastError);
-            message->add((byte)mcp2515.getErrorFlags());
-            message->add((byte)mcp2515.errorCountTX());
-            message->add((byte)mcp2515.errorCountRX());
-            message->add(lastErrorData);
         }
     }
 
