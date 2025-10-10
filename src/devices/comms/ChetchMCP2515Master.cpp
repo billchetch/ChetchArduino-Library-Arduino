@@ -58,9 +58,11 @@ namespace Chetch{
         if(!handled)
         {
             ArduinoMessage* msg;
+            ArduinoMessage::MessageType reqType;
             switch(command){
                 case ArduinoDevice::REQUEST: //Message from outside BUS .. all nodes should respond to this
-                    msg = getMessageForDevice(this, ArduinoMessage::TYPE_STATUS_REQUEST, 1);
+                    reqType = (ArduinoMessage::MessageType)message->get<ArduinoMessage::MessageType>(1);
+                    msg = getMessageForDevice(this, reqType, 1);
                     sendMessage(msg);
                     handled = true;
                     break;

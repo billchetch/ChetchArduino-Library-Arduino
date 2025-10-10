@@ -302,14 +302,8 @@ namespace Chetch{
                 }
             }
         }
-        
-        byte messageType = message->type & 0x1F;
-        byte nodeIDAndSender = (nodeID << 4 ) | (message->sender & 0x0F);
-        byte tagAndCRC = (message->tag << 5) | crc5(canOutFrame.data, canOutFrame.can_dlc);
-        canOutFrame.can_id = (unsigned long)messageType << 24 | (unsigned long)nodeIDAndSender << 16 | (unsigned long)tagAndCRC << 8 | (unsigned long)messageStructure;
-        canOutFrame.can_id |= CAN_EFF_FLAG;
 
-        //copy message bytes to data array
+        //CAN DATA: copy message bytes to data array
         int n = 0;
         for(int i = 0; i < message->getArgumentCount(); i++){
             byte* b = message->getArgument(i);
@@ -317,6 +311,17 @@ namespace Chetch{
                 canOutFrame.data[n++] = b[j];
             }
         }
+        if(canOutFrame.can_dlc != n){
+            raiseError(INVALID_MESSAGE);
+            return false;
+        }
+        
+        //CAN ID
+        byte messageType = message->type & 0x1F;
+        byte nodeIDAndSender = (nodeID << 4 ) | (message->sender & 0x0F);
+        byte tagAndCRC = (message->tag << 5) | crc5(canOutFrame.data, canOutFrame.can_dlc);
+        canOutFrame.can_id = (unsigned long)messageType << 24 | (unsigned long)nodeIDAndSender << 16 | (unsigned long)tagAndCRC << 8 | (unsigned long)messageStructure;
+        canOutFrame.can_id |= CAN_EFF_FLAG;
 
         //Send the message and handle the response
         MCP2515::ERROR err = mcp2515.sendMessage(&canOutFrame);
