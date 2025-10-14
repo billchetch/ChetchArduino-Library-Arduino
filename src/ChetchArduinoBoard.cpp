@@ -4,9 +4,12 @@
 namespace Chetch{
     
     //Constructors
-    ArduinoBoard::ArduinoBoard() : frame(MessageFrame::FrameSchema::SMALL_SIMPLE_CHECKSUM, MessageFrame::MessageEncoding::SYSTEM_DEFINED, MAX_FRAME_PAYLOAD_SIZE), 
+    ArduinoBoard::ArduinoBoard() 
+#if ARDUINO_BOARD_USE_STREAM            
+    : frame(MessageFrame::FrameSchema::SMALL_SIMPLE_CHECKSUM, MessageFrame::MessageEncoding::SYSTEM_DEFINED, MAX_FRAME_PAYLOAD_SIZE), 
                                 inboundMessage(MAX_FRAME_PAYLOAD_SIZE), 
                                 outboundMessage(MAX_FRAME_PAYLOAD_SIZE)
+#endif
     {
         for(byte i = 0; i < MAX_DEVICES; i++){
             devices[i] = NULL;
@@ -15,10 +18,11 @@ namespace Chetch{
 
 
     bool ArduinoBoard::begin(Stream* stream){
+#if ARDUINO_BOARD_USE_STREAM            
         this->stream = stream;
         inboundMessage.clear();
         outboundMessage.clear();
-
+#endif
         for(int i = 0; i < deviceCount; i++){
             if(!devices[i]->begin() || !devices[i]->hasBegun()){ //in case we forget to set the begun flag
                 return false;
@@ -59,6 +63,7 @@ namespace Chetch{
         return freeMemory();
     }
     
+#if ARDUINO_BOARD_USE_STREAM            
     //returns true if received a valid message, false otherwise
     bool ArduinoBoard::receiveMessage(){
         if(stream == NULL)return false;
@@ -103,7 +108,7 @@ namespace Chetch{
         outboundMessage.clear();
         
     }
-    
+
     void ArduinoBoard::setErrorInfo(ArduinoMessage* message, ErrorCode errorCode, byte errorSubCode){
         message->type = ArduinoMessage::TYPE_ERROR;
         message->add((byte)errorCode);
@@ -180,11 +185,13 @@ namespace Chetch{
         }
         return qi;
     }
+#endif
 
     void ArduinoBoard::loop(){
         //basic error checking here to make sure that we've begun
         if(!begun)return;
 
+#if ARDUINO_BOARD_USE_STREAM
         //1. Receieve any message and possilbly reply (will get sent next loop)
         if(receiveMessage()){
             //we have received a VALID message ... so direct it then to the appropriate place for handling
@@ -221,13 +228,14 @@ namespace Chetch{
         } else if(!outboundMessage.isEmpty()){ //if the receiveMessage populated an outbound message (e.g. error)
             sendMessage();
         }
-
+#endif
         //2. Loop next device
         if(deviceCount > 0 && devices[currentdevice] != NULL){
             devices[currentdevice]->loop(); //will update device state, possible set flags etc. to then pouplate outbound message
             currentdevice = (currentdevice + 1) % deviceCount;
         }
 
+#if ARDUINO_BOARD_USE_STREAM
         //3. Process next message to send in queue
         if(!isMessageQueueEmpty() && outboundMessage.isEmpty()){
             MessageQueueItem qi = dequeueMessageToSend();
@@ -237,6 +245,7 @@ namespace Chetch{
             outboundMessage.tag = qi.messageTag;
             sendMessage();
         }
+#endif
     }
 
     ArduinoBoard Board;

@@ -40,7 +40,7 @@ namespace Chetch{
 	            TYPE_INITIALISE_RESPONSE,
                 TYPE_ALERT,
                 TYPE_FINALISE,
-                TYPE_PRESENCE_REQUEST,
+                TYPE_PRESENCE,
                 TYPE_PRESENCE_RESPONSE
             };
 	  

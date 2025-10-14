@@ -149,7 +149,9 @@ namespace Chetch{
 
         protected:
             MCP2515ErrorCode lastError = MCP2515ErrorCode::NO_ERROR;
-            unsigned int lastErrorData = 0;
+            unsigned long lastErrorData = 0;
+            byte errorCounts[10];
+            unsigned long lastErrorOn = 0;
 
             bool canSend = false; //is set to true if either a message is received or a certain period has elapsed
             
@@ -172,7 +174,9 @@ namespace Chetch{
             bool begin() override;
             virtual bool allowSending();
         
-            virtual void raiseError(MCP2515ErrorCode errorCode, unsigned int errorData = 0);
+            virtual void raiseError(MCP2515ErrorCode errorCode, unsigned long errorData = 0);
+            byte* getErrorCounts(){ return errorCounts; }
+
             void indicate(bool on);
             void loop() override;
             

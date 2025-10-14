@@ -17,7 +17,9 @@ namespace Chetch{
     }
 
     void ArduinoDevice::setErrorInfo(ArduinoMessage* message, byte errorSubCode){
+#if ARDUINO_BOARD_USE_STREAM
         Board->setErrorInfo(message, ArduinoBoard::ErrorCode::DEVICE_ERROR, errorSubCode);
+#endif
     }
 
     void ArduinoDevice::setStatusInfo(ArduinoMessage* message){
@@ -55,7 +57,9 @@ namespace Chetch{
     }
 
     bool ArduinoDevice::enqueueMessageToSend(byte messageID, byte messageTag){
+#if ARDUINO_BOARD_USE_STREAM
         return Board->enqueueMessageToSend(this, messageID, messageTag);
+#endif
     }
 
     bool ArduinoDevice::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){

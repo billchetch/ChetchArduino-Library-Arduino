@@ -19,7 +19,10 @@ namespace Chetch{
     void MCP2515Device::init(){
         if(!initialised){
             reset();
-            randomSeed(getNodeID() + analogRead(A0));
+
+            for(byte i = 0;i < 10; i++){
+                errorCounts[i] = 0;
+            }
             initialised = true;
         }
     }
@@ -49,9 +52,13 @@ namespace Chetch{
         if(indicatorPin > 0)digitalWrite(indicatorPin, on ? HIGH : LOW);
     }
 
-    void MCP2515Device::raiseError(MCP2515ErrorCode errorCode, unsigned int errorData){
+    void MCP2515Device::raiseError(MCP2515ErrorCode errorCode, unsigned long errorData){
         lastError = errorCode;
         lastErrorData = errorData;
+
+        lastErrorOn = millis();
+        byte idx = (byte)(errorCode) - 1;
+        if(errorCounts[idx] < 255)errorCounts[idx]++;
 
         if(errorListener != NULL){
             errorListener(this, errorCode);
@@ -71,7 +78,7 @@ namespace Chetch{
         if(lastError != MCP2515ErrorCode::NO_ERROR){
             //send error message
             ArduinoMessage* msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_ERROR, 1);
-            msg->add(lastError);
+            msg->add((byte)lastError);
             msg->add(lastErrorData);
             msg->add(mcp2515.getErrorFlags());
             msg->add(mcp2515.getStatus());
@@ -160,7 +167,7 @@ namespace Chetch{
                 }
 
                 //Add message arguments
-                if(canInFrame.can_dlc > 0){
+                /*if(canInFrame.can_dlc > 0){
                     byte messageStructure = canInFrame.can_id & 0x000000FF;
                     byte shiftRight = 6;
                     byte argCount = 1 + ((messageStructure >> shiftRight) & 0b00000011);
@@ -176,7 +183,7 @@ namespace Chetch{
                         amsg.addBytes(&canInFrame.data[idx], argSize);
                         idx += argSize;
                     }
-                }
+                }*/
 
                 /*
                 Serial.println("Received ID: ");
@@ -220,6 +227,7 @@ namespace Chetch{
         switch(message->type){
             case ArduinoMessage::TYPE_STATUS_REQUEST:
                 msg = getMessageForDevice(this, ArduinoMessage::TYPE_STATUS_RESPONSE, message->tag);
+                
                 msg->add(mcp2515.getStatus());
                 msg->add(mcp2515.getErrorFlags());
                 msg->add(mcp2515.errorCountTX());

@@ -36,12 +36,15 @@
 #include "ChetchArduinoMessage.h"
 #include "ChetchArduinoDevice.h"
 
+#define ARDUINO_BOARD_USE_STREAM true
 
 namespace Chetch{
     class ArduinoBoard{
         public:
             static const byte DEFAULT_BOARD_ID = 1; //the target ID for messaging
             static const byte START_DEVICE_IDS_AT = 8;
+
+#if ARDUINO_BOARD_USE_STREAM            
             static const int MAX_QUEUE_SIZE = MAX_DEVICES;
 
             struct MessageQueueItem{
@@ -49,7 +52,7 @@ namespace Chetch{
                 byte messageID; 
                 byte messageTag;  //currently not used 1/2/25
             };
-
+#endif
             enum class ErrorCode{
                 NO_ERROR = 0,
                 MESSAGE_FRAME_ERROR = 10, //To indicate this is a Frame error
@@ -72,6 +75,7 @@ namespace Chetch{
             byte deviceCount = 0;
             byte currentdevice = 0;
 
+#if ARDUINO_BOARD_USE_STREAM            
             MessageFrame frame;
             ArduinoMessage inboundMessage;
             ArduinoMessage outboundMessage;
@@ -80,8 +84,9 @@ namespace Chetch{
             int queueCount = 0;
             MessageQueueItem messageQueue[MAX_QUEUE_SIZE];
 
-            bool begun = false;
             Stream* stream;
+#endif
+            bool begun = false;
 
         public:
             //Constructor/Destructor
@@ -99,6 +104,7 @@ namespace Chetch{
             bool begin(Stream* stream); //will return false if fails to begin
             void loop();
 
+#if ARDUINO_BOARD_USE_STREAM            
             //messaging stuff
             void setErrorInfo(ArduinoMessage* message, ErrorCode errorCode, byte errorSubCode);
             void setResponseInfo(ArduinoMessage* response, ArduinoMessage* message, byte sender);
@@ -110,6 +116,7 @@ namespace Chetch{
             MessageQueueItem dequeueMessageToSend();
             bool isMessageQueueFull();
             bool isMessageQueueEmpty();
+#endif
     };
 
     extern ArduinoBoard Board;
