@@ -24,11 +24,13 @@ namespace Chetch{
         delete[] argumentIndices;
     }
 
-    void ArduinoMessage::clear(){
-        type = (byte)MessageType::TYPE_NONE;
-        tag = 0;
-        target = 0;
-        sender = 0;
+    void ArduinoMessage::clear(bool argumentsOnly){
+        if(!argumentsOnly){
+            type = (byte)MessageType::TYPE_NONE;
+            tag = 0;
+            target = 0;
+            sender = 0;
+        }
 
         for(int i = 0; i < byteCount; i++)bytes[i] = 0;
         for(int i = 0; i < argumentCount; i++)argumentIndices[i] = 0;

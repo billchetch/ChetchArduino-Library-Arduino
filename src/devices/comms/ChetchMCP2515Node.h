@@ -21,7 +21,7 @@ namespace Chetch{
         private:
             
         public:
-            MCP2515Node(byte nodeID = 0, int csPin = CAN_DEFAULT_CS_PIN);
+            MCP2515Node(byte nodeID = 0, unsigned long presenceInterval = MCP2515Device::PRESENCE_INTERVAL, int csPin = CAN_DEFAULT_CS_PIN);
     };
 } //end namespace
 #endif //end prevent multiple inclusion

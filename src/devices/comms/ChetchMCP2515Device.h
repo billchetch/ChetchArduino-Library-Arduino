@@ -108,6 +108,8 @@ namespace Chetch{
             static const byte MAX_NODE_ID = 15;
             static const byte MIN_NODE_ID = 1;
             static const int NO_FILTER = -1;
+            static const unsigned int PRESENCE_INTERVAL = 2000;
+            static const byte TIMESTAMP_RESOLUTION = 4; //Shift right by this many bits... lower number makes finer resolution
             
             static const byte EVENT_READTY_TO_SEND = 1;
 
@@ -121,36 +123,109 @@ namespace Chetch{
                 ALL_TX_BUSY, //TX error
                 READ_FAIL, //RX error
                 CRC_ERROR, //RX error (probably from SPI issues but who knows.. ba)
+                STALE_MESSAGE, //an old message
+                SYNC_ERROR, //if presence is out of sync
                 CUSTOM_ERROR, //For individual applications
                 DEBUG_ASSERT, //For debug purposes
             };
             
-            typedef void (*MessageListener)(MCP2515Device*, byte, ArduinoMessage*);
+            class NodeDependency{
+                public: //NOTE: change to private
+                    byte nodeID = 0;
+                    unsigned long nodeTime = 0;
+                    unsigned long updatedOn = 0;
+                    bool updated = false;
+
+                public:
+                    NodeDependency* next = NULL;
+
+                public: 
+                    NodeDependency(byte nid){
+                        nodeID = nid;
+                    }
+
+                    byte getNodeID(){ return nodeID; }
+
+                    void reset(){
+                        nodeTime = 0;
+                        updatedOn = 0;
+                        updated = 0;
+                    }
+
+                    bool inSync(unsigned long ms){
+                        if(!updated)return true;
+
+                        unsigned long ent = getEstimatedNodeTime();
+
+                        if(ent > ms){
+                            return ent - ms < 8;
+                        } else {
+                            return ms - ent < 8;
+                        }
+                    }
+
+                    bool setNodeTime(unsigned long ms){
+                        bool sync = inSync(ms);
+
+                        nodeTime = ms;
+                        updatedOn = millis();
+                        updated = true;
+                        
+                        return sync;
+                    }
+
+                    unsigned long getEstimatedNodeTime(){
+                        if(!updated)return 0;
+
+                        return (millis() - updatedOn) + nodeTime;
+                    }
+
+                    bool isStale(byte timestamp, byte resolution = TIMESTAMP_RESOLUTION){
+                        if(!updated)return false;
+
+                        byte estimatedTimestamp = (byte)((getEstimatedNodeTime() >> resolution) & 0xFF);
+
+                        int diff = abs((int)timestamp - (int)estimatedTimestamp);
+                        diff = min(diff, 256 - diff);
+                        return diff > 1;
+                    }
+            };
+
+            typedef void (*MessageListener)(MCP2515Device*, byte, ArduinoMessage*, byte*); //device, node, message, canData
             typedef void (*CommandListener)(MCP2515Device*, byte, ArduinoDevice::DeviceCommand, ArduinoMessage*);
             typedef void (*ErrorListener)(MCP2515Device*, MCP2515ErrorCode);
+            typedef bool (*SendValidator)(MCP2515Device*, ArduinoMessage*, unsigned long canID, byte* canData);
 
             MCP2515 mcp2515; //should be moved to private
-        
+            ArduinoMessage amsg; //shuuld be moved to private
+
         private:
             bool initialised = false;
             
             byte nodeID = 0;
             byte indicatorPin = CAN_DEFAULT_INDICATOR_PIN;
 
-            ArduinoMessage amsg;
+            NodeDependency* firstDependency = NULL;
 
-            MessageListener messageReceivedListener = NULL;
-            CommandListener commandListener = NULL;
-            MessageListener messageSentListener = NULL;
-            ErrorListener errorListener = NULL;
+            
 
             byte maskNum = 0; //max is 1
             byte filterNum = 0; //max is 5 after regNum == 1 then maskNum increments
 
+        public: //SHOULD BE PRIVATE
+            unsigned int presenceInterval = 0; //how often to broadcast a PRESENCE message
+            unsigned long lastPresenceOn = 0;
+            bool presenceSent = false; //to indicate first presence sent
+
         protected:
+            MessageListener messageReceivedListener = NULL;
+            CommandListener commandListener = NULL;
+            SendValidator sendValidator = NULL;
+            ErrorListener errorListener = NULL;
+
             MCP2515ErrorCode lastError = MCP2515ErrorCode::NO_ERROR;
             unsigned long lastErrorData = 0;
-            byte errorCounts[10];
+            byte errorCounts[12];
             unsigned long lastErrorOn = 0;
 
             bool canSend = false; //is set to true if either a message is received or a certain period has elapsed
@@ -167,13 +242,16 @@ namespace Chetch{
             bool vcrc5(byte crc, byte* data, byte len);
             
         public:
-            MCP2515Device(byte nodeID = 0, int csPin = CAN_DEFAULT_CS_PIN);
-            
+            MCP2515Device(byte nodeID = 0, unsigned int presenceInterval = PRESENCE_INTERVAL, int csPin = CAN_DEFAULT_CS_PIN);
+            ~MCP2515Device();
+
             byte getNodeID(){ return nodeID; }
             void reset();
             bool begin() override;
             virtual bool allowSending();
-        
+            bool addNodeDependency(byte nodeID);
+            NodeDependency* getDependency(byte nodeID);
+            
             virtual void raiseError(MCP2515ErrorCode errorCode, unsigned long errorData = 0);
             byte* getErrorCounts(){ return errorCounts; }
 
@@ -182,7 +260,7 @@ namespace Chetch{
             
             void addMessageReceivedListener(MessageListener listener){ messageReceivedListener = listener; }
             void addCommandListener(CommandListener listener){ commandListener = listener; }
-            void addMessageSentListener(MessageListener listener){ messageSentListener = listener; }
+            void addSendValidator(SendValidator validator){ sendValidator = validator; }
             void addErrorListener(ErrorListener listener){ errorListener = listener; }
 
             ArduinoMessage* getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType = ArduinoMessage::TYPE_DATA, byte tag = 0);

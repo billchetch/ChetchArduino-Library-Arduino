@@ -3,11 +3,21 @@
 
 
 namespace Chetch{
-    MCP2515Device::MCP2515Device(byte nodeID, int csPin) : 
+    MCP2515Device::MCP2515Device(byte nodeID, unsigned int presenceInterval, int csPin) : 
                                     mcp2515(csPin, 4000000), 
                                     amsg(ARDUINO_MESSAGE_SIZE)
     {
         this->nodeID = nodeID;
+        this->presenceInterval = presenceInterval;
+    }
+
+    MCP2515Device::~MCP2515Device(){
+        NodeDependency* d = firstDependency;
+        while(d != NULL){
+            NodeDependency* prev = d;
+            d = d->next;
+            delete prev;
+        }
     }
 
     void MCP2515Device::reset(){
@@ -20,7 +30,7 @@ namespace Chetch{
         if(!initialised){
             reset();
 
-            for(byte i = 0;i < 10; i++){
+            for(byte i = 0;i < 11; i++){
                 errorCounts[i] = 0;
             }
             initialised = true;
@@ -44,6 +54,9 @@ namespace Chetch{
             pinMode(indicatorPin, OUTPUT);
             indicate(false);
         }
+
+        presenceSent = false;
+
         begun = true;
         return begun;
 	}
@@ -65,14 +78,63 @@ namespace Chetch{
         }
     }
 
+    MCP2515Device::NodeDependency* MCP2515Device::getDependency(byte nodeID){
+        NodeDependency* d = firstDependency;
+        while(d != NULL){
+            if(d->getNodeID() == nodeID){
+                return d;
+            }
+            d = d->next;
+        }
+        return NULL;
+    }
+
+    bool MCP2515Device::addNodeDependency(byte nodeID){
+        NodeDependency* nd = new NodeDependency(nodeID);
+
+        if(firstDependency == NULL){
+            firstDependency = nd;
+        } else {
+            NodeDependency* d = firstDependency;
+            while(d != NULL){
+                if(d->getNodeID() == nodeID){
+                    delete nd;
+                    return false;
+                }
+
+                if(d->next == NULL){
+                    d->next = nd;
+                    break;
+                }
+                d = d->next;
+            }
+        }
+        return true;
+    }
+
     void MCP2515Device::loop(){
         indicate(false);
         ArduinoDevice::loop();
 
         readMessage();    
     
-        if(!canSend && millis() > 2000){
-            allowSending();
+        if(presenceInterval > 0 && millis() - lastPresenceOn > presenceInterval){
+            ArduinoMessage* msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_PRESENCE, 1);
+            msg->add(millis());
+            msg->add(!presenceSent); //reset presence in remote node
+            msg->add(mcp2515.getStatus());
+
+            if(!canSend){
+                canSend = true;
+                sendMessage(msg);
+                canSend = false;
+                allowSending();
+            } else {
+                sendMessage(msg);
+            }
+
+            lastPresenceOn = millis();
+            presenceSent = true;
         }
 
         if(lastError != MCP2515ErrorCode::NO_ERROR){
@@ -83,12 +145,13 @@ namespace Chetch{
             msg->add(mcp2515.getErrorFlags());
             msg->add(mcp2515.getStatus());
 
-            sendMessage(msg);
-
+            //TODO: restore this!!!
+            //sendMessage(msg);
+            
             //reset code
             lastError = MCP2515ErrorCode::NO_ERROR;
             lastErrorData = 0;
-        }
+        } 
     }
 
     bool MCP2515Device::allowSending(){
@@ -149,6 +212,10 @@ namespace Chetch{
                 amsg.tag = (tagAndCRC >> 5) & 0x07;
                 amsg.sender = nodeIDAndSender & 0x0F; //last 4 bits make the sender
                 byte sourceNodeID = nodeIDAndSender >> 4 & 0x0F; //first 4 bits are used for the remote node ID
+                byte timestamp = canInFrame.can_id & 0xFF;
+                //Serial.print("Received timestamp: ");
+                //Serial.println(timestamp);
+                
 
                 //Do some basic validationg
                 if(sourceNodeID < MIN_NODE_ID || sourceNodeID > MAX_NODE_ID){
@@ -166,34 +233,15 @@ namespace Chetch{
                     return; //ERROR....
                 }
 
-                //Add message arguments
-                /*if(canInFrame.can_dlc > 0){
-                    byte messageStructure = canInFrame.can_id & 0x000000FF;
-                    byte shiftRight = 6;
-                    byte argCount = 1 + ((messageStructure >> shiftRight) & 0b00000011);
-                    byte idx = 0;
-                    byte argSize = 0;
-                    for(int i = 0; i < argCount; i++){
-                        if(i < 3 && argCount > 1){
-                            shiftRight -= 2;
-                            argSize = 1 + ((messageStructure >> shiftRight) & 0b00000011);
-                        } else {
-                            argSize = canInFrame.can_dlc - idx;
-                        }
-                        amsg.addBytes(&canInFrame.data[idx], argSize);
-                        idx += argSize;
+                if(amsg.type != ArduinoMessage::MessageType::TYPE_PRESENCE){
+                    NodeDependency* nd = getDependency(sourceNodeID);
+                    if(nd != NULL && nd->isStale(timestamp)){
+                        raiseError(STALE_MESSAGE, canInFrame.can_id);
+                        return;
                     }
-                }*/
-
-                /*
-                Serial.println("Received ID: ");
-                for (int i = (sizeof(canInFrame.can_id) * 8) - 1; i >= 0; i--) { // Loop from bit 7 (MSB) down to 0 (LSB)
-                    Serial.print(bitRead(canInFrame.can_id, i)); // Print the value of the i-th bit
-                    if(i % 8 == 0)Serial.println("----");
-                }*/
+                }
                 
                 //By here we have received and successfully parsed an ArduinoMessage
-                allowSending();
                 indicate(true); 
 
                 handleReceivedMessage(sourceNodeID, &amsg);
@@ -239,12 +287,34 @@ namespace Chetch{
                 break;
 
             case ArduinoMessage::TYPE_COMMAND:
-                if(commandListener != NULL && message->getArgumentCount() > 0){
+                if(commandListener != NULL && canInFrame.can_dlc > 0){
+                    if(canInFrame.can_dlc == 1){
+                        message->populate<byte>(canInFrame.data);
+                    } else {
+                        message->populate<byte, byte>(canInFrame.data);
+                    }
                     command = message->get<ArduinoDevice::DeviceCommand>(0);
                     commandListener(this, sourceNodeID, command, message);
                     handled = true;
                 } else {
                     handled = false;
+                }
+                break;
+
+            case ArduinoMessage::TYPE_PRESENCE:
+                message->populate<unsigned long, bool, byte>(canInFrame.data);
+                NodeDependency* nd = getDependency(sourceNodeID);
+                if(nd != NULL){
+                    if(message->get<bool>(1)){ //reset node dependency (incase remote node restarted)
+                        nd->reset();
+                    }
+
+                    if(!nd->setNodeTime(message->get<unsigned long>(0))){
+                        raiseError(SYNC_ERROR, message->get<unsigned long>(0));
+                        handled = true;
+                    } else {
+                        //TODO: process other message values
+                    }                    
                 }
                 break;
 
@@ -254,7 +324,7 @@ namespace Chetch{
         }
 
         if(!handled && messageReceivedListener != NULL){
-            messageReceivedListener(this, sourceNodeID, message);
+            messageReceivedListener(this, sourceNodeID, message, canInFrame.data);
         }
     }
 
@@ -262,53 +332,29 @@ namespace Chetch{
         if(!canSend)return false;
 
         if(message == NULL){
-            raiseError(NO_MESSAGE);
+            raiseError(MCP2515ErrorCode::NO_MESSAGE);
             return false; //ERROR!
         }
-        if(message->getArgumentCount() > 4){
-            raiseError(INVALID_MESSAGE);
-            return false; //ERROR ... can data of 8 bytes sets this limit
-        }
         if(message->type > 31 || message->type < 1){
-            raiseError(INVALID_MESSAGE);
+            raiseError(MCP2515ErrorCode::INVALID_MESSAGE);
             return false; //ERROR .... not a valid message type
         }
+        
         if(message->tag > 7){
-            raiseError(INVALID_MESSAGE);
+            raiseError(MCP2515ErrorCode::INVALID_MESSAGE);
             return false; //ERROR .... tag values can only be 0 - 7
         }
+
         if(message->sender > 15){
-            raiseError(INVALID_MESSAGE);
+            raiseError(MCP2515ErrorCode::INVALID_MESSAGE);
             return false; //ERROR .... sender only has 4 bits available
         }
         
-        //Determine data length and message structure from original message
-        canOutFrame.can_dlc = 0;
-        byte messageStructure = 0;
-        if(message->getArgumentCount() <= 1){
-            canOutFrame.can_dlc = message->getArgumentCount() == 0 ? 0 : message->getArgumentSize(0);
-            if(canOutFrame.can_dlc > CAN_MAX_DLC){
-                raiseError(INVALID_MESSAGE);
-                return false; //ERROR ... can data of 8 bytes sets this limit
-            }
-        } else {
-            byte shiftLeft = 6;
-            messageStructure = ((message->getArgumentCount() - 1) << shiftLeft);
-            for(int i = 0; i < message->getArgumentCount(); i++){
-                if(message->getArgumentSize(i) > 4){
-                    raiseError(INVALID_MESSAGE);
-                    return false; //ERROR ... to keep structures representable by one byte we don't allow multi argument messages to have a single argument over 4 bytes
-                }
-                canOutFrame.can_dlc += message->getArgumentSize(i);
-                if(canOutFrame.can_dlc > CAN_MAX_DLC){
-                    raiseError(INVALID_MESSAGE);
-                    return false; //ERROR ... can data of 8 bytes sets this limit
-                }
-                if(i < 3){
-                    shiftLeft -= 2;
-                    messageStructure = messageStructure | (message->getArgumentSize(i) - 1 << shiftLeft);
-                }
-            }
+        
+        canOutFrame.can_dlc = message->getByteCount() - ArduinoMessage::HEADER_SIZE - message->getArgumentCount();
+        if(canOutFrame.can_dlc > CAN_MAX_DLC){
+            raiseError(MCP2515ErrorCode::INVALID_MESSAGE);
+            return false; //ERROR ... can data of 8 bytes sets this limit
         }
 
         //CAN DATA: copy message bytes to data array
@@ -328,8 +374,18 @@ namespace Chetch{
         byte messageType = message->type & 0x1F;
         byte nodeIDAndSender = (nodeID << 4 ) | (message->sender & 0x0F);
         byte tagAndCRC = (message->tag << 5) | crc5(canOutFrame.data, canOutFrame.can_dlc);
-        canOutFrame.can_id = (unsigned long)messageType << 24 | (unsigned long)nodeIDAndSender << 16 | (unsigned long)tagAndCRC << 8 | (unsigned long)messageStructure;
+        unsigned long ms = millis();
+        byte timestamp = (byte)((ms >> TIMESTAMP_RESOLUTION) & 0xFF);
+        //Serial.print("Send millis: ");
+        //Serial.println(ms);
+        //Serial.print("Send timestamp: ");
+        //Serial.println(timestamp);
+        canOutFrame.can_id = (unsigned long)messageType << 24 | (unsigned long)nodeIDAndSender << 16 | (unsigned long)tagAndCRC << 8 | (unsigned long)timestamp;
         canOutFrame.can_id |= CAN_EFF_FLAG;
+
+        if(sendValidator != NULL && !sendValidator(this, &amsg, canOutFrame.can_id, canOutFrame.data)){
+            return false;
+        }
 
         //Send the message and handle the response
         MCP2515::ERROR err = mcp2515.sendMessage(&canOutFrame);

@@ -78,7 +78,7 @@ namespace Chetch{
             ArduinoMessage(byte maxBytes);
             ~ArduinoMessage();
 
-            void clear();
+            void clear(bool argumentsOnly = false);
             bool isEmpty(); //type is NONE and no arguments
             void copy(ArduinoMessage *message);
 
@@ -112,6 +112,29 @@ namespace Chetch{
                     }
                     s[i] = 0;
                 }
+            }
+
+            template <typename T> void populate(byte* data){
+                clear(true); //clear away previous arguments
+                addBytes(&data[0], sizeof(T));
+            }
+
+            template <typename T1, typename T> void populate(byte* data){
+                populate<T1>(data);
+                byte idx = getByteCount() - ArduinoMessage::HEADER_SIZE - getArgumentCount();
+                addBytes(&data[idx], sizeof(T));
+            }
+
+            template <typename T1, typename T2, typename T> void populate(byte* data){
+                populate<T1, T2>(data);
+                byte idx = getByteCount() - ArduinoMessage::HEADER_SIZE - getArgumentCount();
+                addBytes(&data[idx], sizeof(T));
+            }
+
+            template <typename T1, typename T2, typename T3, typename T> void populate(byte* data){
+                populate<T1, T2, T3>(data);
+                byte idx = getByteCount() - ArduinoMessage::HEADER_SIZE - getArgumentCount();
+                addBytes(&data[idx], sizeof(T));
             }
 
             void addBytes(byte *bytev, byte bytec);

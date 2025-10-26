@@ -3,9 +3,9 @@
 
 
 namespace Chetch{
-    MCP2515Master::MCP2515Master(int csPin) : MCP2515Device(MASTER_NODE_ID, csPin)
-                                            , frecvmsg(ARDUINO_MESSAGE_SIZE + 12) //Add 12 bytes to allow for additional 'meta' data
-                                            , fsendmsg(ARDUINO_MESSAGE_SIZE + 12) //Add 12 bytes to allow for additional 'meta' data
+    MCP2515Master::MCP2515Master(unsigned int presenceInterval, int csPin) : MCP2515Device(MASTER_NODE_ID, presenceInterval, csPin)
+                                            , frecvmsg(18) //Add 12 bytes to allow for additional 'meta' data
+                                            , fsendmsg(18) //Add 12 bytes to allow for additional 'meta' data
 
     { }
 
@@ -71,7 +71,7 @@ namespace Chetch{
                     msg = getMessageForDevice(this, ArduinoMessage::TYPE_COMMAND, 1);
                     msg->add((byte)command);
                     int byteTotal = 1;
-                    for(byte i = 0; i < min(message->getArgumentCount(), 4) - 1; i++){
+                    for(byte i = 0; i < message->getArgumentCount(); i++){
                         byte bytec = message->getArgumentSize(i + 1);
                         byteTotal += bytec;
                         if(byteTotal >= CAN_MAX_DLC)break;
@@ -79,9 +79,9 @@ namespace Chetch{
                     }
                     sendMessage(msg);
 
-                    //We call this as it will trigger the commandListener if one is present
-                    MCP2515Device::handleReceivedMessage(getNodeID(), msg);
-                    
+                    if(commandListener != NULL){
+                        commandListener(this, getNodeID(), command, message);
+                    }
                     handled = true;
                     break;
             }
@@ -92,9 +92,12 @@ namespace Chetch{
     bool MCP2515Master::sendMessage(ArduinoMessage *message){
         if(MCP2515Device::sendMessage(message)){
             fsendmsg.clear();
-            fsendmsg.copy(message);
+            fsendmsg.tag = message->tag;
+            fsendmsg.sender = message->sender;
+
+            fsendmsg.addBytes(canOutFrame.data, canOutFrame.can_dlc);
+            
             fsendmsg.add(canOutFrame.can_id);
-            fsendmsg.add((byte)canOutFrame.can_dlc);
             fsendmsg.add(message->type);
 
             enqueueMessageToSend(MESSAGE_ID_FORWARD_SENT, MESSAGE_ID_FORWARD_SENT);
@@ -109,9 +112,12 @@ namespace Chetch{
         
         //Make sure we take a copy of this message if we are forwarding stuff
         frecvmsg.clear();
-        frecvmsg.copy(message);
+        frecvmsg.tag = message->tag;
+        frecvmsg.sender = message->sender;
+
+        frecvmsg.addBytes(canInFrame.data, canInFrame.can_dlc);
+        
         frecvmsg.add(canInFrame.can_id);
-        frecvmsg.add((byte)canInFrame.can_dlc);
         frecvmsg.add(message->type);
         
         enqueueMessageToSend(MESSAGE_ID_FORWARD_RECEIVED, MESSAGE_ID_FORWARD_RECEIVED);
