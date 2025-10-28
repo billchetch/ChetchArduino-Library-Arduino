@@ -74,7 +74,7 @@ namespace Chetch{
         if(errorCounts[idx] < 255)errorCounts[idx]++;
 
         if(errorListener != NULL){
-            errorListener(this, errorCode);
+            errorListener(this, errorCode, errorData);
         }
     }
 
@@ -89,8 +89,8 @@ namespace Chetch{
         return NULL;
     }
 
-    bool MCP2515Device::addNodeDependency(byte nodeID){
-        NodeDependency* nd = new NodeDependency(nodeID);
+    bool MCP2515Device::addNodeDependency(byte nodeID, byte tolerance){
+        NodeDependency* nd = new NodeDependency(nodeID, tolerance);
 
         if(firstDependency == NULL){
             firstDependency = nd;
@@ -118,9 +118,11 @@ namespace Chetch{
 
         readMessage();    
     
-        if(presenceInterval > 0 && millis() - lastPresenceOn > presenceInterval){
+        unsigned long ms = millis();
+        if(presenceInterval > 0 && ms - lastPresenceOn > presenceInterval){
             ArduinoMessage* msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_PRESENCE, 1);
             msg->add(millis());
+            msg->add((unsigned int)(ms - lastPresenceOn));
             msg->add(!presenceSent); //reset presence in remote node
             msg->add(mcp2515.getStatus());
 
@@ -290,8 +292,10 @@ namespace Chetch{
                 if(commandListener != NULL && canInFrame.can_dlc > 0){
                     if(canInFrame.can_dlc == 1){
                         message->populate<byte>(canInFrame.data);
-                    } else {
+                    } else if(canInFrame.can_dlc == 2){
                         message->populate<byte, byte>(canInFrame.data);
+                    } else {
+                        message->populate<byte, byte, int>(canInFrame.data);
                     }
                     command = message->get<ArduinoDevice::DeviceCommand>(0);
                     commandListener(this, sourceNodeID, command, message);
@@ -302,15 +306,15 @@ namespace Chetch{
                 break;
 
             case ArduinoMessage::TYPE_PRESENCE:
-                message->populate<unsigned long, bool, byte>(canInFrame.data);
+                message->populate<unsigned long, unsigned int, bool, byte>(canInFrame.data);
                 NodeDependency* nd = getDependency(sourceNodeID);
                 if(nd != NULL){
-                    if(message->get<bool>(1)){ //reset node dependency (incase remote node restarted)
+                    if(message->get<bool>(2)){ //reset node dependency (incase remote node restarted)
                         nd->reset();
                     }
-
-                    if(!nd->setNodeTime(message->get<unsigned long>(0))){
-                        raiseError(SYNC_ERROR, message->get<unsigned long>(0));
+                    unsigned long ent = nd->getEstimatedNodeTime();
+                    if(!nd->setNodeTime(message->get<unsigned long>(0), message->get<unsigned int>(1))){
+                        raiseError(SYNC_ERROR, ent);
                         handled = true;
                     } else {
                         //TODO: process other message values

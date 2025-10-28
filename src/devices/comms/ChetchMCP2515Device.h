@@ -135,13 +135,15 @@ namespace Chetch{
                     unsigned long nodeTime = 0;
                     unsigned long updatedOn = 0;
                     bool updated = false;
+                    byte tolerance = 1;
 
                 public:
                     NodeDependency* next = NULL;
 
                 public: 
-                    NodeDependency(byte nid){
+                    NodeDependency(byte nid, byte tolerance = 1){
                         nodeID = nid;
+                        this->tolerance = tolerance;
                     }
 
                     byte getNodeID(){ return nodeID; }
@@ -152,21 +154,22 @@ namespace Chetch{
                         updated = 0;
                     }
 
-                    bool inSync(unsigned long ms){
+                    bool inSync(unsigned long ms, unsigned int msElapsed){
                         if(!updated)return true;
 
                         unsigned long ent = getEstimatedNodeTime();
 
+                        unsigned int tolerance = msElapsed / 200; //allow for drift of 0.5% according to specs
                         if(ent > ms){
-                            return ent - ms < 8;
+                            return ent - ms <= tolerance;
                         } else {
-                            return ms - ent < 8;
+                            return ms - ent <= tolerance;
                         }
                     }
 
-                    bool setNodeTime(unsigned long ms){
-                        bool sync = inSync(ms);
-
+                    bool setNodeTime(unsigned long ms, unsigned int msElapsed){
+                        bool sync = inSync(ms, msElapsed);
+                        
                         nodeTime = ms;
                         updatedOn = millis();
                         updated = true;
@@ -180,6 +183,7 @@ namespace Chetch{
                         return (millis() - updatedOn) + nodeTime;
                     }
 
+                    
                     bool isStale(byte timestamp, byte resolution = TIMESTAMP_RESOLUTION){
                         if(!updated)return false;
 
@@ -187,13 +191,14 @@ namespace Chetch{
 
                         int diff = abs((int)timestamp - (int)estimatedTimestamp);
                         diff = min(diff, 256 - diff);
-                        return diff > 1;
+
+                        return diff > tolerance;
                     }
             };
 
             typedef void (*MessageListener)(MCP2515Device*, byte, ArduinoMessage*, byte*); //device, node, message, canData
             typedef void (*CommandListener)(MCP2515Device*, byte, ArduinoDevice::DeviceCommand, ArduinoMessage*);
-            typedef void (*ErrorListener)(MCP2515Device*, MCP2515ErrorCode);
+            typedef void (*ErrorListener)(MCP2515Device*, MCP2515ErrorCode, unsigned long errorData);
             typedef bool (*SendValidator)(MCP2515Device*, ArduinoMessage*, unsigned long canID, byte* canData);
 
             MCP2515 mcp2515; //should be moved to private
@@ -249,7 +254,7 @@ namespace Chetch{
             void reset();
             bool begin() override;
             virtual bool allowSending();
-            bool addNodeDependency(byte nodeID);
+            bool addNodeDependency(byte nodeID, byte tolerance = 1);
             NodeDependency* getDependency(byte nodeID);
             
             virtual void raiseError(MCP2515ErrorCode errorCode, unsigned long errorData = 0);
