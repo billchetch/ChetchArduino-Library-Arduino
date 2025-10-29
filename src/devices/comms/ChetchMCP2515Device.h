@@ -110,7 +110,8 @@ namespace Chetch{
             static const int NO_FILTER = -1;
             static const unsigned int PRESENCE_INTERVAL = 2000;
             static const byte TIMESTAMP_RESOLUTION = 4; //Shift right by this many bits... lower number makes finer resolution
-            
+            static const unsigned int INDICATOR_INTERVAL = 50;
+
             static const byte EVENT_READTY_TO_SEND = 1;
 
             enum MCP2515ErrorCode{
@@ -159,11 +160,11 @@ namespace Chetch{
 
                         unsigned long ent = getEstimatedNodeTime();
 
-                        unsigned int tolerance = msElapsed / 200; //allow for drift of 0.5% according to specs
+                        unsigned int tol = msElapsed / 200; //allow for drift of 0.5% according to specs
                         if(ent > ms){
-                            return ent - ms <= tolerance;
+                            return ent - ms <= tol;
                         } else {
-                            return ms - ent <= tolerance;
+                            return ms - ent <= tol;
                         }
                     }
 
@@ -209,6 +210,8 @@ namespace Chetch{
             
             byte nodeID = 0;
             byte indicatorPin = CAN_DEFAULT_INDICATOR_PIN;
+            bool indicated = false;
+            unsigned long indicatedOn = 0;
 
             NodeDependency* firstDependency = NULL;
 
@@ -260,7 +263,7 @@ namespace Chetch{
             virtual void raiseError(MCP2515ErrorCode errorCode, unsigned long errorData = 0);
             byte* getErrorCounts(){ return errorCounts; }
 
-            void indicate(bool on);
+            void indicate(bool on, bool force = false);
             void loop() override;
             
             void addMessageReceivedListener(MessageListener listener){ messageReceivedListener = listener; }

@@ -61,8 +61,17 @@ namespace Chetch{
         return begun;
 	}
 
-    void MCP2515Device::indicate(bool on){
-        if(indicatorPin > 0)digitalWrite(indicatorPin, on ? HIGH : LOW);
+     void MCP2515Device::indicate(bool on, bool force){
+        if(on == indicated || indicatorPin == 0)return; 
+
+        if(on){
+            indicatedOn = millis();
+            indicated = true;
+            digitalWrite(indicatorPin, HIGH);
+        } else if(force || millis() - indicatedOn > INDICATOR_INTERVAL){
+            indicated = false;
+            digitalWrite(indicatorPin, LOW);
+        }
     }
 
     void MCP2515Device::raiseError(MCP2515ErrorCode errorCode, unsigned long errorData){
@@ -147,8 +156,7 @@ namespace Chetch{
             msg->add(mcp2515.getErrorFlags());
             msg->add(mcp2515.getStatus());
 
-            //TODO: restore this!!!
-            //sendMessage(msg);
+            sendMessage(msg);
             
             //reset code
             lastError = MCP2515ErrorCode::NO_ERROR;
