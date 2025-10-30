@@ -4,8 +4,8 @@
 
 namespace Chetch{
     MCP2515Master::MCP2515Master(unsigned int presenceInterval, int csPin) : MCP2515Device(MASTER_NODE_ID, presenceInterval, csPin)
-                                            , frecvmsg(18) //Add 12 bytes to allow for additional 'meta' data
-                                            , fsendmsg(18) //Add 12 bytes to allow for additional 'meta' data
+                                            , frecvmsg(20) //Add 12 bytes to allow for additional 'meta' data
+                                            , fsendmsg(20) //Add 12 bytes to allow for additional 'meta' data
 
     { }
 
@@ -119,7 +119,7 @@ namespace Chetch{
         
         frecvmsg.add(canInFrame.can_id);
         frecvmsg.add(message->type);
-        
+
         enqueueMessageToSend(MESSAGE_ID_FORWARD_RECEIVED, MESSAGE_ID_FORWARD_RECEIVED);
 
         MCP2515Device::handleReceivedMessage(sourceNodeID, message);
