@@ -246,7 +246,7 @@ namespace Chetch{
                 if(amsg.type != ArduinoMessage::MessageType::TYPE_PRESENCE){
                     NodeDependency* nd = getDependency(sourceNodeID);
                     if(nd != NULL && nd->isStale(timestamp)){
-                        raiseError(STALE_MESSAGE, canInFrame.can_id);
+                        raiseError(STALE_MESSAGE, nd->getDiff(timestamp));
                         return;
                     }
                 }

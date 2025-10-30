@@ -184,16 +184,18 @@ namespace Chetch{
                         return (millis() - updatedOn) + nodeTime;
                     }
 
-                    
-                    bool isStale(byte timestamp, byte resolution = TIMESTAMP_RESOLUTION){
-                        if(!updated)return false;
-
+                    int getDiff(byte timestamp, byte resolution = TIMESTAMP_RESOLUTION){
                         byte estimatedTimestamp = (byte)((getEstimatedNodeTime() >> resolution) & 0xFF);
 
                         int diff = abs((int)timestamp - (int)estimatedTimestamp);
                         diff = min(diff, 256 - diff);
+                        return diff;
+                    }
 
-                        return diff > tolerance;
+                    bool isStale(byte timestamp, byte resolution = TIMESTAMP_RESOLUTION){
+                        if(!updated)return false;
+
+                        return getDiff(timestamp, resolution) > tolerance;
                     }
             };
 
