@@ -236,7 +236,7 @@ namespace Chetch{
             MCP2515ErrorCode lastError = MCP2515ErrorCode::NO_ERROR;
             unsigned long lastErrorData = 0;
             byte errorCounts[12];
-            unsigned int errorCountFlags = 0;
+            unsigned int errorCodeFlags = 0;
             unsigned long lastErrorOn = 0;
             
 

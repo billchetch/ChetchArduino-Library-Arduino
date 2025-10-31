@@ -33,7 +33,7 @@ namespace Chetch{
         message->add((byte)mcp2515.getErrorFlags());
         message->add((byte)mcp2515.errorCountTX());
         message->add((byte)mcp2515.errorCountRX());
-        message->add(errorCountFlags);
+        message->add(errorCodeFlags);
         message->add(canSend);
     }
 
