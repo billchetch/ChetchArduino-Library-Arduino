@@ -81,6 +81,8 @@ namespace Chetch{
         lastErrorOn = millis();
         byte idx = (byte)(errorCode) - 1;
         if(errorCounts[idx] < 255)errorCounts[idx]++;
+        unsigned int emask = (1 << idx);
+        errorCountFlags = errorCountFlags | emask;
 
         if(errorListener != NULL){
             errorListener(this, errorCode, errorData);
@@ -290,6 +292,7 @@ namespace Chetch{
                 msg->add(mcp2515.getErrorFlags());
                 msg->add(mcp2515.errorCountTX());
                 msg->add(mcp2515.errorCountRX());
+                msg->add(errorCountFlags);
                 
                 //NOTE: We are sending out a message during a possible readMessage execution
                 sendMessage(msg);

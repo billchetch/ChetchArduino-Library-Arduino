@@ -236,7 +236,9 @@ namespace Chetch{
             MCP2515ErrorCode lastError = MCP2515ErrorCode::NO_ERROR;
             unsigned long lastErrorData = 0;
             byte errorCounts[12];
+            unsigned int errorCountFlags = 0;
             unsigned long lastErrorOn = 0;
+            
 
             bool canSend = false; //is set to true if either a message is received or a certain period has elapsed
             
