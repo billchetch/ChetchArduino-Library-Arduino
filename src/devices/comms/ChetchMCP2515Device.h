@@ -123,7 +123,7 @@ namespace Chetch{
                 FAIL_TX, //TX error
                 ALL_TX_BUSY, //TX error
                 READ_FAIL, //RX error
-                CRC_ERROR, //RX error (probably from SPI issues but who knows.. ba)
+                CRC_ERROR, //RX error (probably from SPI issues but who knows.. )
                 STALE_MESSAGE, //an old message
                 SYNC_ERROR, //if presence is out of sync
                 CUSTOM_ERROR, //For individual applications
