@@ -227,6 +227,9 @@ namespace Chetch{
             unsigned long lastPresenceOn = 0;
             bool presenceSent = false; //to indicate first presence sent
 
+            bool statusRequested = false;
+            bool pinged = false;
+
         protected:
             MessageListener messageReceivedListener = NULL;
             CommandListener commandListener = NULL;
@@ -269,6 +272,8 @@ namespace Chetch{
 
             void indicate(bool on, bool force = false);
             void loop() override;
+            void setStatusInfo(ArduinoMessage* response) override;
+            void setPingInfo(ArduinoMessage* response) override;
             
             void addMessageReceivedListener(MessageListener listener){ messageReceivedListener = listener; }
             void addCommandListener(CommandListener listener){ commandListener = listener; }

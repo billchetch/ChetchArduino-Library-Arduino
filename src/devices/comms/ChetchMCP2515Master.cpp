@@ -26,13 +26,10 @@ namespace Chetch{
             return false;
         }
     }
+    
     void MCP2515Master::setStatusInfo(ArduinoMessage* message){
-        ArduinoDevice::setStatusInfo(message);
         message->add(getNodeID());
-        message->add((byte)mcp2515.getStatus());
-        message->add((byte)mcp2515.getErrorFlags());
-        message->add((byte)mcp2515.errorCountTX());
-        message->add((byte)mcp2515.errorCountRX());
+        ArduinoDevice::setStatusInfo(message);
         message->add(errorCodeFlags);
         message->add(canSend);
     }
@@ -64,6 +61,9 @@ namespace Chetch{
                 case ArduinoDevice::REQUEST: //Message from outside BUS .. all nodes should respond to this
                     reqType = (ArduinoMessage::MessageType)message->get<ArduinoMessage::MessageType>(1);
                     msg = getMessageForDevice(this, reqType, message->tag);
+                    if(message->getArgumentCount()== 2){
+                        msg->add(message->get<byte>(2));
+                    }
                     sendMessage(msg);
                     handled = true;
                     break;

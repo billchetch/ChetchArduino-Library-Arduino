@@ -26,6 +26,10 @@ namespace Chetch{
         message->add(reportInterval);
     }
 
+    void ArduinoDevice::setPingInfo(ArduinoMessage* message){
+        message->add(millis());
+    }
+
     void ArduinoDevice::handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response){
         switch(message->type){
             case ArduinoMessage::TYPE_STATUS_REQUEST:
@@ -35,7 +39,7 @@ namespace Chetch{
 
             case ArduinoMessage::TYPE_PING:
                 response->type = ArduinoMessage::TYPE_PING_RESPONSE;
-                response->add(millis());
+                setPingInfo(response);
                 break;
 
             case ArduinoMessage::TYPE_COMMAND:

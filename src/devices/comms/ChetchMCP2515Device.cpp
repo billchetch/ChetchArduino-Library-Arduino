@@ -130,8 +130,9 @@ namespace Chetch{
         readMessage();    
     
         unsigned long ms = millis();
+        ArduinoMessage* msg;
         if(presenceInterval > 0 && ms - lastPresenceOn > presenceInterval){
-            ArduinoMessage* msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_PRESENCE, 1);
+            msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_PRESENCE, 1);
             msg->add(millis());
             msg->add((unsigned int)(ms - lastPresenceOn));
             msg->add(!presenceSent); //reset presence in remote node
@@ -148,11 +149,9 @@ namespace Chetch{
 
             lastPresenceOn = millis();
             presenceSent = true;
-        }
-
-        if(lastError != MCP2515ErrorCode::NO_ERROR){
+        } else if(lastError != MCP2515ErrorCode::NO_ERROR){
             //send error message
-            ArduinoMessage* msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_ERROR, 1);
+            msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_ERROR, 1);
             msg->add((byte)lastError);
             msg->add(lastErrorData);
             msg->add(mcp2515.getErrorFlags());
@@ -163,7 +162,17 @@ namespace Chetch{
             //reset code
             lastError = MCP2515ErrorCode::NO_ERROR;
             lastErrorData = 0;
-        } 
+        } else if(statusRequested){
+            msg = getMessageForDevice(this, ArduinoMessage::TYPE_STATUS_RESPONSE);
+            setStatusInfo(msg);
+            sendMessage(msg);
+            statusRequested = false;
+        } else if(pinged){
+            msg = getMessageForDevice(this, ArduinoMessage::TYPE_PING_RESPONSE);
+            setPingInfo(msg);
+            sendMessage(msg);
+            pinged = false;
+        }
     }
 
     bool MCP2515Device::allowSending(){
@@ -273,6 +282,18 @@ namespace Chetch{
         }
     }
 
+    void MCP2515Device::setStatusInfo(ArduinoMessage* message){
+        message->add(mcp2515.getStatus());
+        message->add(mcp2515.getErrorFlags());
+        message->add(mcp2515.errorCountTX());
+        message->add(mcp2515.errorCountRX());
+        message->add(errorCodeFlags);
+    }
+
+    void MCP2515Device::setPingInfo(ArduinoMessage* message){
+        
+    }
+
     void MCP2515Device::handleReceivedMessage(byte sourceNodeID, ArduinoMessage* message){
             
         //The concern here is that a messageReceivedListener will often send out a message
@@ -286,17 +307,21 @@ namespace Chetch{
 
         switch(message->type){
             case ArduinoMessage::TYPE_STATUS_REQUEST:
-                msg = getMessageForDevice(this, ArduinoMessage::TYPE_STATUS_RESPONSE, message->tag);
-                
-                msg->add(mcp2515.getStatus());
-                msg->add(mcp2515.getErrorFlags());
-                msg->add(mcp2515.errorCountTX());
-                msg->add(mcp2515.errorCountRX());
-                msg->add(errorCodeFlags);
-                
-                //NOTE: We are sending out a message during a possible readMessage execution
-                sendMessage(msg);
+                //msg = getMessageForDevice(this, ArduinoMessage::TYPE_STATUS_RESPONSE, message->tag);
+                statusRequested = true;
+
                 handled = true;
+                break;
+
+            case ArduinoMessage::TYPE_PING:
+                message->populate<byte>(canInFrame.data);
+                byte target = message->get<byte>(0);
+                if(target == getNodeID()){
+                    pinged = true;
+                    handled = true;
+                } else {
+                    handled = false;
+                }
                 break;
 
             case ArduinoMessage::TYPE_COMMAND:
