@@ -20,19 +20,22 @@ namespace Chetch{
         }
     }
 
-    void MCP2515Device::reset(){
-        maskNum = 0;
-        filterNum = 0;
-        mcp2515.reset();
+    void MCP2515Device::resetErrors(){
+        for(byte i = 0;i < 12; i++){
+            errorCounts[i] = 0;
+        }
+        lastError = NO_ERROR;
+        lastErrorOn = 0;
+        lastErrorData = 0;
+        errorCodeFlags = 0;
     }
 
     void MCP2515Device::init(){
         if(!initialised){
-            reset();
-
-            for(byte i = 0;i < 11; i++){
-                errorCounts[i] = 0;
-            }
+            maskNum = 0;
+            filterNum = 0;
+            mcp2515.reset();
+            resetErrors();
             initialised = true;
         }
     }
@@ -263,7 +266,7 @@ namespace Chetch{
                 }
                 
                 //By here we have received and successfully parsed an ArduinoMessage
-                indicate(true); 
+                if(canIndicate(INDICATE_ON_RECIEVE))indicate(true); 
 
                 handleReceivedMessage(sourceNodeID, &amsg);
                 break;
@@ -431,7 +434,7 @@ namespace Chetch{
         MCP2515::ERROR err = mcp2515.sendMessage(&canOutFrame);
         switch(err){
             case MCP2515::ERROR_OK:
-                indicate(true);
+                if(canIndicate(INDICATE_ON_SEND))indicate(true); indicate(true);
                 return true;
             case MCP2515::ERROR_FAILTX:
                 raiseError(MCP2515ErrorCode::FAIL_TX);

@@ -129,6 +129,13 @@ namespace Chetch{
                 CUSTOM_ERROR, //For individual applications
                 DEBUG_ASSERT, //For debug purposes
             };
+
+            enum IndicateMode{
+                NO_INDICATOR = 0,
+                INDICATE_ON_SEND = 1,
+                INDICATE_ON_RECIEVE = 2,
+                INDICATE_FULL = 3
+            };
             
             class NodeDependency{
                 public: //NOTE: change to private
@@ -215,12 +222,12 @@ namespace Chetch{
             bool indicated = false;
             unsigned long indicatedOn = 0;
 
-            NodeDependency* firstDependency = NULL;
-
-            
+            NodeDependency* firstDependency = NULL; 
 
             byte maskNum = 0; //max is 1
             byte filterNum = 0; //max is 5 after regNum == 1 then maskNum increments
+
+            IndicateMode indicateMode = INDICATE_ON_SEND;
 
         public: //SHOULD BE PRIVATE
             unsigned int presenceInterval = 0; //how often to broadcast a PRESENCE message
@@ -261,7 +268,7 @@ namespace Chetch{
             ~MCP2515Device();
 
             byte getNodeID(){ return nodeID; }
-            void reset();
+            void resetErrors();
             bool begin() override;
             virtual bool allowSending();
             bool addNodeDependency(byte nodeID, byte tolerance = 1);
@@ -271,6 +278,8 @@ namespace Chetch{
             byte* getErrorCounts(){ return errorCounts; }
 
             void indicate(bool on, bool force = false);
+            bool canIndicate(IndicateMode mode){ return mode & indicateMode == mode; }
+            void setIndicateMode(IndicateMode mode){ indicateMode = mode; }
             void loop() override;
             void setStatusInfo(ArduinoMessage* response) override;
             void setPingInfo(ArduinoMessage* response) override;
