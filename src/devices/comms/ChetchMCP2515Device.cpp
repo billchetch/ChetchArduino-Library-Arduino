@@ -310,21 +310,19 @@ namespace Chetch{
 
         switch(message->type){
             case ArduinoMessage::TYPE_STATUS_REQUEST:
-                //msg = getMessageForDevice(this, ArduinoMessage::TYPE_STATUS_RESPONSE, message->tag);
                 statusRequested = true;
-
                 handled = true;
                 break;
 
             case ArduinoMessage::TYPE_PING:
                 message->populate<byte>(canInFrame.data);
-                byte target = message->get<byte>(0);
+                /*byte target = message->get<byte>(0);
                 if(target == getNodeID()){
                     pinged = true;
                     handled = true;
                 } else {
                     handled = false;
-                }
+                }*/
                 break;
 
             case ArduinoMessage::TYPE_COMMAND:

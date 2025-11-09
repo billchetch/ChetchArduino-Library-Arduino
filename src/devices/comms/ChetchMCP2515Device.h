@@ -289,7 +289,7 @@ namespace Chetch{
             void addSendValidator(SendValidator validator){ sendValidator = validator; }
             void addErrorListener(ErrorListener listener){ errorListener = listener; }
 
-            ArduinoMessage* getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType = ArduinoMessage::TYPE_DATA, byte tag = 0);
+            ArduinoMessage* getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType, byte tag = 0);
             virtual bool sendMessage(ArduinoMessage *message);
             void readMessage();
             virtual void handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message);
