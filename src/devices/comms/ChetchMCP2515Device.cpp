@@ -157,9 +157,9 @@ namespace Chetch{
             msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_ERROR, 1);
             msg->add((byte)lastError);
             msg->add(lastErrorData);
+            msg->add(errorCodeFlags);
             msg->add(mcp2515.getErrorFlags());
-            msg->add(mcp2515.getStatus());
-
+            
             sendMessage(msg);
             
             //reset code
@@ -257,16 +257,34 @@ namespace Chetch{
                     return; //ERROR....
                 }
 
-                if(amsg.type != ArduinoMessage::MessageType::TYPE_PRESENCE){
-                    NodeDependency* nd = getDependency(sourceNodeID);
-                    if(nd != NULL && nd->isStale(timestamp)){
-                        raiseError(STALE_MESSAGE, nd->getDiff(timestamp));
-                        return;
+                //handle node dependency
+                NodeDependency* nd = getDependency(sourceNodeID);
+                if(nd != NULL){
+                    if(amsg.type == ArduinoMessage::MessageType::TYPE_PRESENCE){
+                        amsg.populate<unsigned long, unsigned int, bool, byte>(canInFrame.data);
+                        if(amsg.get<bool>(2)){ //reset node dependency (incase remote node restarted)
+                            nd->reset();
+                        }
+                        unsigned long ent = nd->getEstimatedNodeTime();
+                        if(!nd->setNodeTime(amsg.get<unsigned long>(0), amsg.get<unsigned int>(1))){
+                            raiseError(SYNC_ERROR, ent);
+                            return;
+                        } else {
+                            //TODO: process other message values
+                        }
+                    } else { //check for stame messages
+                        if(nd->isStale(timestamp)){
+                            unsigned long edata = (unsigned long)sourceNodeID << 24 | (unsigned long)amsg.type << 16 | nd->getDiff(timestamp);
+                            raiseError(STALE_MESSAGE, edata);
+                            return;
+                        }
                     }
                 }
                 
                 //By here we have received and successfully parsed an ArduinoMessage
-                if(canIndicate(INDICATE_ON_RECIEVE))indicate(true); 
+                if(canIndicate(INDICATE_ON_RECIEVE)){
+                    indicate(true); 
+                }
 
                 handleReceivedMessage(sourceNodeID, &amsg);
                 break;
@@ -331,31 +349,17 @@ namespace Chetch{
                         message->populate<byte>(canInFrame.data);
                     } else if(canInFrame.can_dlc == 2){
                         message->populate<byte, byte>(canInFrame.data);
-                    } else {
+                    } else if(canInFrame.can_dlc == 4){
                         message->populate<byte, byte, int>(canInFrame.data);
+                    } else {
+                        raiseError(UNKNOWN_RECEIVE_ERROR, 1);
+                        return;
                     }
                     command = message->get<ArduinoDevice::DeviceCommand>(0);
                     commandListener(this, sourceNodeID, command, message);
                     handled = true;
                 } else {
                     handled = false;
-                }
-                break;
-
-            case ArduinoMessage::TYPE_PRESENCE:
-                message->populate<unsigned long, unsigned int, bool, byte>(canInFrame.data);
-                NodeDependency* nd = getDependency(sourceNodeID);
-                if(nd != NULL){
-                    if(message->get<bool>(2)){ //reset node dependency (incase remote node restarted)
-                        nd->reset();
-                    }
-                    unsigned long ent = nd->getEstimatedNodeTime();
-                    if(!nd->setNodeTime(message->get<unsigned long>(0), message->get<unsigned int>(1))){
-                        raiseError(SYNC_ERROR, ent);
-                        handled = true;
-                    } else {
-                        //TODO: process other message values
-                    }                    
                 }
                 break;
 
@@ -432,7 +436,9 @@ namespace Chetch{
         MCP2515::ERROR err = mcp2515.sendMessage(&canOutFrame);
         switch(err){
             case MCP2515::ERROR_OK:
-                if(canIndicate(INDICATE_ON_SEND))indicate(true); indicate(true);
+                if(canIndicate(INDICATE_ON_SEND)){
+                    indicate(true);
+                }
                 return true;
             case MCP2515::ERROR_FAILTX:
                 raiseError(MCP2515ErrorCode::FAIL_TX);

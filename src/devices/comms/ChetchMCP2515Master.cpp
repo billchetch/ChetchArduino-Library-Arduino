@@ -81,12 +81,13 @@ namespace Chetch{
                         msg->addBytes(message->getArgument(i + 1), bytec);
                     }
 
-                    if(commandListener != NULL){
-                        commandListener(this, getNodeID(), command, message);
-                    }
-
                     //send using base method so as not to send a message back to the sender of this command
                     MCP2515Device::sendMessage(msg);
+
+                    if(commandListener != NULL){
+                        commandListener(this, getNodeID(), command, msg);
+                    }
+
                     handled = true;
                     break;
             }
