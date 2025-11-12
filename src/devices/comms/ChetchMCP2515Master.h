@@ -36,6 +36,7 @@ namespace Chetch{
             
             void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
             void setStatusInfo(ArduinoMessage* response) override;
+            void setPingInfo(ArduinoMessage* response) override; //this is called upon receiving a message fro
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
             bool sendMessage(ArduinoMessage *message) override;

@@ -34,6 +34,11 @@ namespace Chetch{
         message->add(canSend);
     }
 
+    void MCP2515Master::setPingInfo(ArduinoMessage* message){
+        indicate(true);
+        MCP2515Device::setPingInfo(message);
+    }
+
     void MCP2515Master::populateOutboundMessage(ArduinoMessage* message, byte messageID){
         MCP2515Device::populateOutboundMessage(message, messageID);
 

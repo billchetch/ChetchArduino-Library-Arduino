@@ -130,13 +130,13 @@ namespace Chetch{
         indicate(false);
         ArduinoDevice::loop();
 
-        readMessage();    
-    
+        readMessage();
+
         unsigned long ms = millis();
         ArduinoMessage* msg;
         if(presenceInterval > 0 && ms - lastPresenceOn > presenceInterval){
             msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_PRESENCE, 1);
-            msg->add(millis());
+            msg->add(ms);
             msg->add((unsigned int)(ms - lastPresenceOn));
             msg->add(!presenceSent); //reset presence in remote node
             msg->add(mcp2515.getStatus());
@@ -312,7 +312,8 @@ namespace Chetch{
     }
 
     void MCP2515Device::setPingInfo(ArduinoMessage* message){
-        
+        ArduinoDevice::setPingInfo(message);
+        //TODO: add something more here??
     }
 
     void MCP2515Device::handleReceivedMessage(byte sourceNodeID, ArduinoMessage* message){
@@ -325,6 +326,7 @@ namespace Chetch{
         //check the message type in case we need to handle messages directed to this device specifically
         ArduinoDevice::DeviceCommand command;
         ArduinoMessage* msg;
+        byte target = 0;
 
         switch(message->type){
             case ArduinoMessage::TYPE_STATUS_REQUEST:
@@ -333,14 +335,15 @@ namespace Chetch{
                 break;
 
             case ArduinoMessage::TYPE_PING:
+                indicate(true);    
                 message->populate<byte>(canInFrame.data);
-                /*byte target = message->get<byte>(0);
+                target = message->get<byte>(0);
                 if(target == getNodeID()){
                     pinged = true;
                     handled = true;
                 } else {
                     handled = false;
-                }*/
+                }
                 break;
 
             case ArduinoMessage::TYPE_COMMAND:
@@ -440,12 +443,15 @@ namespace Chetch{
                     indicate(true);
                 }
                 return true;
+
             case MCP2515::ERROR_FAILTX:
                 raiseError(MCP2515ErrorCode::FAIL_TX);
                 return false;
+
             case MCP2515::ERROR_ALLTXBUSY:
                 raiseError(MCP2515ErrorCode::ALL_TX_BUSY);
                 return false;
+
             default:
                 raiseError(MCP2515ErrorCode::UNKNOWN_SEND_ERROR);
                 return false;
