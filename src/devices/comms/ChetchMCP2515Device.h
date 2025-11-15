@@ -99,6 +99,7 @@ D7: TX2IF (CANINTF[4]) Transmit Buffer-2-Empty Interrupt Flag bit
 #define CAN_AS_LOOPBACK false
 #define CAN_DEFAULT_CS_PIN 10
 #define CAN_DEFAULT_INDICATOR_PIN 9
+#define COUNT_ERROR_CODES 12 //Set to 0 to not use error counts
 
 namespace Chetch{
     class MCP2515Device : public ArduinoDevice{
@@ -234,6 +235,7 @@ namespace Chetch{
             unsigned long lastPresenceOn = 0;
             bool presenceSent = false; //to indicate first presence sent
 
+            bool remoteInitialised = false;
             bool statusRequested = false;
             bool pinged = false;
 
@@ -245,7 +247,7 @@ namespace Chetch{
 
             MCP2515ErrorCode lastError = MCP2515ErrorCode::NO_ERROR;
             unsigned long lastErrorData = 0;
-            byte errorCounts[12];
+            byte errorCounts[COUNT_ERROR_CODES];
             unsigned int errorCodeFlags = 0;
             unsigned long lastErrorOn = 0;
             

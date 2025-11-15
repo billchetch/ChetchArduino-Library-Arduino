@@ -21,7 +21,7 @@ namespace Chetch{
     }
 
     void MCP2515Device::resetErrors(){
-        for(byte i = 0;i < 12; i++){
+        for(byte i = 0;i < COUNT_ERROR_CODES; i++){
             errorCounts[i] = 0;
         }
         lastError = NO_ERROR;
@@ -165,16 +165,20 @@ namespace Chetch{
             //reset code
             lastError = MCP2515ErrorCode::NO_ERROR;
             lastErrorData = 0;
+        } else if(remoteInitialised){
+            msg = getMessageForDevice(this, ArduinoMessage::TYPE_INITIALISE_RESPONSE);
+            sendMessage(msg);
+            remoteInitialised = false; //reset flag
         } else if(statusRequested){
             msg = getMessageForDevice(this, ArduinoMessage::TYPE_STATUS_RESPONSE);
             setStatusInfo(msg);
             sendMessage(msg);
-            statusRequested = false;
+            statusRequested = false; //reset flag
         } else if(pinged){
             msg = getMessageForDevice(this, ArduinoMessage::TYPE_PING_RESPONSE);
             setPingInfo(msg);
             sendMessage(msg);
-            pinged = false;
+            pinged = false; //reset flag
         }
     }
 
@@ -327,6 +331,7 @@ namespace Chetch{
         ArduinoDevice::DeviceCommand command;
         ArduinoMessage* msg;
         byte target = 0;
+        int i = 0;
 
         switch(message->type){
             case ArduinoMessage::TYPE_STATUS_REQUEST:
@@ -334,11 +339,21 @@ namespace Chetch{
                 handled = true;
                 break;
 
+            case ArduinoMessage::TYPE_INITIALISE:
+                target = message->get<byte>(0);
+                if(target == 0 || target == getNodeID()){
+                    indicate(true);    
+                    resetErrors();
+                    remoteInitialised = true;
+                }
+                handled = false; //allow to be handled by message received listener
+                break;
+
             case ArduinoMessage::TYPE_PING:
-                indicate(true);    
                 message->populate<byte>(canInFrame.data);
                 target = message->get<byte>(0);
-                if(target == getNodeID()){
+                if(target == 0 || target == getNodeID()){
+                    indicate(true);    
                     pinged = true;
                     handled = true;
                 } else {
