@@ -42,10 +42,12 @@ namespace Chetch{
                 break;
 
             case ArduinoMessage::TYPE_INITIALISE:
+                indicate(true);
                 resetErrors();
                 if(messageReceivedListener != NULL){
                     messageReceivedListener(this, getNodeID(), message, NULL);
                 }
+                response->add(millis());
                 break;
         }
     }

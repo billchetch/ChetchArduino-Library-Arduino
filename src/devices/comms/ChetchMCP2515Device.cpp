@@ -167,6 +167,7 @@ namespace Chetch{
             lastErrorData = 0;
         } else if(remoteInitialised){
             msg = getMessageForDevice(this, ArduinoMessage::TYPE_INITIALISE_RESPONSE);
+            msg->add(ms);
             sendMessage(msg);
             remoteInitialised = false; //reset flag
         } else if(statusRequested){
