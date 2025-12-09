@@ -49,6 +49,15 @@ namespace Chetch{
                 }
                 response->add(millis());
                 break;
+
+            case ArduinoMessage::TYPE_RESET:
+                indicate(true);
+                resetErrors();
+                if(messageReceivedListener != NULL){
+                    messageReceivedListener(this, getNodeID(), message, NULL);
+                }
+                //response->type = ArduinoMessage::TYPE_ECHO_RESPONSE;
+                break;
         }
     }
 

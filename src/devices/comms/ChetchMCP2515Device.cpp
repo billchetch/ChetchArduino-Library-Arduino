@@ -30,6 +30,16 @@ namespace Chetch{
         errorCodeFlags = 0;
     }
 
+    int MCP2515Device::clearReceive(){
+        int n = 0;
+        /*while(mcp2515.checkReceive() && n < 3){
+            readMessage();
+            n++;
+        }*/
+
+        return n;
+    }
+
     void MCP2515Device::init(){
         if(!initialised){
             maskNum = 0;
@@ -82,8 +92,10 @@ namespace Chetch{
         lastErrorData = errorData;
 
         lastErrorOn = millis();
+#if COUNT_ERROR_CODES > 0
         byte idx = (byte)(errorCode) - 1;
         if(errorCounts[idx] < 255)errorCounts[idx]++;
+#endif
         unsigned int emask = (1 << idx);
         errorCodeFlags = errorCodeFlags | emask;
 
@@ -248,17 +260,17 @@ namespace Chetch{
 
                 //Do some basic validationg
                 if(sourceNodeID < MIN_NODE_ID || sourceNodeID > MAX_NODE_ID){
-                    raiseError(INVALID_MESSAGE);
+                    raiseError(INVALID_MESSAGE, 1);
                     return; //ERROR....
                 }
 
                 if(amsg.type < 1 || amsg.type > 31){
-                    raiseError(INVALID_MESSAGE);
+                    raiseError(INVALID_MESSAGE, 2);
                     return; //ERROR....
                 }
 
                 if(amsg.tag > 7){
-                    raiseError(INVALID_MESSAGE);
+                    raiseError(INVALID_MESSAGE, 3);
                     return; //ERROR....
                 }
 
@@ -341,14 +353,31 @@ namespace Chetch{
                 break;
 
             case ArduinoMessage::TYPE_INITIALISE:
+                message->populate<byte>(canInFrame.data);
                 target = message->get<byte>(0);
                 if(target == 0 || target == getNodeID()){
                     indicate(true);    
                     resetErrors();
+                    if(clearReceive() > 2){
+                        raiseError(READ_FAIL, 3);
+                    }
                     remoteInitialised = true;
                 }
                 handled = false; //allow to be handled by message received listener
                 break;
+
+            /*case ArduinoMessage::TYPE_RESET:
+                message->populate<byte>(canInFrame.data);
+                target = message->get<byte>(0);
+                if(target == 0 || target == getNodeID()){
+                    indicate(true);
+                    resetErrors();
+                    if(clearReceive() > 2){
+                        raiseError(READ_FAIL, 3);
+                    }
+                }
+                handled = false; //allow to be handled by message received listener
+                break;*/
 
             case ArduinoMessage::TYPE_PING:
                 message->populate<byte>(canInFrame.data);

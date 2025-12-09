@@ -271,6 +271,7 @@ namespace Chetch{
 
             byte getNodeID(){ return nodeID; }
             void resetErrors();
+            int clearReceive();
             bool begin() override;
             virtual bool allowSending();
             bool addNodeDependency(byte nodeID, byte tolerance = 1);
