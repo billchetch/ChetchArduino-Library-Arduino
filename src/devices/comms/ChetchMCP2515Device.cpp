@@ -21,9 +21,11 @@ namespace Chetch{
     }
 
     void MCP2515Device::resetErrors(){
+#if defined(COUNT_ERROR_CODES)
         for(byte i = 0;i < COUNT_ERROR_CODES; i++){
             errorCounts[i] = 0;
         }
+#endif
         lastError = NO_ERROR;
         lastErrorOn = 0;
         lastErrorData = 0;
@@ -32,10 +34,10 @@ namespace Chetch{
 
     int MCP2515Device::clearReceive(){
         int n = 0;
-        /*while(mcp2515.checkReceive() && n < 3){
+        while(mcp2515.checkReceive() && n < 3){
             readMessage();
             n++;
-        }*/
+        }
 
         return n;
     }
@@ -92,8 +94,9 @@ namespace Chetch{
         lastErrorData = errorData;
 
         lastErrorOn = millis();
-#if COUNT_ERROR_CODES > 0
         byte idx = (byte)(errorCode) - 1;
+        
+#if defined(COUNT_ERROR_CODES)
         if(errorCounts[idx] < 255)errorCounts[idx]++;
 #endif
         unsigned int emask = (1 << idx);
@@ -180,6 +183,7 @@ namespace Chetch{
         } else if(remoteInitialised){
             msg = getMessageForDevice(this, ArduinoMessage::TYPE_INITIALISE_RESPONSE);
             msg->add(ms);
+            msg->add((byte)TIMESTAMP_RESOLUTION);
             sendMessage(msg);
             remoteInitialised = false; //reset flag
         } else if(statusRequested){
@@ -358,15 +362,12 @@ namespace Chetch{
                 if(target == 0 || target == getNodeID()){
                     indicate(true);    
                     resetErrors();
-                    if(clearReceive() > 2){
-                        raiseError(READ_FAIL, 3);
-                    }
                     remoteInitialised = true;
                 }
                 handled = false; //allow to be handled by message received listener
                 break;
 
-            /*case ArduinoMessage::TYPE_RESET:
+            case ArduinoMessage::TYPE_RESET:
                 message->populate<byte>(canInFrame.data);
                 target = message->get<byte>(0);
                 if(target == 0 || target == getNodeID()){
@@ -375,9 +376,10 @@ namespace Chetch{
                     if(clearReceive() > 2){
                         raiseError(READ_FAIL, 3);
                     }
+                    mcp2515.clearInterrupts();
                 }
                 handled = false; //allow to be handled by message received listener
-                break;*/
+                break;
 
             case ArduinoMessage::TYPE_PING:
                 message->populate<byte>(canInFrame.data);

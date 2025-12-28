@@ -86,20 +86,21 @@ D0: EWARN (Error Warning Flag):
 
 STATUS FLAGS (Bits in the byte read from the ? register)
 (Source: MCP2515-Stand-Alone-CAN-Controller-with-SPI-20001801J.pdf)
-D0: RX0IF (CANINTF[0]) Receive-Buffer-0-Full Interrupt Flag
-D1: RX1IF (CANINTF[1]) Receive-Buffer-1-Full Interrupt Flag
-D2: TXREQ (TXB0CNTRL[3]) Buffer 0, Message-Transmit-Request bit
-D3: TX0IF (CANINTF[2]) Transmit Buffer-0-Empty Interrupt Flag bit
-D4: TXREQ (TXB1CNTRL[3]) Buffer 1, Message-Transmit-Request bit
-D5: TX1IF (CANINTF[3]) Transmit Buffer-1-Empty Interrupt Flag bit
-D6: TXREQ (TXB2CNTRL[3]) Buffer 2, Message-Transmit-Request bit
 D7: TX2IF (CANINTF[4]) Transmit Buffer-2-Empty Interrupt Flag bit
+D6: TXREQ (TXB2CNTRL[3]) Buffer 2, Message-Transmit-Request bit
+D5: TX1IF (CANINTF[3]) Transmit Buffer-1-Empty Interrupt Flag bit
+D4: TXREQ (TXB1CNTRL[3]) Buffer 1, Message-Transmit-Request bit
+D3: TX0IF (CANINTF[2]) Transmit Buffer-0-Empty Interrupt Flag bit
+D2: TXREQ (TXB0CNTRL[3]) Buffer 0, Message-Transmit-Request bit
+D1: RX1IF (CANINTF[1]) Receive-Buffer-1-Full Interrupt Flag
+D0: RX0IF (CANINTF[0]) Receive-Buffer-0-Full Interrupt Flag
+
 */
 
 #define CAN_AS_LOOPBACK false
 #define CAN_DEFAULT_CS_PIN 10
 #define CAN_DEFAULT_INDICATOR_PIN 9
-#define COUNT_ERROR_CODES 12 //Set to 0 to not use error counts
+//#define COUNT_ERROR_CODES 12 //Comment out if not counting error codes
 
 namespace Chetch{
     class MCP2515Device : public ArduinoDevice{
@@ -247,7 +248,9 @@ namespace Chetch{
 
             MCP2515ErrorCode lastError = MCP2515ErrorCode::NO_ERROR;
             unsigned long lastErrorData = 0;
+#if defined(COUNT_ERROR_CODES)
             byte errorCounts[COUNT_ERROR_CODES];
+#endif
             unsigned int errorCodeFlags = 0;
             unsigned long lastErrorOn = 0;
             
@@ -278,7 +281,9 @@ namespace Chetch{
             NodeDependency* getDependency(byte nodeID);
             
             virtual void raiseError(MCP2515ErrorCode errorCode, unsigned long errorData = 0);
+#if defined(COUNT_ERROR_CODES)
             byte* getErrorCounts(){ return errorCounts; }
+#endif
 
             void indicate(bool on, bool force = false);
             bool canIndicate(IndicateMode mode){ return mode & indicateMode == mode; }

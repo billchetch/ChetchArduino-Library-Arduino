@@ -48,15 +48,19 @@ namespace Chetch{
                     messageReceivedListener(this, getNodeID(), message, NULL);
                 }
                 response->add(millis());
+                response->add((byte)TIMESTAMP_RESOLUTION);
                 break;
 
             case ArduinoMessage::TYPE_RESET:
                 indicate(true);
                 resetErrors();
+                if(clearReceive() > 2){
+                    raiseError(READ_FAIL, 3);
+                }
+                mcp2515.clearInterrupts();
                 if(messageReceivedListener != NULL){
                     messageReceivedListener(this, getNodeID(), message, NULL);
                 }
-                //response->type = ArduinoMessage::TYPE_ECHO_RESPONSE;
                 break;
         }
     }
