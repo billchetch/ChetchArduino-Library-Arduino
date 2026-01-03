@@ -8,7 +8,7 @@ namespace Chetch{
         public:
             static const byte NO_TARGET = 0; //can be used to delcare a braodcast message for example
 
-            enum MessageType {
+            enum MessageType : byte{
                 TYPE_NONE = 0, 
                 TYPE_REGISTER_LISTENER = 1,
                 TYPE_CUSTOM = 2,

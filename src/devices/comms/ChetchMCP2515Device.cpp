@@ -393,6 +393,17 @@ namespace Chetch{
                 }
                 break;
 
+            case ArduinoMessage::TYPE_ERROR_TEST:
+                message->populate<byte, byte, unsigned long>(canInFrame.data);
+                target = message->get<byte>(0);
+                if(target == 0 || target == getNodeID()){
+                    indicate(true);
+                    MCP2515ErrorCode ecode = message->get<MCP2515ErrorCode>(1);
+                    raiseError(ecode, message->get<unsigned long>(2));
+                }
+                handled = false;
+                break;
+
             case ArduinoMessage::TYPE_COMMAND:
                 if(commandListener != NULL && canInFrame.can_dlc > 0){
                     if(canInFrame.can_dlc == 1){

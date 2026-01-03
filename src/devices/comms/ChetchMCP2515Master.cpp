@@ -62,6 +62,12 @@ namespace Chetch{
                     messageReceivedListener(this, getNodeID(), message, NULL);
                 }
                 break;
+
+            case ArduinoMessage::TYPE_ERROR_TEST:
+                indicate(true);
+                MCP2515ErrorCode ecode = message->get<MCP2515ErrorCode>(0);
+                raiseError(ecode, message->get<unsigned long>(1));
+                break;
         }
     }
 
@@ -88,12 +94,18 @@ namespace Chetch{
         {
             ArduinoMessage* msg;
             ArduinoMessage::MessageType reqType;
+            int byteTotal = 0;
+            byte bytec = 0;
             switch(command){
                 case ArduinoDevice::REQUEST: //Message from outside BUS .. all nodes should respond to this
                     reqType = (ArduinoMessage::MessageType)message->get<ArduinoMessage::MessageType>(1);
                     msg = getMessageForDevice(this, reqType, message->tag);
-                    if(message->getArgumentCount() == 3){
-                        msg->add(message->get<byte>(2));
+                    byteTotal = 0;
+                    for(byte i = 1; i < message->getArgumentCount(); i++){
+                        bytec = message->getArgumentSize(i + 1);
+                        byteTotal += bytec;
+                        if(byteTotal >= CAN_MAX_DLC)break;
+                        msg->addBytes(message->getArgument(i + 1), bytec);
                     }
 
                     //send using base method so as not to send a message back to the sender of this command
@@ -104,9 +116,9 @@ namespace Chetch{
                 default: //Message from outside BUS .. all nodes should respond to this
                     msg = getMessageForDevice(this, ArduinoMessage::TYPE_COMMAND, 1);
                     msg->add((byte)command);
-                    int byteTotal = 1;
+                    byteTotal = 1;
                     for(byte i = 0; i < message->getArgumentCount(); i++){
-                        byte bytec = message->getArgumentSize(i + 1);
+                        bytec = message->getArgumentSize(i + 1);
                         byteTotal += bytec;
                         if(byteTotal >= CAN_MAX_DLC)break;
                         msg->addBytes(message->getArgument(i + 1), bytec);
@@ -147,6 +159,9 @@ namespace Chetch{
     void MCP2515Master::handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message){
         //TODO: check first if we have set any forwarding message filters
         
+        //Call base method
+        MCP2515Device::handleReceivedMessage(sourceNodeID, message);
+
         //Make sure we take a copy of this message if we are forwarding stuff
         frecvmsg.clear();
         frecvmsg.tag = message->tag;
@@ -158,7 +173,5 @@ namespace Chetch{
         frecvmsg.add(message->type);
 
         enqueueMessageToSend(MESSAGE_ID_FORWARD_RECEIVED, MESSAGE_ID_FORWARD_RECEIVED);
-
-        MCP2515Device::handleReceivedMessage(sourceNodeID, message);
     }
 }

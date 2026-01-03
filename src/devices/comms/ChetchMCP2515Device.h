@@ -116,7 +116,7 @@ namespace Chetch{
 
             static const byte EVENT_READTY_TO_SEND = 1;
 
-            enum MCP2515ErrorCode{
+            enum MCP2515ErrorCode : byte{
                 NO_ERROR = 0,
                 UNKNOWN_RECEIVE_ERROR, //RX error
                 UNKNOWN_SEND_ERROR, //TX error
@@ -278,6 +278,7 @@ namespace Chetch{
             bool begin() override;
             virtual bool allowSending();
             bool addNodeDependency(byte nodeID, byte tolerance = 1);
+            bool hasDependencies(){ return firstDependency != NULL; }
             NodeDependency* getDependency(byte nodeID);
             
             virtual void raiseError(MCP2515ErrorCode errorCode, unsigned long errorData = 0);
