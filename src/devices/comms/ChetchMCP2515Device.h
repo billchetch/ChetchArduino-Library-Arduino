@@ -246,8 +246,10 @@ namespace Chetch{
             SendValidator sendValidator = NULL;
             ErrorListener errorListener = NULL;
 
+            bool broadcastError = false;
             MCP2515ErrorCode lastError = MCP2515ErrorCode::NO_ERROR;
             unsigned long lastErrorData = 0;
+
 #if defined(COUNT_ERROR_CODES)
             byte errorCounts[COUNT_ERROR_CODES];
 #endif

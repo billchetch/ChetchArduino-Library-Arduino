@@ -26,12 +26,11 @@ namespace Chetch{
             return false;
         }
     }
-    
+ 
     void MCP2515Master::setStatusInfo(ArduinoMessage* message){
         ArduinoDevice::setStatusInfo(message);
         message->add(getNodeID());
         MCP2515Device::setStatusInfo(message);
-        message->add(canSend);
     }
 
     void MCP2515Master::handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response){

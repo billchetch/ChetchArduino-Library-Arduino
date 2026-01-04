@@ -90,9 +90,19 @@ namespace Chetch{
     }
 
     void MCP2515Device::raiseError(MCP2515ErrorCode errorCode, unsigned long errorData){
+        bool repeatError = lastError == errorCode;
+
+        if(lastError == MCP2515ErrorCode::NO_ERROR)
+        {
+            broadcastError = true;
+        } else if(repeatError){
+            broadcastError = millis() - lastErrorOn > 1000;
+        } else {
+            broadcastError = millis() - lastErrorOn > 250;
+        }
+
         lastError = errorCode;
         lastErrorData = errorData;
-
         lastErrorOn = millis();
         byte idx = (byte)(errorCode) - 1;
         
@@ -167,7 +177,7 @@ namespace Chetch{
 
             lastPresenceOn = millis();
             presenceSent = true;
-        } else if(lastError != MCP2515ErrorCode::NO_ERROR){
+        } else if(broadcastError){
             //send error message
             msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_ERROR, 1);
             msg->add((byte)lastError);
@@ -178,8 +188,7 @@ namespace Chetch{
             sendMessage(msg);
             
             //reset code
-            lastError = MCP2515ErrorCode::NO_ERROR;
-            lastErrorData = 0;
+            broadcastError = false;
         } else if(remoteInitialised){
             msg = getMessageForDevice(this, ArduinoMessage::TYPE_INITIALISE_RESPONSE);
             msg->add(ms);
@@ -247,34 +256,35 @@ namespace Chetch{
                 byte messageType = (canInFrame.can_id >> 24) & 0x1F; //first 5 bits
                 byte nodeIDAndSender = (canInFrame.can_id >> 16) & 0xFF; //whole byte split 4 | 4
                 byte tagAndCRC = (canInFrame.can_id >> 8) & 0xFF; //whole byte split 3 | 5
+                byte sourceNodeID = nodeIDAndSender >> 4 & 0x0F; //first 4 bits are used for the remote node ID
+                byte timestamp = canInFrame.can_id & 0xFF;
+                //Serial.print("Received timestamp: ");
+                //Serial.println(timestamp);
+
+                unsigned long edata = (unsigned long)sourceNodeID << 24 | (unsigned long)amsg.type << 16;
                 if(!vcrc5(tagAndCRC & 0x1F, canInFrame.data, canInFrame.can_dlc)){
                     //data error
-                    raiseError(CRC_ERROR, tagAndCRC & 0x1F);
+                    raiseError(CRC_ERROR, edata | tagAndCRC & 0x1F);
                     return;
                 }
 
                 amsg.type = messageType;
                 amsg.tag = (tagAndCRC >> 5) & 0x07;
                 amsg.sender = nodeIDAndSender & 0x0F; //last 4 bits make the sender
-                byte sourceNodeID = nodeIDAndSender >> 4 & 0x0F; //first 4 bits are used for the remote node ID
-                byte timestamp = canInFrame.can_id & 0xFF;
-                //Serial.print("Received timestamp: ");
-                //Serial.println(timestamp);
                 
-
                 //Do some basic validationg
                 if(sourceNodeID < MIN_NODE_ID || sourceNodeID > MAX_NODE_ID){
-                    raiseError(INVALID_MESSAGE, 1);
+                    raiseError(INVALID_MESSAGE, edata | 1);
                     return; //ERROR....
                 }
 
                 if(amsg.type < 1 || amsg.type > 31){
-                    raiseError(INVALID_MESSAGE, 2);
+                    raiseError(INVALID_MESSAGE, edata | 2);
                     return; //ERROR....
                 }
 
                 if(amsg.tag > 7){
-                    raiseError(INVALID_MESSAGE, 3);
+                    raiseError(INVALID_MESSAGE, edata | 3);
                     return; //ERROR....
                 }
 
@@ -288,15 +298,14 @@ namespace Chetch{
                         }
                         unsigned long ent = nd->getEstimatedNodeTime();
                         if(!nd->setNodeTime(amsg.get<unsigned long>(0), amsg.get<unsigned int>(1))){
-                            raiseError(SYNC_ERROR, ent);
+                            raiseError(SYNC_ERROR, (unsigned long)sourceNodeID << 24 | 0x00FFFFFF & ent);
                             return;
                         } else {
                             //TODO: process other message values
                         }
                     } else { //check for stame messages
                         if(nd->isStale(timestamp)){
-                            unsigned long edata = (unsigned long)sourceNodeID << 24 | (unsigned long)amsg.type << 16 | nd->getDiff(timestamp);
-                            raiseError(STALE_MESSAGE, edata);
+                            raiseError(STALE_MESSAGE, edata | nd->getDiff(timestamp));
                             return;
                         }
                     }
