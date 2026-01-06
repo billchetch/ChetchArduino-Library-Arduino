@@ -249,15 +249,12 @@ namespace Chetch{
             bool broadcastError = false;
             MCP2515ErrorCode lastError = MCP2515ErrorCode::NO_ERROR;
             unsigned long lastErrorData = 0;
-
+            
 #if defined(COUNT_ERROR_CODES)
             byte errorCounts[COUNT_ERROR_CODES];
 #endif
             unsigned int errorCodeFlags = 0;
             unsigned long lastErrorOn = 0;
-            
-
-            bool canSend = false; //is set to true if either a message is received or a certain period has elapsed
             
         public: //temp:  should be protected this
             struct can_frame canInFrame;
@@ -278,7 +275,7 @@ namespace Chetch{
             void resetErrors();
             int clearReceive();
             bool begin() override;
-            virtual bool allowSending();
+            bool allowSending();
             bool addNodeDependency(byte nodeID, byte tolerance = 1);
             bool hasDependencies(){ return firstDependency != NULL; }
             NodeDependency* getDependency(byte nodeID);
@@ -289,7 +286,7 @@ namespace Chetch{
 #endif
 
             void indicate(bool on, bool force = false);
-            bool canIndicate(IndicateMode mode){ return mode & indicateMode == mode; }
+            bool canIndicate(IndicateMode mode){ return (mode & indicateMode) == mode; }
             void setIndicateMode(IndicateMode mode){ indicateMode = mode; }
             void loop() override;
             void setStatusInfo(ArduinoMessage* response) override;

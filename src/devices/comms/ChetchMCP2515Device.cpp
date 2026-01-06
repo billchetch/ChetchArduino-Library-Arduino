@@ -159,24 +159,18 @@ namespace Chetch{
 
         unsigned long ms = millis();
         ArduinoMessage* msg;
-        if(presenceInterval > 0 && ms - lastPresenceOn > presenceInterval){
+        //We ensure that the first message sent is a presence message and this should be as soon as the device has begun
+        if(!presenceSent || (presenceInterval > 0 && ms - lastPresenceOn > presenceInterval)){
             msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_PRESENCE, 1);
             msg->add(ms);
             msg->add((unsigned int)(ms - lastPresenceOn));
-            msg->add(!presenceSent); //reset presence in remote node
+            msg->add(!presenceSent); //if true then resets presence in remote node (i.e. first presence message)
             msg->add(mcp2515.getStatus());
 
-            if(!canSend){
-                canSend = true;
-                sendMessage(msg);
-                canSend = false;
-                allowSending();
-            } else {
-                sendMessage(msg);
+            if(sendMessage(msg)){
+                lastPresenceOn = millis();
+                presenceSent = true;
             }
-
-            lastPresenceOn = millis();
-            presenceSent = true;
         } else if(broadcastError){
             //send error message
             msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_ERROR, 1);
@@ -205,16 +199,6 @@ namespace Chetch{
             setPingInfo(msg);
             sendMessage(msg);
             pinged = false; //reset flag
-        }
-    }
-
-    bool MCP2515Device::allowSending(){
-        if(!canSend){
-            canSend = true;
-            raiseEvent(EVENT_READTY_TO_SEND);
-            return true;
-        } else {
-            return false;
         }
     }
 
@@ -444,8 +428,6 @@ namespace Chetch{
     }
 
     bool MCP2515Device::sendMessage(ArduinoMessage* message){
-        if(!canSend)return false;
-
         if(message == NULL){
             raiseError(MCP2515ErrorCode::NO_MESSAGE);
             return false; //ERROR!

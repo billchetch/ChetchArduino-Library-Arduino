@@ -22,7 +22,6 @@ namespace Chetch{
         public:            
             static const byte MESSAGE_ID_FORWARD_RECEIVED = 100;
             static const byte MESSAGE_ID_FORWARD_SENT = 101;
-            static const byte MESSAGE_ID_READY_TO_SEND = 102;
             
         private:
             ArduinoMessage frecvmsg;
@@ -32,7 +31,6 @@ namespace Chetch{
             MCP2515Master(unsigned int presenceInterval = MCP2515Device::PRESENCE_INTERVAL, int csPin = CAN_DEFAULT_CS_PIN);
 
             bool begin() override;
-            bool allowSending() override;
             
             void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response) override;
             void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;

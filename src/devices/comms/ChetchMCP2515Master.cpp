@@ -14,19 +14,12 @@ namespace Chetch{
             begun = false;
             return begun;
         } else {
-            return MCP2515Device::begin();
+            MCP2515Device::begin();
+            return begun;
         }
 	}
 
-    bool MCP2515Master::allowSending(){
-        if(MCP2515Device::allowSending()){ //true if called for first time
-            enqueueMessageToSend(MESSAGE_ID_READY_TO_SEND, MESSAGE_ID_READY_TO_SEND);
-            return true;
-        } else {
-            return false;
-        }
-    }
- 
+    
     void MCP2515Master::setStatusInfo(ArduinoMessage* message){
         ArduinoDevice::setStatusInfo(message);
         message->add(getNodeID());
@@ -48,6 +41,13 @@ namespace Chetch{
                 }
                 response->add(millis());
                 response->add((byte)TIMESTAMP_RESOLUTION);
+                break;
+            
+            case ArduinoMessage::TYPE_FINALISE:
+                indicate(true);
+                if(messageReceivedListener != NULL){
+                    messageReceivedListener(this, getNodeID(), message, NULL);
+                }
                 break;
 
             case ArduinoMessage::TYPE_RESET:
@@ -81,8 +81,6 @@ namespace Chetch{
             message->copy(&fsendmsg);
             //IMPORTANT: we identify forwarded messages as having the INFO type (original type is recorded as last parameter)
             message->type = ArduinoMessage::MessageType::TYPE_INFO;
-        } else if(messageID == MESSAGE_ID_READY_TO_SEND){
-            message->type = ArduinoMessage::MessageType::TYPE_NOTIFICATION;
         }
     }
 
