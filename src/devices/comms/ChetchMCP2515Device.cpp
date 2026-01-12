@@ -189,21 +189,11 @@ namespace Chetch{
             msg->add((byte)TIMESTAMP_RESOLUTION);
             sendMessage(msg);
             remoteInitialised = false; //reset flag
-        } else if(statusRequested){
-            msg = getMessageForDevice(this, ArduinoMessage::TYPE_STATUS_RESPONSE);
-            setStatusInfo(msg);
-            sendMessage(msg);
-            statusRequested = false; //reset flag
         } else if(pinged){
             msg = getMessageForDevice(this, ArduinoMessage::TYPE_PING_RESPONSE);
             setPingInfo(msg);
             sendMessage(msg);
             pinged = false; //reset flag
-        } else if(commandHandled > 0){
-            msg = getMessageForDevice(responseID, ArduinoMessage::TYPE_COMMAND_RESPONSE);
-            msg->add(commandHandled);
-            sendMessage(msg);
-            commandHandled = 0;
         }
     }
 
@@ -382,7 +372,7 @@ namespace Chetch{
                 } else {
                     device = Board->getDeviceByID(message->sender);
                     if(device == NULL){
-                        raiseError(UNKNOWN_RECEIVE_ERROR, 2);
+                        raiseError(UNKNOWN_RECEIVE_ERROR, 1);
                     } else {
                         response = getMessageForDevice(device, ArduinoMessage::TYPE_STATUS_RESPONSE);
                         device->setStatusInfo(response);
@@ -444,7 +434,7 @@ namespace Chetch{
                     } else if(canInFrame.can_dlc == 4){
                         message->populate<byte, int, byte>(canInFrame.data);
                     } else {
-                        raiseError(UNKNOWN_RECEIVE_ERROR, 1);
+                        raiseError(UNKNOWN_RECEIVE_ERROR, 2);
                         return;
                     }
                     command = message->get<ArduinoDevice::DeviceCommand>(0);
@@ -452,12 +442,13 @@ namespace Chetch{
                     if(targetNode == getNodeID()){
                         device = Board->getDeviceByID(message->sender);
                         if(device == NULL){
-                            raiseError(UNKNOWN_RECEIVE_ERROR, 2);
-                        } else if(device->executeCommand(command, message, NULL)){
-                            responseID = device->id;
-                            commandHandled = command;
+                            raiseError(UNKNOWN_RECEIVE_ERROR, 3);
                         } else {
-                            commandHandled = 0;
+                            response = getMessageForDevice(message->sender, ArduinoMessage::TYPE_COMMAND_RESPONSE);
+                            response->add(command);
+                            if(device->executeCommand(command, message, response)){
+                                sendMessage(response);
+                            }
                         }
                     }
                 }

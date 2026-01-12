@@ -237,10 +237,8 @@ namespace Chetch{
 
             byte responseID = 0;
             bool remoteInitialised = false;
-            bool statusRequested = false;
             bool pinged = false;
-            byte commandHandled = 0;
-
+            
         protected:
             MessageListener messageReceivedListener = NULL;
             SendValidator sendValidator = NULL;
