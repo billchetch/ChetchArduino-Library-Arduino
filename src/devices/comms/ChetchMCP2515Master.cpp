@@ -4,8 +4,8 @@
 
 namespace Chetch{
     MCP2515Master::MCP2515Master(unsigned int presenceInterval, int csPin) : MCP2515Device(MASTER_NODE_ID, presenceInterval, csPin)
-                                            , frecvmsg(20) //Add 12 bytes to allow for additional 'meta' data
-                                            , fsendmsg(20) //Add 12 bytes to allow for additional 'meta' data
+                                            , frecvmsg(22) //Add 12 bytes to allow for additional 'meta' data
+                                            , fsendmsg(22) //Add 12 bytes to allow for additional 'meta' data
 
     { }
 
@@ -85,7 +85,7 @@ namespace Chetch{
     }
 
     bool MCP2515Master::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
-        bool handled = ArduinoDevice::executeCommand(command, message, response);
+        bool handled = MCP2515Device::executeCommand(command, message, response);
         
         if(!handled)
         {
@@ -96,7 +96,7 @@ namespace Chetch{
             switch(command){
                 case ArduinoDevice::REQUEST: //Message from outside BUS .. all nodes should respond to this
                     reqType = (ArduinoMessage::MessageType)message->get<ArduinoMessage::MessageType>(1);
-                    msg = getMessageForDevice(this, reqType, message->tag);
+                    msg = getMessageForDevice(message->sender, reqType, message->tag);
                     byteTotal = 0;
                     for(byte i = 1; i < message->getArgumentCount(); i++){
                         bytec = message->getArgumentSize(i + 1);
@@ -111,7 +111,7 @@ namespace Chetch{
                     break;
 
                 default: //Message from outside BUS .. all nodes should respond to this
-                    msg = getMessageForDevice(this, ArduinoMessage::TYPE_COMMAND, 1);
+                    msg = getMessageForDevice(message->sender, ArduinoMessage::TYPE_COMMAND, 1);
                     msg->add((byte)command);
                     byteTotal = 1;
                     for(byte i = 0; i < message->getArgumentCount(); i++){
@@ -124,10 +124,6 @@ namespace Chetch{
                     //send using base method so as not to send a message back to the sender of this command
                     MCP2515Device::sendMessage(msg);
 
-                    if(commandListener != NULL){
-                        commandListener(this, getNodeID(), command, msg);
-                    }
-
                     handled = true;
                     break;
             }
@@ -139,12 +135,17 @@ namespace Chetch{
         if(MCP2515Device::sendMessage(message)){
             fsendmsg.clear();
             fsendmsg.tag = message->tag;
-            fsendmsg.sender = message->sender;
-
+            
             fsendmsg.addBytes(canOutFrame.data, canOutFrame.can_dlc);
             
             fsendmsg.add(canOutFrame.can_id);
             fsendmsg.add(message->type);
+            if(message->sender == 0){
+                fsendmsg.add(Board->getID());    
+            } else {
+                fsendmsg.add((byte)(message->sender + ArduinoBoard::START_DEVICE_IDS_AT - 1));
+            }
+            
 
             enqueueMessageToSend(MESSAGE_ID_FORWARD_SENT, MESSAGE_ID_FORWARD_SENT);
             return true;
@@ -162,12 +163,12 @@ namespace Chetch{
         //Make sure we take a copy of this message if we are forwarding stuff
         frecvmsg.clear();
         frecvmsg.tag = message->tag;
-        frecvmsg.sender = message->sender;
-
+        
         frecvmsg.addBytes(canInFrame.data, canInFrame.can_dlc);
         
         frecvmsg.add(canInFrame.can_id);
         frecvmsg.add(message->type);
+        frecvmsg.add(message->sender);
 
         enqueueMessageToSend(MESSAGE_ID_FORWARD_RECEIVED, MESSAGE_ID_FORWARD_RECEIVED);
     }

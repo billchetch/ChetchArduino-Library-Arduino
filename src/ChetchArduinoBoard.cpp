@@ -109,9 +109,11 @@ namespace Chetch{
     }
 
     void ArduinoBoard::setErrorInfo(ArduinoMessage* message, ErrorCode errorCode, byte errorSubCode){
-        message->type = ArduinoMessage::TYPE_ERROR;
-        message->add((byte)errorCode);
-        message->add(errorSubCode);
+        if(message != NULL){
+            message->type = ArduinoMessage::TYPE_ERROR;
+            message->add((byte)errorCode);
+            message->add(errorSubCode);
+        }
     }
 
     void ArduinoBoard::setResponseInfo(ArduinoMessage* response, ArduinoMessage* message, byte sender){

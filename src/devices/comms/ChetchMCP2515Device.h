@@ -209,7 +209,6 @@ namespace Chetch{
             };
 
             typedef void (*MessageListener)(MCP2515Device*, byte, ArduinoMessage*, byte*); //device, node, message, canData
-            typedef void (*CommandListener)(MCP2515Device*, byte, ArduinoDevice::DeviceCommand, ArduinoMessage*);
             typedef void (*ErrorListener)(MCP2515Device*, MCP2515ErrorCode, unsigned long errorData);
             typedef bool (*SendValidator)(MCP2515Device*, ArduinoMessage*, unsigned long canID, byte* canData);
 
@@ -236,13 +235,14 @@ namespace Chetch{
             unsigned long lastPresenceOn = 0;
             bool presenceSent = false; //to indicate first presence sent
 
+            byte responseID = 0;
             bool remoteInitialised = false;
             bool statusRequested = false;
             bool pinged = false;
+            byte commandHandled = 0;
 
         protected:
             MessageListener messageReceivedListener = NULL;
-            CommandListener commandListener = NULL;
             SendValidator sendValidator = NULL;
             ErrorListener errorListener = NULL;
 
@@ -293,11 +293,12 @@ namespace Chetch{
             void setPingInfo(ArduinoMessage* response) override;
             
             void addMessageReceivedListener(MessageListener listener){ messageReceivedListener = listener; }
-            void addCommandListener(CommandListener listener){ commandListener = listener; }
             void addSendValidator(SendValidator validator){ sendValidator = validator; }
             void addErrorListener(ErrorListener listener){ errorListener = listener; }
 
-            ArduinoMessage* getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType, byte tag = 0);
+            ArduinoMessage* getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType = ArduinoMessage::TYPE_DATA, byte tag = 0);
+            ArduinoMessage* getMessageForDevice(byte deviceID, ArduinoMessage::MessageType messageType, byte tag = 0);
+            bool sendMessageForDevice(ArduinoDevice* device, byte messageID);
             virtual bool sendMessage(ArduinoMessage *message);
             void readMessage();
             virtual void handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message);
