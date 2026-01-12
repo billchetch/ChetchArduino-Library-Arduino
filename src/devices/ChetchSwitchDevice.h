@@ -8,7 +8,7 @@
 namespace Chetch{
     class SwitchDevice : public ArduinoDevice {
         public:
-            enum SwitchMode {
+            enum SwitchMode : byte {
                 ACTIVE = 1,
                 PASSIVE = 2,
             };

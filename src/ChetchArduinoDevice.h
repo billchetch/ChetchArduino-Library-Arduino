@@ -10,7 +10,7 @@ namespace Chetch{
 
     class ArduinoDevice{
         public:
-            enum DeviceCommand{
+            enum DeviceCommand : byte{
                 NONE = 0,
                 COMPOUND,
                 TEST,
