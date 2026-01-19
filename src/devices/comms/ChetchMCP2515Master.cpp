@@ -7,7 +7,9 @@ namespace Chetch{
                                             , frecvmsg(22) //Add 12 bytes to allow for additional 'meta' data
                                             , fsendmsg(22) //Add 12 bytes to allow for additional 'meta' data
 
-    { }
+    { 
+        setReportInterval(1000); //For reporting bus activity
+    }
 
     bool MCP2515Master::begin(){
         if(getNodeID() != MASTER_NODE_ID){
@@ -26,6 +28,12 @@ namespace Chetch{
         MCP2515Device::setStatusInfo(message);
     }
 
+    void MCP2515Master::setReportInfo(ArduinoMessage* message){
+        //MCP2515Device::setReportInfo(message);
+        message->add(messageCount);
+        messageCount = 0;
+    }
+
     void MCP2515Master::handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response){
         ArduinoDevice::handleInboundMessage(message, response);
         switch(message->type){
@@ -41,6 +49,7 @@ namespace Chetch{
                 }
                 response->add(millis());
                 response->add((byte)TIMESTAMP_RESOLUTION);
+                response->add(presenceInterval);
                 break;
             
             case ArduinoMessage::TYPE_FINALISE:
@@ -132,7 +141,29 @@ namespace Chetch{
     }
     
     bool MCP2515Master::sendMessage(ArduinoMessage *message){
-        if(MCP2515Device::sendMessage(message)){
+        /*
+        NOTE
+
+        1. This method is used in MCP2515Device::handleReceivedMessage as well as MCP2525Device::loop
+
+        2. Not all messages generated from these methods should be sent to the bus.  Errors for instance
+        */
+
+        bool send = false;
+        bool forward = false;
+
+        //criteria for sending
+        if(message->type == ArduinoMessage::MessageType::TYPE_ERROR){
+            send = false;
+        }
+
+        if(send){
+            forward = MCP2515Device::sendMessage(message);
+            if(forward){
+                messageCount++;
+            }
+        } 
+        if(forward){
             fsendmsg.clear();
             fsendmsg.tag = message->tag;
             
@@ -146,7 +177,6 @@ namespace Chetch{
                 fsendmsg.add((byte)(message->sender + ArduinoBoard::START_DEVICE_IDS_AT - 1));
             }
             
-
             enqueueMessageToSend(MESSAGE_ID_FORWARD_SENT, MESSAGE_ID_FORWARD_SENT);
             return true;
         } else {
@@ -155,12 +185,23 @@ namespace Chetch{
     }
 
     void MCP2515Master::handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message){
-        //TODO: check first if we have set any forwarding message filters
+        /*
+        NOTE
+
+        1. This will only be called by messages received from the CAN bus
+        i.e only from remote nodes (Not from the serial connection).
         
-        //Call base method
+        2. 0y here the message will have passed all error checks in MCP2515Device::readMessage
+        So we can assume the message is valid
+        */
+
+        //Call base method first to allow default handling
         MCP2515Device::handleReceivedMessage(sourceNodeID, message);
 
-        //Make sure we take a copy of this message if we are forwarding stuff
+        //update message count
+        messageCount++;
+
+        //Now we prepare a message to forward it vias the seria. connection
         frecvmsg.clear();
         frecvmsg.tag = message->tag;
         
@@ -169,7 +210,7 @@ namespace Chetch{
         frecvmsg.add(canInFrame.can_id);
         frecvmsg.add(message->type);
         frecvmsg.add(message->sender);
-
+    
         enqueueMessageToSend(MESSAGE_ID_FORWARD_RECEIVED, MESSAGE_ID_FORWARD_RECEIVED);
     }
 }

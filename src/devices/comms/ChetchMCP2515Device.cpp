@@ -180,13 +180,14 @@ namespace Chetch{
             msg->add(mcp2515.getErrorFlags());
             
             sendMessage(msg);
-            
+        
             //reset code
             broadcastError = false;
         } else if(remoteInitialised){
             msg = getMessageForDevice(this, ArduinoMessage::TYPE_INITIALISE_RESPONSE);
             msg->add(ms);
             msg->add((byte)TIMESTAMP_RESOLUTION);
+            msg->add(presenceInterval);
             sendMessage(msg);
             remoteInitialised = false; //reset flag
         } else if(pinged){
@@ -254,7 +255,7 @@ namespace Chetch{
                 //Serial.print("Received timestamp: ");
                 //Serial.println(timestamp);
 
-                unsigned long edata = (unsigned long)sourceNodeID << 24 | (unsigned long)amsg.type << 16;
+                unsigned long edata = (unsigned long)sourceNodeID << 24 | (unsigned long)messageType << 16;
                 if(!vcrc5(tagAndCRC & 0x1F, canInFrame.data, canInFrame.can_dlc)){
                     //data error
                     raiseError(CRC_ERROR, edata | tagAndCRC & 0x1F);
@@ -523,6 +524,7 @@ namespace Chetch{
 
         //Send the message and handle the response
         MCP2515::ERROR err = mcp2515.sendMessage(&canOutFrame);
+        unsigned long edata = (unsigned long)nodeIDAndSender << 24 | (unsigned long)messageType << 16;
         switch(err){
             case MCP2515::ERROR_OK:
                 if(canIndicate(INDICATE_ON_SEND)){
@@ -531,15 +533,15 @@ namespace Chetch{
                 return true;
 
             case MCP2515::ERROR_FAILTX:
-                raiseError(MCP2515ErrorCode::FAIL_TX);
+                raiseError(MCP2515ErrorCode::FAIL_TX, edata);
                 return false;
 
             case MCP2515::ERROR_ALLTXBUSY:
-                raiseError(MCP2515ErrorCode::ALL_TX_BUSY);
+                raiseError(MCP2515ErrorCode::ALL_TX_BUSY, edata);
                 return false;
 
             default:
-                raiseError(MCP2515ErrorCode::UNKNOWN_SEND_ERROR);
+                raiseError(MCP2515ErrorCode::UNKNOWN_SEND_ERROR, edata);
                 return false;
         }
     }
