@@ -132,6 +132,12 @@ namespace Chetch{
                 DEBUG_ASSERT, //For debug purposes
             };
 
+            enum ResetRegime : byte{
+                NOT_SET = 0,
+                RESET_UNIT = 1,
+                CLEAR_ERRORS = 2
+            };
+
             enum IndicateMode{
                 NO_INDICATOR = 0,
                 INDICATE_ON_SEND = 1,
@@ -258,10 +264,8 @@ namespace Chetch{
             struct can_frame canInFrame;
             struct can_frame canOutFrame;
             
-        private:
-            void init(); //Must be called after construtor but before configuring stuff hence why it's present in config type methods
-            
         protected:
+            void init(bool forceInit = false); //Must be called after construtor but before configuring stuff hence why it's present in config type methods
             byte crc5(byte* data, byte len);
             bool vcrc5(byte crc, byte* data, byte len);
             

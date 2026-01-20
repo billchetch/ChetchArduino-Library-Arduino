@@ -59,22 +59,30 @@ namespace Chetch{
                 }
                 break;
 
-            case ArduinoMessage::TYPE_RESET:
+            case ArduinoMessage::TYPE_ERROR_TEST:
                 indicate(true);
-                resetErrors();
-                if(clearReceive() > 2){
-                    raiseError(READ_FAIL, 3);
-                }
-                mcp2515.clearInterrupts();
+                MCP2515ErrorCode ecode = message->get<MCP2515ErrorCode>(0);
+                raiseError(ecode, 0); //message->get<unsigned long>(1));
                 if(messageReceivedListener != NULL){
                     messageReceivedListener(this, getNodeID(), message, NULL);
                 }
                 break;
 
-            case ArduinoMessage::TYPE_ERROR_TEST:
+            case ArduinoMessage::TYPE_RESET:
                 indicate(true);
-                MCP2515ErrorCode ecode = message->get<MCP2515ErrorCode>(0);
-                raiseError(ecode, message->get<unsigned long>(1));
+                ResetRegime regime = message->get<ResetRegime>(0);
+
+                init(true);
+
+                resetErrors();
+                if(clearReceive() > 2){
+                    raiseError(READ_FAIL, 3);
+                }
+                mcp2515.clearInterrupts();
+
+                if(messageReceivedListener != NULL){
+                    messageReceivedListener(this, getNodeID(), message, NULL);
+                }
                 break;
         }
     }
@@ -102,40 +110,32 @@ namespace Chetch{
             ArduinoMessage::MessageType reqType;
             int byteTotal = 0;
             byte bytec = 0;
-            switch(command){
-                case ArduinoDevice::REQUEST: //Message from outside BUS .. all nodes should respond to this
-                    reqType = (ArduinoMessage::MessageType)message->get<ArduinoMessage::MessageType>(1);
-                    msg = getMessageForDevice(message->sender, reqType, message->tag);
-                    byteTotal = 0;
-                    for(byte i = 1; i < message->getArgumentCount(); i++){
-                        bytec = message->getArgumentSize(i + 1);
-                        byteTotal += bytec;
-                        if(byteTotal >= CAN_MAX_DLC)break;
-                        msg->addBytes(message->getArgument(i + 1), bytec);
-                    }
-
-                    //send using base method so as not to send a message back to the sender of this command
-                    MCP2515Device::sendMessage(msg);
-                    handled = true;
-                    break;
-
-                default: //Message from outside BUS .. all nodes should respond to this
-                    msg = getMessageForDevice(message->sender, ArduinoMessage::TYPE_COMMAND, 1);
-                    msg->add((byte)command);
-                    byteTotal = 1;
-                    for(byte i = 0; i < message->getArgumentCount(); i++){
-                        bytec = message->getArgumentSize(i + 1);
-                        byteTotal += bytec;
-                        if(byteTotal >= CAN_MAX_DLC)break;
-                        msg->addBytes(message->getArgument(i + 1), bytec);
-                    }
-
-                    //send using base method so as not to send a message back to the sender of this command
-                    MCP2515Device::sendMessage(msg);
-
-                    handled = true;
-                    break;
+            byte startAt = 0;
+            /*if(command == ArduinoDevice::REQUEST){
+                reqType = (ArduinoMessage::MessageType)message->get<ArduinoMessage::MessageType>(1);
+                msg = getMessageForDevice(message->sender, reqType, message->tag);
+                startAt = 1;
+                byteTotal = 0;
+            } else {    
+                msg = getMessageForDevice(message->sender, ArduinoMessage::TYPE_COMMAND, 1);
+                msg->add((byte)command);
+                startAt = 0;
+                byteTotal = 1;
             }
+
+            //copy message arguments across
+            for(byte i = startAt; i < message->getArgumentCount(); i++){
+                bytec = message->getArgumentSize(i + 1);
+                byteTotal += bytec;
+                if(byteTotal >= CAN_MAX_DLC)break;
+                msg->addBytes(message->getArgument(i + 1), bytec);
+            }*/
+
+            //send using base method so as not to send a message back to the sender of this command
+            //handled = MCP2515Device::sendMessage(msg);
+            //sendMessageFromBase(msg);
+
+            handled = false;
         }
         return handled;
     }
@@ -146,24 +146,10 @@ namespace Chetch{
 
         1. This method is used in MCP2515Device::handleReceivedMessage as well as MCP2525Device::loop
 
-        2. Not all messages generated from these methods should be sent to the bus.  Errors for instance
+        2. Base sendMessage MUST be called in order to forward the message otherwise the message and canOutFrame are not seeded with data
         */
-
-        bool send = false;
-        bool forward = false;
-
-        //criteria for sending
-        if(message->type == ArduinoMessage::MessageType::TYPE_ERROR){
-            send = false;
-        }
-
-        if(send){
-            forward = MCP2515Device::sendMessage(message);
-            if(forward){
-                messageCount++;
-            }
-        } 
-        if(forward){
+    
+        if(MCP2515Device::sendMessage(message)){
             fsendmsg.clear();
             fsendmsg.tag = message->tag;
             
@@ -177,7 +163,11 @@ namespace Chetch{
                 fsendmsg.add((byte)(message->sender + ArduinoBoard::START_DEVICE_IDS_AT - 1));
             }
             
-            enqueueMessageToSend(MESSAGE_ID_FORWARD_SENT, MESSAGE_ID_FORWARD_SENT);
+            messageCount++;
+
+            if(!enqueueMessageToSend(MESSAGE_ID_FORWARD_SENT, MESSAGE_ID_FORWARD_SENT)){
+                raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 10);
+            }
             return true;
         } else {
             return false;

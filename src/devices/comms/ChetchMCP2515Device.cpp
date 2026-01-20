@@ -42,8 +42,8 @@ namespace Chetch{
         return n;
     }
 
-    void MCP2515Device::init(){
-        if(!initialised){
+    void MCP2515Device::init(bool forceInit){
+        if(!initialised || forceInit){
             maskNum = 0;
             filterNum = 0;
             mcp2515.reset();
@@ -92,8 +92,7 @@ namespace Chetch{
     void MCP2515Device::raiseError(MCP2515ErrorCode errorCode, unsigned long errorData){
         bool repeatError = lastError == errorCode;
 
-        if(lastError == MCP2515ErrorCode::NO_ERROR)
-        {
+        if(lastError == MCP2515ErrorCode::NO_ERROR){
             broadcastError = true;
         } else if(repeatError){
             broadcastError = millis() - lastErrorOn > 1000;
@@ -181,7 +180,7 @@ namespace Chetch{
             
             sendMessage(msg);
         
-            //reset code
+            //reset broadcast flag
             broadcastError = false;
         } else if(remoteInitialised){
             msg = getMessageForDevice(this, ArduinoMessage::TYPE_INITIALISE_RESPONSE);
@@ -363,21 +362,23 @@ namespace Chetch{
             case ArduinoMessage::TYPE_STATUS_REQUEST:
                 message->populate<byte>(canInFrame.data);
                 targetNode = message->get<byte>(0);
-                if(message->sender == Board->getID()){
-                    response = getMessageForDevice(message->sender, ArduinoMessage::TYPE_STATUS_RESPONSE);
-                    response->add(Board->getID());
-                    response->add(millis());
-                    response->add(Board->getDeviceCount());
-                    response->add(Board->getFreeMemory());
-                    sendMessage(response);
-                } else {
-                    device = Board->getDeviceByID(message->sender);
-                    if(device == NULL){
-                        raiseError(UNKNOWN_RECEIVE_ERROR, 1);
-                    } else {
-                        response = getMessageForDevice(device, ArduinoMessage::TYPE_STATUS_RESPONSE);
-                        device->setStatusInfo(response);
+                if(targetNode == 0 || targetNode == getNodeID()){
+                    if(message->sender == Board->getID()){
+                        response = getMessageForDevice(message->sender, ArduinoMessage::TYPE_STATUS_RESPONSE);
+                        response->add(Board->getID());
+                        response->add(millis());
+                        response->add(Board->getDeviceCount());
+                        response->add(Board->getFreeMemory());
                         sendMessage(response);
+                    } else {
+                        device = Board->getDeviceByID(message->sender);
+                        if(device == NULL){
+                            raiseError(UNKNOWN_RECEIVE_ERROR, 1);
+                        } else {
+                            response = getMessageForDevice(device, ArduinoMessage::TYPE_STATUS_RESPONSE);
+                            device->setStatusInfo(response);
+                            sendMessage(response);
+                        }
                     }
                 }
                 handled = true;
@@ -544,6 +545,7 @@ namespace Chetch{
                 raiseError(MCP2515ErrorCode::UNKNOWN_SEND_ERROR, edata);
                 return false;
         }
+       return true;
     }
 
     uint32_t MCP2515Device::createFilterMask(bool checkNodeID, bool checkMessageType, bool checkSender){

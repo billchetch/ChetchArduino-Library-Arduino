@@ -41,8 +41,8 @@ namespace Chetch{
             void setStatusInfo(ArduinoMessage* response) override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
-            bool sendMessage(ArduinoMessage *message) override;
             void handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message) override;
+            bool sendMessage(ArduinoMessage *message) override;
     };
 } //end namespace
 #endif //end prevent multiple inclusion
