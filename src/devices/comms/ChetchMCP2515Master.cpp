@@ -24,9 +24,9 @@ namespace Chetch{
     void MCP2515Master::loop(){
         if(statusRequested){
             if(millis() - lastStatusRequest > 20000){
-                //if(canForward)canForward = false;
+                if(canForward)canForward = false;
             } else {
-                //if(!canForward)canForward = true;
+                if(!canForward)canForward = true;
             }
         }
 
@@ -49,55 +49,47 @@ namespace Chetch{
 
     void MCP2515Master::handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response){
         ArduinoDevice::handleInboundMessage(message, response);
-        switch(message->type){
-            case ArduinoMessage::TYPE_PING:
-                indicate(true);
-                break;
 
-            case ArduinoMessage::TYPE_INITIALISE:
-                indicate(true);
-                resetErrors();
-                if(messageReceivedListener != NULL){
-                    messageReceivedListener(this, getNodeID(), message, NULL);
-                }
-                response->add(millis());
-                response->add((byte)TIMESTAMP_RESOLUTION);
-                response->add(presenceInterval);
-                break;
+        if(message->type == ArduinoMessage::TYPE_PING){
+            indicate(true);
+        } else if(message->type == ArduinoMessage::TYPE_INITIALISE){
+            indicate(true);
+            resetErrors();
+            if(messageReceivedListener != NULL){
+                messageReceivedListener(this, getNodeID(), message, NULL);
+            }
+            response->add(millis());
+            response->add((byte)TIMESTAMP_RESOLUTION);
+            response->add(presenceInterval);
+        } else if(message->type == ArduinoMessage::TYPE_FINALISE){
+            indicate(true);
+            canForward = false;
+            statusRequested = false;
+            if(messageReceivedListener != NULL){
+                messageReceivedListener(this, getNodeID(), message, NULL);
+            }
+        } else if(message->type == ArduinoMessage::TYPE_ERROR_TEST){
+            indicate(true);
+            MCP2515ErrorCode ecode = message->get<MCP2515ErrorCode>(0);
+            raiseError(ecode, 0); //message->get<unsigned long>(1));
+            if(messageReceivedListener != NULL){
+                messageReceivedListener(this, getNodeID(), message, NULL);
+            }
+        } else if(message->type== ArduinoMessage::TYPE_RESET){
+            indicate(true);
+            ResetRegime regime = message->get<ResetRegime>(0);
             
-            case ArduinoMessage::TYPE_FINALISE:
-                indicate(true);
-                canForward = false;
-                if(messageReceivedListener != NULL){
-                    messageReceivedListener(this, getNodeID(), message, NULL);
-                }
-                break;
+            init(true);
 
-            case ArduinoMessage::TYPE_ERROR_TEST:
-                indicate(true);
-                MCP2515ErrorCode ecode = message->get<MCP2515ErrorCode>(0);
-                raiseError(ecode, 0); //message->get<unsigned long>(1));
-                if(messageReceivedListener != NULL){
-                    messageReceivedListener(this, getNodeID(), message, NULL);
-                }
-                break;
+            resetErrors();
+            if(clearReceive() > 2){
+                raiseError(READ_FAIL, 3);
+            }
+            mcp2515.clearInterrupts();
 
-            case ArduinoMessage::TYPE_RESET:
-                indicate(true);
-                ResetRegime regime = message->get<ResetRegime>(0);
-                
-                init(true);
-
-                resetErrors();
-                if(clearReceive() > 2){
-                    raiseError(READ_FAIL, 3);
-                }
-                mcp2515.clearInterrupts();
-
-                if(messageReceivedListener != NULL){
-                    messageReceivedListener(this, getNodeID(), message, NULL);
-                }
-                break;
+            if(messageReceivedListener != NULL){
+                messageReceivedListener(this, getNodeID(), message, NULL);
+            }
         }
     }
 
