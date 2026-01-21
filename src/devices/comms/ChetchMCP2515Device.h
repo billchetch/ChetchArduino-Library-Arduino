@@ -236,7 +236,7 @@ namespace Chetch{
 
             IndicateMode indicateMode = INDICATE_ON_SEND;
 
-        public: //SHOULD BE PRIVATE
+        public: //SHOULD BE PRIVATE/PROTECTED
             unsigned int presenceInterval = 0; //how often to broadcast a PRESENCE message
             unsigned long lastPresenceOn = 0;
             bool presenceSent = false; //to indicate first presence sent

@@ -21,11 +21,24 @@ namespace Chetch{
         }
 	}
 
-    
+    void MCP2515Master::loop(){
+        if(statusRequested){
+            if(millis() - lastStatusRequest > 20000){
+                //if(canForward)canForward = false;
+            } else {
+                //if(!canForward)canForward = true;
+            }
+        }
+
+        MCP2515Device::loop();
+    }
     void MCP2515Master::setStatusInfo(ArduinoMessage* message){
         ArduinoDevice::setStatusInfo(message);
         message->add(getNodeID());
         MCP2515Device::setStatusInfo(message);
+
+        lastStatusRequest = millis();
+        statusRequested = true;
     }
 
     void MCP2515Master::setReportInfo(ArduinoMessage* message){
@@ -54,6 +67,7 @@ namespace Chetch{
             
             case ArduinoMessage::TYPE_FINALISE:
                 indicate(true);
+                canForward = false;
                 if(messageReceivedListener != NULL){
                     messageReceivedListener(this, getNodeID(), message, NULL);
                 }
@@ -71,7 +85,7 @@ namespace Chetch{
             case ArduinoMessage::TYPE_RESET:
                 indicate(true);
                 ResetRegime regime = message->get<ResetRegime>(0);
-
+                
                 init(true);
 
                 resetErrors();
@@ -111,7 +125,7 @@ namespace Chetch{
             int byteTotal = 0;
             byte bytec = 0;
             byte startAt = 0;
-            /*if(command == ArduinoDevice::REQUEST){
+            if(command == ArduinoDevice::REQUEST){
                 reqType = (ArduinoMessage::MessageType)message->get<ArduinoMessage::MessageType>(1);
                 msg = getMessageForDevice(message->sender, reqType, message->tag);
                 startAt = 1;
@@ -129,13 +143,10 @@ namespace Chetch{
                 byteTotal += bytec;
                 if(byteTotal >= CAN_MAX_DLC)break;
                 msg->addBytes(message->getArgument(i + 1), bytec);
-            }*/
+            }
 
             //send using base method so as not to send a message back to the sender of this command
-            //handled = MCP2515Device::sendMessage(msg);
-            //sendMessageFromBase(msg);
-
-            handled = false;
+            handled = MCP2515Device::sendMessage(msg);
         }
         return handled;
     }
@@ -149,7 +160,7 @@ namespace Chetch{
         2. Base sendMessage MUST be called in order to forward the message otherwise the message and canOutFrame are not seeded with data
         */
     
-        if(MCP2515Device::sendMessage(message)){
+        if(MCP2515Device::sendMessage(message) && canForward){
             fsendmsg.clear();
             fsendmsg.tag = message->tag;
             
@@ -187,20 +198,24 @@ namespace Chetch{
 
         //Call base method first to allow default handling
         MCP2515Device::handleReceivedMessage(sourceNodeID, message);
-
+        
         //update message count
         messageCount++;
 
-        //Now we prepare a message to forward it vias the seria. connection
-        frecvmsg.clear();
-        frecvmsg.tag = message->tag;
-        
-        frecvmsg.addBytes(canInFrame.data, canInFrame.can_dlc);
-        
-        frecvmsg.add(canInFrame.can_id);
-        frecvmsg.add(message->type);
-        frecvmsg.add(message->sender);
-    
-        enqueueMessageToSend(MESSAGE_ID_FORWARD_RECEIVED, MESSAGE_ID_FORWARD_RECEIVED);
+        if(canForward){
+            //Now we prepare a message to forward it vias the seria. connection
+            frecvmsg.clear();
+            frecvmsg.tag = message->tag;
+            
+            frecvmsg.addBytes(canInFrame.data, canInFrame.can_dlc);
+            
+            frecvmsg.add(canInFrame.can_id);
+            frecvmsg.add(message->type);
+            frecvmsg.add(message->sender);
+            
+            if(!enqueueMessageToSend(MESSAGE_ID_FORWARD_RECEIVED, MESSAGE_ID_FORWARD_RECEIVED)){
+                raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 11);
+            }
+        }
     }
 }

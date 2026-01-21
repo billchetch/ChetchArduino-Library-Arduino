@@ -28,11 +28,16 @@ namespace Chetch{
             ArduinoMessage fsendmsg;
 
             unsigned int messageCount = 0;
+
+            bool canForward = false;
+            unsigned long lastStatusRequest = 0;
+            bool statusRequested = false;
             
         public:
             MCP2515Master(unsigned int presenceInterval = MCP2515Device::PRESENCE_INTERVAL, int csPin = CAN_DEFAULT_CS_PIN);
 
             bool begin() override;
+            void loop() override;
             
             void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response) override;
             void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
@@ -41,6 +46,7 @@ namespace Chetch{
             void setStatusInfo(ArduinoMessage* response) override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
+            
             void handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message) override;
             bool sendMessage(ArduinoMessage *message) override;
     };
