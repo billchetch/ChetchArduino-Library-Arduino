@@ -8,6 +8,7 @@ namespace Chetch{
                                             , fsendmsg(22) //Add 12 bytes to allow for additional 'meta' data
 
     { 
+        setIndicateMode(NO_INDICATOR);
         setReportInterval(1000); //For reporting bus activity
     }
 
@@ -152,24 +153,28 @@ namespace Chetch{
         2. Base sendMessage MUST be called in order to forward the message otherwise the message and canOutFrame are not seeded with data
         */
     
-        if(MCP2515Device::sendMessage(message) && canForward){
-            fsendmsg.clear();
-            fsendmsg.tag = message->tag;
-            
-            fsendmsg.addBytes(canOutFrame.data, canOutFrame.can_dlc);
-            
-            fsendmsg.add(canOutFrame.can_id);
-            fsendmsg.add(message->type);
-            if(message->sender == 0){
-                fsendmsg.add(Board->getID());    
-            } else {
-                fsendmsg.add((byte)(message->sender + ArduinoBoard::START_DEVICE_IDS_AT - 1));
-            }
-            
-            messageCount++;
+        if(MCP2515Device::sendMessage(message)){ 
+            if(canForward){
+                indicate(true);
 
-            if(!enqueueMessageToSend(MESSAGE_ID_FORWARD_SENT, MESSAGE_ID_FORWARD_SENT)){
-                raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 10);
+                fsendmsg.clear();
+                fsendmsg.tag = message->tag;
+                
+                fsendmsg.addBytes(canOutFrame.data, canOutFrame.can_dlc);
+                
+                fsendmsg.add(canOutFrame.can_id);
+                fsendmsg.add(message->type);
+                if(message->sender == 0){
+                    fsendmsg.add(Board->getID());    
+                } else {
+                    fsendmsg.add((byte)(message->sender + ArduinoBoard::START_DEVICE_IDS_AT - 1));
+                }
+                
+                messageCount++;
+
+                if(!enqueueMessageToSend(MESSAGE_ID_FORWARD_SENT, MESSAGE_ID_FORWARD_SENT)){
+                    raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 10);
+                }
             }
             return true;
         } else {
@@ -195,6 +200,8 @@ namespace Chetch{
         messageCount++;
 
         if(canForward){
+            indicate(true);
+
             //Now we prepare a message to forward it vias the seria. connection
             frecvmsg.clear();
             frecvmsg.tag = message->tag;
