@@ -9,9 +9,9 @@ namespace Chetch{
         eventListener = listener;
     }
 
-    bool ArduinoDevice::raiseEvent(byte eventID) {
+    bool ArduinoDevice::raiseEvent(byte eventID, byte eventTag) {
         if (eventListener != NULL) {
-            return eventListener(this, eventID);
+            return eventListener(this, eventID, eventTag);
         }
         return false;
     }

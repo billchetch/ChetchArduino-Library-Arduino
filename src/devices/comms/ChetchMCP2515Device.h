@@ -114,7 +114,7 @@ namespace Chetch{
             static const byte TIMESTAMP_RESOLUTION = 4; //Shift right by this many bits... lower number makes finer resolution
             static const unsigned int INDICATOR_INTERVAL = 50;
 
-            static const byte EVENT_READTY_TO_SEND = 1;
+            static const byte EVENT_NODE_JOINED = 1;
 
             enum MCP2515ErrorCode : byte{
                 NO_ERROR = 0,
@@ -302,6 +302,7 @@ namespace Chetch{
             ArduinoMessage* getMessageForDevice(byte deviceID, ArduinoMessage::MessageType messageType, byte tag = 0);
             bool sendMessageForDevice(ArduinoDevice* device, byte messageID);
             virtual bool sendMessage(ArduinoMessage *message);
+            bool checkReceive();
             void readMessage();
             virtual void handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message);
 

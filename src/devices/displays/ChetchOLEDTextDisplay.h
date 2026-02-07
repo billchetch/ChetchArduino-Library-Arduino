@@ -68,10 +68,11 @@ namespace Chetch{
 
             void updateDisplay(byte tag = 0);
             void addDisplayHandler(DisplayHandler handler){ displayHandler = handler; }
+            void setCursor(unsigned int cx, unsigned int cy);
             void clearDisplay();
             void clearLine(byte lineNumber);
             void setFontSize(DisplayOption displayOption);
-            void print(char* text, unsigned int cx = 0, unsigned int cy = 0);
+            template <typename T> void print(T t){ display.print(t); }
             void displayPreset(DisplayPreset preset, unsigned int lockFor);
             void displayBoardStats(unsigned int lockFor);
             void lock(unsigned int lockFor); //set to 0 to remove lock, lockFor in ms

@@ -123,28 +123,22 @@ namespace Chetch{
     }
 
     void ArduinoBoard::handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response){
-        switch(message->type){
-            case ArduinoMessage::TYPE_ECHO:
-                response->copy(message);
-                response->type = ArduinoMessage::TYPE_ECHO_RESPONSE;
-                setResponseInfo(response, message, getID());
-                break;
-
-            case ArduinoMessage::TYPE_STATUS_REQUEST:
-                response->type = ArduinoMessage::TYPE_STATUS_RESPONSE;
-                response->add(BOARD_NAME);
-                response->add(millis());
-                response->add(deviceCount);
-                response->add(getFreeMemory());
-                setResponseInfo(response, message, getID());
-                break;
-
-            case ArduinoMessage::TYPE_PING:
-                response->type = ArduinoMessage::TYPE_PING_RESPONSE;
-                //response->add(BOARD_NAME);
-                response->add(millis());
-                setResponseInfo(response, message, getID());
-                break;
+        if(message->type == ArduinoMessage::TYPE_ECHO){
+            response->copy(message);
+            response->type = ArduinoMessage::TYPE_ECHO_RESPONSE;
+            setResponseInfo(response, message, getID());
+        } else if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST){
+            response->type = ArduinoMessage::TYPE_STATUS_RESPONSE;
+            response->add(BOARD_NAME);
+            response->add(millis());
+            response->add(deviceCount);
+            response->add(getFreeMemory());
+            setResponseInfo(response, message, getID());
+        } else if(message->type == ArduinoMessage::TYPE_PING){
+            response->type = ArduinoMessage::TYPE_PING_RESPONSE;
+            //response->add(BOARD_NAME);
+            response->add(millis());
+            setResponseInfo(response, message, getID());
         }
     }
 

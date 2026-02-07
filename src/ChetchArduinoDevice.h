@@ -42,12 +42,13 @@ namespace Chetch{
                 UNLOCK,
                 REQUEST,
                 SYNCHRONISE,
+                UPDATE,
             };
 
         public:
             static const byte MESSAGE_ID_REPORT = 1;
 
-            typedef bool (*EventListener)(ArduinoDevice*, byte);
+            typedef bool (*EventListener)(ArduinoDevice*, byte, byte);
 
         public:
             ArduinoBoard* Board = NULL; //TODO: this could be static to save space
@@ -63,7 +64,7 @@ namespace Chetch{
         
         public:
             void addEventListener(EventListener listener);
-            bool raiseEvent(byte eventID);
+            bool raiseEvent(byte eventID, byte eventTag = 0);
 
             void setReportInterval(int interval) { reportInterval = interval; }
             

@@ -47,7 +47,6 @@ namespace Chetch{
 	}
     
     void OLEDTextDisplay::updateDisplay(byte tag){
-        if(isLocked() || (update && tag == 0))return;
         update = true; 
         updateTag = tag; 
     }
@@ -60,13 +59,12 @@ namespace Chetch{
             unlock();
         }
 
-        if(update && (millis()- lastUpdated > (int)refreshRate)){
-            update = false;
-            lastUpdated = millis();
-            if(displayHandler != NULL){
-                displayHandler(this, updateTag);
+        if(displayHandler != NULL && !isLocked() && update && (millis()- lastUpdated > (int)refreshRate)){
+            if(displayHandler(this, updateTag)){
+                update = false;
+                lastUpdated = millis();
+                updateTag = 0;
             }
-            updateTag = 0;
         }
     }
 
@@ -86,10 +84,19 @@ namespace Chetch{
                 case PRINT:
                     if(message->getArgumentSize(1) < 32){
                         message->get(1, text);
-                        print(text, message->get<unsigned int>(2), message->get<unsigned int>(3));
+                        setCursor(message->get<unsigned int>(2), message->get<unsigned int>(3));
+                        print(text);
                     } else {
                         //todo an error of sorts
                     }
+                    handled = true;
+                    break;
+
+                case UPDATE:
+                    if(message->hasArgument(1)){
+                        updateTag = message->get<byte>(1);
+                    }
+                    update = true;
                     handled = true;
                     break;
 
@@ -116,6 +123,11 @@ namespace Chetch{
         lockDuration = 0;
     }
 
+    void OLEDTextDisplay::setCursor(unsigned int cx, unsigned int cy){
+        if(isLocked())return;
+        display.setCursor(cx, cy);
+    }
+
     void OLEDTextDisplay::clearDisplay(){
         if(isLocked())return;
         display.clearDisplay();
@@ -138,13 +150,6 @@ namespace Chetch{
                 display.setFont(u8x8_font_px437wyse700a_2x2_r);
                 break;
         }
-    }
-
-    void OLEDTextDisplay::print(char* text, unsigned int cx, unsigned int cy){
-        if(isLocked())return;
-
-        display.setCursor(cx, cy);
-        display.print(text);
     }
 
     void OLEDTextDisplay::displayPreset(DisplayPreset preset, unsigned int lockFor){
