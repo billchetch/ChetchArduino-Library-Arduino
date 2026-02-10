@@ -105,7 +105,7 @@ namespace Chetch{
             digitalWrite(pin, pinState);
         }
         on = pinState == HIGH;
-        raiseEvent(EVENT_SWITCH_TRIGGERED);
+        raiseEvent(EVENT_SWITCH_TRIGGERED, on);
     }
 
     void SwitchDevice::turn(bool on){
