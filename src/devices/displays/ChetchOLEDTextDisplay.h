@@ -66,7 +66,8 @@ namespace Chetch{
             void loop() override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
-            void updateDisplay(byte tag = 0);
+            void updateDisplay(byte tag = 0, bool refresh = false);
+            void refreshDisplay();
             void addDisplayHandler(DisplayHandler handler){ displayHandler = handler; }
             void setCursor(unsigned int cx, unsigned int cy);
             void clearDisplay();

@@ -46,9 +46,13 @@ namespace Chetch{
         return begun;
 	}
     
-    void OLEDTextDisplay::updateDisplay(byte tag){
+    void OLEDTextDisplay::updateDisplay(byte tag, bool refresh){
         update = true; 
         updateTag = tag; 
+
+        if(refresh){
+            refreshDisplay();
+        }
     }
 
     void OLEDTextDisplay::loop(){
@@ -60,6 +64,12 @@ namespace Chetch{
         }
 
         if(displayHandler != NULL && !isLocked() && update && (millis()- lastUpdated > (int)refreshRate)){
+            refreshDisplay();
+        }
+    }
+
+    void OLEDTextDisplay::refreshDisplay(){
+        if(displayHandler!= NULL){
             if(displayHandler(this, updateTag)){
                 update = false;
                 lastUpdated = millis();
