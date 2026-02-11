@@ -159,7 +159,7 @@ namespace Chetch{
         unsigned long ms = millis();
         ArduinoMessage* msg;
         //We ensure that the first message sent is a presence message and this should be as soon as the device has begun
-        if(!presenceSent || (presenceInterval > 0 && ms - lastPresenceOn > presenceInterval)){
+        if(!presenceSent || (presenceInterval > 0 && (ms - lastPresenceOn) > presenceInterval)){
             msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_PRESENCE, 1);
             msg->add(ms);
             msg->add((unsigned int)(ms - lastPresenceOn));
