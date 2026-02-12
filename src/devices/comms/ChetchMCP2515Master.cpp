@@ -3,6 +3,8 @@
 
 /*
  */
+
+ 
 namespace Chetch{
     MCP2515Master::MCP2515Master(unsigned int presenceInterval, int csPin) : MCP2515Device(MASTER_NODE_ID, presenceInterval, csPin)
                                             , frecvmsg(22) //Add 12 bytes to allow for additional 'meta' data
