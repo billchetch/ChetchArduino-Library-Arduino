@@ -13,7 +13,6 @@ namespace Chetch{
         return begun;
 	}
 
-
     void SerialPinMaster::loop(){
         SerialPin::loop();
 
@@ -73,13 +72,13 @@ namespace Chetch{
     }
 
     bool SerialPinMaster::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
-        bool handled = SerialPin::executeCommand(command, message, response);
+        bool handled = ArduinoDevice::executeCommand(command, message, response);
         
         if(!handled){
             switch(command){
                 case DeviceCommand::SEND:
                 case DeviceCommand::TRANSMIT:
-                    byte b2s = message->get<byte>(1);
+                    byte b2s = 12; //message->get<byte>(1);
                     send(b2s);
                     break;
             }

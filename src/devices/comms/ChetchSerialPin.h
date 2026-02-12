@@ -30,6 +30,8 @@ namespace Chetch{
         public:
             SerialPin(byte pin, int interval = 100);
 
+            void setStatusInfo(ArduinoMessage* response) override;
+            
             void loop() override;
 
 

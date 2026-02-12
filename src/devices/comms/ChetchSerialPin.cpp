@@ -9,6 +9,13 @@ namespace Chetch{
         this->interval = interval;
     }
     
+    void SerialPin::setStatusInfo(ArduinoMessage* message){
+        ArduinoDevice::setStatusInfo(message);
+        
+        message->add(pin);
+        message->add(interval);
+    }
+
     void SerialPin::loop(){
         ArduinoDevice::loop();
 
