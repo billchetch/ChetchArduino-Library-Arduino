@@ -19,6 +19,7 @@ namespace Chetch{
 
             bool begin() override;
             void loop() override;
+            bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
             bool send(byte b);
     }; //end class
