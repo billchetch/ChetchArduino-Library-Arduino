@@ -12,7 +12,7 @@ namespace Chetch{
     void SerialPin::loop(){
         ArduinoDevice::loop();
 
-        if(!ready4comms && pinRead() == 1){
+        if(!ready4comms && pinRead(false) == 1){
             ready4comms = true;
         }
     }
@@ -21,8 +21,8 @@ namespace Chetch{
         return (millis() - lastPinIO) > (interval + slip);
     }
 
-    byte SerialPin::pinRead(){
-        lastPinIO = millis();
+    byte SerialPin::pinRead(bool asData){
+        if(asData)lastPinIO = millis();
         return digitalRead(pin) & 0x01;
     }
 } //end namespace

@@ -11,8 +11,7 @@ namespace Chetch{
             static const byte EVENT_DATA_RECEIVED = 1;
 
         private: 
-            byte slippage = 10; //allowed diff from master time interval
-
+            
         protected:
             
         public:

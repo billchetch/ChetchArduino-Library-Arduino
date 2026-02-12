@@ -24,7 +24,7 @@ namespace Chetch{
             byte bitCount = 0;
 
         protected:
-            byte pinRead();
+            byte pinRead(bool asData);
             bool intervalElapsed(byte slip = 0);
             
         public:

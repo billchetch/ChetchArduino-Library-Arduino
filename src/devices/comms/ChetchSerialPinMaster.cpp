@@ -22,13 +22,27 @@ namespace Chetch{
         //transmit mode
         if(sending && intervalElapsed()){
             if(bitCount == 0){
+                //Set the line to LOW to indicate transmission to occur
+                //Serial.print("-> SOT ");
+                //Serial.println(millis());
                 pinWrite(0);
                 bitCount = 1;
             } else if(bitCount > 0 && bitCount < 9) {
+                //Transmit the data
                 byte bit = (data >> (bitCount - 1)) & 0x01;
+                /*Serial.print(">> B");
+                Serial.print(bitCount);
+                Serial.print("=");
+                Serial.print(bit);
+                Serial.print(" ival=");
+                Serial.println(millis() - lastPinIO);*/
+
                 pinWrite(bit);
                 bitCount++;
             } else if(bitCount == 9) {
+                //Data has been transmitted so reset some stuff and return the line to high
+                //Serial.print("-> EOT: ");
+                //Serial.println(millis());
                 bitCount = 0;
                 sending = false;
                 pinWrite(1);
