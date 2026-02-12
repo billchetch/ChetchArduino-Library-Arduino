@@ -72,5 +72,9 @@ namespace Chetch{
         }
     }
 
+    bool SerialPinMaster::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
+        bool handled = SerialPin::executeCommand(command, message, response);
+        
+        if(!handled)
 
 } //end namespace
