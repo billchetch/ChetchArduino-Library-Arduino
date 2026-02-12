@@ -76,7 +76,13 @@ namespace Chetch{
         bool handled = SerialPin::executeCommand(command, message, response);
         
         if(!handled){
-
+            switch(command){
+                case DeviceCommand::SEND:
+                case DeviceCommand::TRANSMIT:
+                    byte b2s = message->get<byte>(1);
+                    send(b2s);
+                    break;
+            }
         }
         
         return handled;
