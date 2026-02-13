@@ -78,7 +78,7 @@ namespace Chetch{
             switch(command){
                 case DeviceCommand::SEND:
                 case DeviceCommand::TRANSMIT:
-                    byte b2s = 12; //message->get<byte>(1);
+                    byte b2s = message->get<byte>(1);
                     send(b2s);
                     break;
             }
