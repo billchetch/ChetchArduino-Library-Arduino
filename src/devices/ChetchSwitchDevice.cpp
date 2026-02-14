@@ -10,14 +10,19 @@ namespace Chetch{
         this->mode = mode;
         this->pin = pin;
         this->tolerance = tolerance;
-        this->pinState = pinState;        
+        this->pinState = pinState;  
+        this->onState = !pinState;      
     }    
 
     bool SwitchDevice::begin(){
         
         switch (mode) {
         case SwitchMode::PASSIVE:
-            pinMode(pin, INPUT);
+            if(pinState == LOW){
+                pinMode(pin, INPUT);
+            } else {
+                pinMode(pin, INPUT_PULLUP);
+            }
             break;
 
         case SwitchMode::ACTIVE:
@@ -26,7 +31,6 @@ namespace Chetch{
             break;
         }
 
-        on = pinState == HIGH;
         begun = true;
         return begun;
     }
@@ -104,18 +108,18 @@ namespace Chetch{
             enqueueMessageToSend(MESSAGE_ID_TRIGGERED);
             digitalWrite(pin, pinState);
         }
-        on = pinState == HIGH;
-        raiseEvent(EVENT_SWITCH_TRIGGERED, on);
+        raiseEvent(EVENT_SWITCH_TRIGGERED, isOn());
     }
 
     void SwitchDevice::turn(bool on){
         if(mode != SwitchMode::ACTIVE)return;
 
-        pinState = on;
+        pinState = on ? onState : !onState;
         bool currentPinState = digitalRead(pin);
         if(currentPinState != pinState){
             //if there is a request to change of pin state then if we haven't started recording then we start
             if(recording == 0)recording = millis();
+            if(recording == 0)recording = 1; //in the highly unlikely case where millis == 0
         } else {
             //otherwise we've either requested something already the case OR we've undone our previous request
             recording = 0;
@@ -124,6 +128,6 @@ namespace Chetch{
 
     
     bool SwitchDevice::isOn() {
-        return on;
+        return pinState == onState;
     }
 } //end namespace

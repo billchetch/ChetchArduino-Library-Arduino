@@ -21,10 +21,10 @@ namespace Chetch{
         private:
             SwitchMode mode;
             byte pin = 0;
-            bool pinState = false;
+            bool pinState = LOW;
+            bool onState;
             int tolerance = 0;
             unsigned long recording = 0;
-            bool on = false;
             
         public: 
             
