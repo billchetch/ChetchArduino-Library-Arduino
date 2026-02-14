@@ -4,8 +4,13 @@
 
 namespace Chetch{
 
-    SerialPinSlave::SerialPinSlave(byte pin, int interval) : SerialPin(pin, interval){
-        
+    SerialPinSlave::SerialPinSlave(byte pin, int interval, byte bufferLength) : SerialPin(pin, interval){
+        this->bufferLength = bufferLength == 0 ? 1 : bufferLength;
+        buffer = new byte[this->bufferLength];
+    }
+
+    SerialPinSlave::~SerialPinSlave(){
+        delete[] buffer;
     }
 
     bool SerialPinSlave::begin(){
@@ -48,9 +53,16 @@ namespace Chetch{
                 bitCount = 0;
                 ready4comms = false;
                 
-                raiseEvent(EVENT_DATA_RECEIVED, data);
-
+                buffer[bufferIdx] = data;
+                bufferIdx++;
                 data = 0;
+
+                if(bufferIdx == bufferLength){
+                    bufferIdx = 0;
+                    if(dataListener != NULL){
+                        dataListener(this, buffer, bufferLength);
+                    }
+                }
             }
         }
         
