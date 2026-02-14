@@ -23,12 +23,19 @@ namespace Chetch{
             byte data = 0;
             byte bitCount = 0;
 
+            //For message frames
+            byte* frame;
+            byte frameSize = 0;
+            byte frameIdx = 0;
+
         protected:
             byte pinRead(bool asData);
             bool intervalElapsed(byte slip = 0);
             
         public:
-            SerialPin(byte pin, int interval = 100);
+            SerialPin(byte pin, int interval = 100, byte frameSize = 1);
+            ~SerialPin();
+
 
             void setStatusInfo(ArduinoMessage* response) override;
             

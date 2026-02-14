@@ -124,21 +124,21 @@ namespace Chetch{
             if(command == ArduinoDevice::REQUEST){
                 reqType = (ArduinoMessage::MessageType)message->get<ArduinoMessage::MessageType>(1);
                 msg = getMessageForDevice(message->sender, reqType, message->tag);
-                startAt = 1;
+                startAt = 2;
                 byteTotal = 0;
             } else {    
                 msg = getMessageForDevice(message->sender, ArduinoMessage::TYPE_COMMAND, 1);
                 msg->add((byte)command);
-                startAt = 0;
+                startAt = 1;
                 byteTotal = 1;
             }
 
             //copy message arguments across
             for(byte i = startAt; i < message->getArgumentCount(); i++){
-                bytec = message->getArgumentSize(i + 1);
+                bytec = message->getArgumentSize(i);
                 byteTotal += bytec;
                 if(byteTotal >= CAN_MAX_DLC)break;
-                msg->addBytes(message->getArgument(i + 1), bytec);
+                msg->addBytes(message->getArgument(i), bytec);
             }
 
             //send using base method so as not to send a message back to the sender of this command

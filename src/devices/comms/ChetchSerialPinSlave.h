@@ -13,23 +13,27 @@ namespace Chetch{
             typedef void (*DataListener)(SerialPinSlave*, byte*, byte); //device, buffer
 
         private: 
-            byte* buffer;
-            byte bufferLength = 0;
-            byte bufferIdx = 0;
+            
             
         protected:
             DataListener dataListener = NULL;
 
         public:
-            SerialPinSlave(byte pin, int interval = 100, byte bufferLength = 1);
-            ~SerialPinSlave();
-
+            SerialPinSlave(byte pin, int interval = 100, byte frameSize = 1) : SerialPin(pin, interval, frameSize){}
+            
             void addDataListener(DataListener listener){ dataListener = listener; }
 
             bool begin() override;
             void loop() override;
 
-            
+            template<typename T> T get(byte* bytes = NULL){
+                if(bytes == NULL)bytes = frame;
+                T retVal = 0;
+                for(byte i = 0; i < sizeof(T); i++){
+                    ((byte *)&retVal)[i] = bytes[i];
+                }
+                return retVal;
+            }
     }; //end class
 
 } //end namespace

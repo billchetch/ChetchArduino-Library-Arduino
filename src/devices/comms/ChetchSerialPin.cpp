@@ -3,10 +3,17 @@
 
 
 namespace Chetch{
-    SerialPin::SerialPin(byte pin, int interval)
+    SerialPin::SerialPin(byte pin, int interval, byte frameSize)
     {
         this->pin = pin;
         this->interval = interval;
+
+        this->frameSize = frameSize == 0 ? 1 : frameSize;
+        frame = new byte[this->frameSize];
+    }
+
+    SerialPin::~SerialPin(){
+        delete[] frame;
     }
     
     void SerialPin::setStatusInfo(ArduinoMessage* message){

@@ -20,10 +20,9 @@ namespace Chetch{
 
         //transmit mode
         if(sending && intervalElapsed()){
+            //get byte to send
             if(bitCount == 0){
                 //Set the line to LOW to indicate transmission to occur
-                //Serial.print("-> SOT ");
-                //Serial.println(millis());
                 pinWrite(0);
                 bitCount = 1;
             } else if(bitCount > 0 && bitCount < 9) {
@@ -39,12 +38,21 @@ namespace Chetch{
                 pinWrite(bit);
                 bitCount++;
             } else if(bitCount == 9) {
-                //Data has been transmitted so reset some stuff and return the line to high
-                //Serial.print("-> EOT: ");
-                //Serial.println(millis());
+                //Byte has been transmitted so reset some stuff and return the line to high
                 bitCount = 0;
-                sending = false;
                 pinWrite(1);
+                
+                //Increment frame index to get next byte to send
+                frameIdx++;
+                if(frameIdx == frameSize){
+                    //Serial.print("-> EOT: ");
+                    //Serial.println(millis());
+                
+                    sending = false;
+                    frameIdx = 0;
+                } else {
+                    data = frame[frameIdx]; //get next byte to send
+                }
             }
         }
         
@@ -60,15 +68,36 @@ namespace Chetch{
         lastPinIO = millis();
     }
 
-   bool SerialPinMaster::send(byte b){
-        if(sending){
-            return false;
-        } else {
-            data = b;
-            sending = true;
-            bitCount = 0;
-            return true;
+    bool SerialPinMaster::send(byte *bytes, byte byteCount){
+        for(byte i = 0; i < byteCount; i++){
+            if(!send(bytes[i]))return false;
         }
+
+        return true;
+    }
+
+    bool SerialPinMaster::send(byte b){
+        if(sending)return false;
+
+        frame[frameIdx] = b;
+        frameIdx++; 
+
+        if(frameIdx == frameSize){
+            //send the frame
+            frameIdx = 0;
+            bitCount = 0;
+            data = frame[0]; //get first byte to send
+            sending = true;
+        }
+        return true;
+    }
+
+    bool SerialPinMaster::send(int argv){
+        return send((byte*)&argv, sizeof(argv));
+    }
+
+    bool SerialPinMaster::send(long argv){
+        return send((byte*)&argv, sizeof(argv));
     }
 
     bool SerialPinMaster::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
@@ -78,8 +107,10 @@ namespace Chetch{
             switch(command){
                 case DeviceCommand::SEND:
                 case DeviceCommand::TRANSMIT:
-                    byte b2s = message->get<byte>(1);
-                    send(b2s);
+                    for(byte i = 1; i < message->getArgumentCount(); i++){
+                        byte bytec = message->getArgumentSize(i);
+                        if(!send(message->getArgument(i), bytec))break;
+                    }
                     break;
             }
         }
