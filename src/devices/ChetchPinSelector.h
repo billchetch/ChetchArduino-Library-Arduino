@@ -1,0 +1,35 @@
+#ifndef CHETCH_ARDUINO_PIN_SELECTOR_H
+#define CHETCH_ARDUINO_PIN_SELECTOR_H
+
+
+#include <Arduino.h>
+#include <ChetchArduinoDevice.h>
+#include <ChetchArduinoMessage.h>
+
+#include "devices/ChetchSwitchDevice.h"
+
+namespace Chetch{
+    class PinSelector : public SwitchDevice {
+        public:
+            typedef void (*SelectListener)(PinSelector*, byte); //this, the pin number and 
+
+        private:
+            byte firstPin = 0;
+            byte selectedPin = 0;
+            byte maxPins = 0;
+            
+            int watchPinFor = 0;
+
+            SelectListener selectListener = NULL;
+
+        public:
+            PinSelector(SwitchDevice::Mode mode, byte firstPin, byte maxPins, int tolerance = 100);
+            
+            void addSelectListener(SelectListener listener){ selectListener = listener; }
+
+            bool begin() override;
+            void loop() override;
+            //void trigger() override;
+    }; //end class
+} //end namespae
+#endif

@@ -6,22 +6,33 @@ namespace Chetch{
     SwitchDevice::SwitchDevice(){
         //empty
     }    
-    SwitchDevice::SwitchDevice(SwitchMode mode, byte pin, int tolerance, bool pinState){
+    SwitchDevice::SwitchDevice(SwitchMode mode, byte pin, int tolerance, bool onState){
         this->mode = mode;
         this->pin = pin;
         this->tolerance = tolerance;
-        this->pinState = pinState;  
-        this->onState = !pinState;      
-    }    
-
+        this->pinState = !onState;  
+        this->onState = onState;      
+    }   
+    
     bool SwitchDevice::begin(){
         
+        initPin(pin);
+
+        begun = true;
+        return begun;
+    }
+
+    void SwitchDevice::setPin(byte pin){
+        this->pin = pin;
+    }
+
+    void SwitchDevice::initPin(byte pin){
         switch (mode) {
         case SwitchMode::PASSIVE:
-            if(pinState == LOW){
-                pinMode(pin, INPUT);
-            } else {
+            if(onState == LOW){
                 pinMode(pin, INPUT_PULLUP);
+            } else {
+                pinMode(pin, INPUT);
             }
             break;
 
@@ -30,9 +41,6 @@ namespace Chetch{
             digitalWrite(pin, pinState);
             break;
         }
-
-        begun = true;
-        return begun;
     }
 
     void SwitchDevice::setStatusInfo(ArduinoMessage* message){
@@ -46,7 +54,8 @@ namespace Chetch{
         if(messageID == MESSAGE_ID_TRIGGERED){
 
             message->type = ArduinoMessage::TYPE_DATA;
-            message->add(pinState);             
+            message->add(pinState);
+            message->add(pin);             
         }
     }
 

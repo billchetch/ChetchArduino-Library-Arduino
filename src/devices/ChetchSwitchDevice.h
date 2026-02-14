@@ -25,11 +25,16 @@ namespace Chetch{
             bool onState;
             int tolerance = 0;
             unsigned long recording = 0;
+
+        protected:
+            void initPin(byte pin);
+            void setPin(byte pin); //allow pin change (good for derived functionality)
+            byte getPin(){ return pin; };
             
         public: 
             
             SwitchDevice();
-            SwitchDevice(SwitchMode mode, byte pin, int tolerance, bool pinState = LOW);
+            SwitchDevice(SwitchMode mode, byte pin, int tolerance, bool onState);
 
             bool begin() override;
             void loop() override;

@@ -2,7 +2,7 @@
 
 namespace Chetch{
     
-    PageCycler::PageCycler(byte pin, byte maxPages) : SwitchDevice(SwitchDevice::SwitchMode::PASSIVE, pin, 100){
+    PageCycler::PageCycler(byte pin, byte maxPages) : SwitchDevice(SwitchDevice::SwitchMode::PASSIVE, pin, 100, LOW){
         //empty
     }
    
