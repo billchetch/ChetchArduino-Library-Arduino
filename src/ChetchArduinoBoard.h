@@ -4,7 +4,7 @@
 
 #if defined(ARDUINO_AVR_UNO)
 	//Uno specific code
-	#define MAX_DEVICES 8	
+	#define MAX_DEVICES 16	
     #define BOARD_NAME "UNO"	
     #define MAX_FRAME_PAYLOAD_SIZE 32
 #elif defined(ARDUINO_AVR_MEGA2560)
@@ -17,15 +17,15 @@
     #define BOARD_NAME "SAM"
     #define MAX_FRAME_PAYLOAD_SIZE 32
 #elif defined(ESP8266)
-	#define MAX_DEVICES 8
+	#define MAX_DEVICES 16
     #define BOARD_NAME "ESP8266"
     #define MAX_FRAME_PAYLOAD_SIZE 50
 #elif defined(ARDUINO_AVR_NANO)
-    #define MAX_DEVICES 8
+    #define MAX_DEVICES 16
     #define BOARD_NAME "NANO"
     #define MAX_FRAME_PAYLOAD_SIZE 32
 #else
-    #define MAX_DEVICES 8
+    #define MAX_DEVICES 16
     #define BOARD_NAME "OTHER"
     #define MAX_FRAME_PAYLOAD_SIZE 32
 //#error Unsupported hardware
