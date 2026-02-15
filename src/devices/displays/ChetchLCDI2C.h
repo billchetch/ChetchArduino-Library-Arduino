@@ -19,10 +19,14 @@
 
 /*
 PIN REFERENCE FOR I2C:
-- 5V
+- VCC (5V)
 - GND
 - SDA = A4 (Nano/Arduino), 20 (Mega/Leonardo)
 - SCL = A5 (Nano/Arduino), 21 (Mega/Leonardo)
+
+Note: that for LCD displays many have the SCL and SDA pins reversed when compared to OLED i2c units
+In short check the SDA and SCL pin order (VCC and GND are normally the same)
+
 */
 
 namespace Chetch{

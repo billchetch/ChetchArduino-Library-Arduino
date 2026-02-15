@@ -12,7 +12,9 @@ namespace Chetch{
 	bool LCDI2C::begin(){
         display.init();
         display.backlight();
-        return true;
+        //display.noBacklight();
+        begun = true;
+        return begun;
 	}
     
     void LCDI2C::loop(){
