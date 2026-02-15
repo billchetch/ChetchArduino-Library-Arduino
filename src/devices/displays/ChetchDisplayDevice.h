@@ -24,7 +24,7 @@ namespace Chetch{
                 HELLO_WORLD
             };
 
-            typedef bool (*DisplayHandler)(DisplayDevice*, byte tag); 
+            typedef bool (*DisplayHandler)(byte tag); 
 
         private:
             T pDisplay; //Should be a pointer to the display
@@ -44,6 +44,7 @@ namespace Chetch{
                 this->refreshRate = refreshRate;
             } 
 
+            void addDisplayHandler(DisplayHandler handler){ displayHandler = handler; }
             void loop() override{
                 ArduinoDevice::loop();
                 
@@ -53,7 +54,7 @@ namespace Chetch{
                 }
 
                 if(displayHandler != NULL && !isLocked() && update && (millis()- lastUpdated > (int)refreshRate)){
-                    if(displayHandler(this, updateTag)){
+                    if(displayHandler(updateTag)){
                         update = false;
                         lastUpdated = millis();
                         updateTag = 0;

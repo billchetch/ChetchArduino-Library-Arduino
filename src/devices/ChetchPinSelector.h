@@ -31,6 +31,8 @@ namespace Chetch{
             void loop() override;
             
             void trigger() override;
+
+            byte getSelectedPin(){ return selectedPin; }
     }; //end class
 } //end namespae
 #endif
