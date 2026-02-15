@@ -2,26 +2,39 @@
 
 namespace Chetch{
     
-    PinSelector::PinSelector(SwitchDevice::SwitchMode::PASSIVE, byte firstPin, byte maxPins, int tolerance) : SwitchDevice(mode, firstPin, tolerance, LOW){
-        this->firstPin = firstPin;
-        watchPinFor = tolerance + 1;
+    PinSelector::PinSelector(SwitchDevice::SwitchMode mode, byte firstPin, byte lastPin, int tolerance, bool onState) : SwitchDevice(mode, firstPin, tolerance, onState){
+        this->firstPin = firstPin > lastPin ? lastPin : firstPin;
+        this->lastPin = lastPin < firstPin ? firstPin : lastPin;
     }
    
 
     bool PinSelector::begin(){
-        SwitchDevice::begin();
-        
-        for(byte i = firstPin + 1; i < firstPin + maxPins; i++){
-            initPin(i);
+        if(firstPin == lastPin){
+            begun = false;
+            return false;
         }
-        return begun;
+
+        if(SwitchDevice::begin()){
+            //Initialise the physical pins (other than the first one which is handled above by switch begin)
+            for(byte i = firstPin + 1; i < lastPin; i++){
+                initPin(i);
+            }
+            begun = true;
+            return begun;
+        } else {
+            return false;
+        }
     }
 
     void PinSelector::loop(){
 
-        
-        if(!isOn() && selectedPin == getPin()){
-
+        if(selectedPin == 0 && millis() - lastChecked > getTolerance() + 10){
+            if(!isOn()){
+                byte nextPin = getPin() + 1;
+                if(nextPin > lastPin)nextPin = firstPin;
+                setPin(nextPin);
+            }
+            lastChecked = millis();
         }
 
         SwitchDevice::loop();
@@ -30,6 +43,9 @@ namespace Chetch{
     void PinSelector::trigger(){
         SwitchDevice::trigger();
 
-        selectedPin = getPin();
+        selectedPin = isOn() ? getPin() : 0;
+        if(selectedPin > 0 && selectListener != NULL){
+            selectListener(this, selectedPin);
+        }
     }
 }

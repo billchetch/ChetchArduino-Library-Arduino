@@ -30,7 +30,8 @@ namespace Chetch{
             void initPin(byte pin);
             void setPin(byte pin); //allow pin change (good for derived functionality)
             byte getPin(){ return pin; };
-            
+            int getTolerance(){ return tolerance; }
+
         public: 
             
             SwitchDevice();

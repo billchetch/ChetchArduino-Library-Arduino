@@ -11,25 +11,26 @@
 namespace Chetch{
     class PinSelector : public SwitchDevice {
         public:
-            typedef void (*SelectListener)(PinSelector*, byte); //this, the pin number and 
+            typedef void (*SelectListener)(PinSelector*, byte); //this, the pin number of the selected pin
 
         private:
             byte firstPin = 0;
+            byte lastPin = 0;
             byte selectedPin = 0;
-            byte maxPins = 0;
             
-            int watchPinFor = 0;
+            unsigned long lastChecked = 0;
 
             SelectListener selectListener = NULL;
 
         public:
-            PinSelector(SwitchDevice::Mode mode, byte firstPin, byte maxPins, int tolerance = 100);
+            PinSelector(SwitchDevice::SwitchMode mode, byte firstPin, byte maxPins, int tolerance = 100, bool onState = LOW);
             
             void addSelectListener(SelectListener listener){ selectListener = listener; }
 
             bool begin() override;
             void loop() override;
-            //void trigger() override;
+            
+            void trigger() override;
     }; //end class
 } //end namespae
 #endif

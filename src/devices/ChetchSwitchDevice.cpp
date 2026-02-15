@@ -8,10 +8,9 @@ namespace Chetch{
     }    
     SwitchDevice::SwitchDevice(SwitchMode mode, byte pin, int tolerance, bool onState){
         this->mode = mode;
-        this->pin = pin;
         this->tolerance = tolerance;
-        this->pinState = !onState;  
         this->onState = onState;      
+        setPin(pin);
     }   
     
     bool SwitchDevice::begin(){
@@ -24,6 +23,8 @@ namespace Chetch{
 
     void SwitchDevice::setPin(byte pin){
         this->pin = pin;
+        recording = 0;
+        pinState = !onState;  
     }
 
     void SwitchDevice::initPin(byte pin){
