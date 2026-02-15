@@ -5,6 +5,7 @@
 #include <ChetchArduinoDevice.h>
 #include <ChetchArduinoMessage.h>
 
+#include "devices/displays/ChetchDisplayDevice.h"
 
 #if defined(ARDUINO_AVR_MEGA2560)
     #define DEFAULT_I2C_ADDRESS 0
@@ -30,43 +31,20 @@ In short check the SDA and SCL pin order (VCC and GND are normally the same)
 */
 
 namespace Chetch{
-    class LCDI2C : public ArduinoDevice{
+    class LCDI2C : public DisplayDevice<LiquidCrystal_I2C*>{
         public:
-            /*enum DisplayOption{
-                LARGE_TEXT,
-                SMALL_TEXT,
-                XLARGE_TEXT
-            };*/
-
-            enum DisplayPreset{
-                CLEAR = 0,
-                BOARD_STATS,
-                HELLO_WORLD
-            };
-
+            
         private:
-            LiquidCrystal_I2C display;
-
-            //DisplayOption displayOption;
-            unsigned int lockDuration = 0;
-            unsigned long lockedAt = 0;
+            LiquidCrystal_I2C lcd;
 
         public:
-            LCDI2C(byte cols, byte rows);
+            LCDI2C(byte cols, byte rows, RefreshRate refreshRate = REFRESH_50Hz);
             
             bool begin() override;
             void loop() override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
-            void clearDisplay();
-            /*void clearLine(byte lineNumber);
-            void setFontSize(DisplayOption displayOption);
-            void print(char* text, unsigned int cx = 0, unsigned int cy = 0);
-            void displayPreset(DisplayPreset preset, unsigned int lockFor);
-            void displayBoardStats(unsigned int lockFor);*/
-            void lock(unsigned int lockFor); //set to 0 to remove lock, lockFor in ms
-            void unlock();
-            bool isLocked(){ return lockDuration > 0; };
-            LiquidCrystal_I2C* getDisplay(){ return isLocked() ? NULL : &display; };
+            void updateDisplay(byte tag = 0) override;
+            void clearDisplay() override;
     };
 } //end namespace

@@ -5,78 +5,45 @@
 
 
 namespace Chetch{
-    LCDI2C::LCDI2C(byte cols, byte rows) : display(DEFAULT_I2C_ADDRESS, cols, rows) {
-
+    LCDI2C::LCDI2C(byte cols, byte rows, RefreshRate refreshRate) : DisplayDevice(&lcd, refreshRate), lcd(DEFAULT_I2C_ADDRESS, cols, rows) {
+        //empty
     }
     
-	bool LCDI2C::begin(){
-        display.init();
-        display.backlight();
+    bool LCDI2C::begin(){
+        lcd.init();
+        lcd.backlight();
         //display.noBacklight();
         begun = true;
         return begun;
 	}
-    
-    void LCDI2C::loop(){
-        ArduinoDevice::loop();
 
-        if(isLocked() && millis() - lockedAt > lockDuration){
-            display.clear();
-            unlock();
-        }
+    void LCDI2C::loop(){
+        DisplayDevice::loop();
+
+        //Do stuff here
     }
 
     bool LCDI2C::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
-        bool handled = ArduinoDevice::executeCommand(command, message, response);
+        bool handled = DisplayDevice::executeCommand(command, message, response);
         
         if(!handled)
         {
-            /*char text[32];
-            switch(command){
-                case DIZPLAY:
-                    displayPreset((DisplayPreset)message->get<DisplayPreset>(1),
-                                    message->get<unsigned int>(2));
-                    handled = true;
-                    break;
-
-                case PRINT:
-                    if(message->getArgumentSize(1) < 32){
-                        message->get(1, text);
-                        print(text, message->get<unsigned int>(2), message->get<unsigned int>(3));
-                    } else {
-                        //todo an error of sorts
-                    }
-                    handled = true;
-                    break;
-
-                case LOCK:
-                    //todo
-                    break;
-
-                default:
-                    handled = false;
-                    break;
-
-            }*/
+            
         }
         return handled;
     }
     
-    //Takes control of screen for period in question then clears it after use
-    void LCDI2C::lock(unsigned int lockFor){
-        lockDuration = lockFor;
-        lockedAt = millis();
-    }
-
-    void LCDI2C::unlock(){
-        lockDuration = 0;
+    void LCDI2C::updateDisplay(byte updateTag){
+        DisplayDevice::updateDisplay(updateTag);
+        
     }
 
     void LCDI2C::clearDisplay(){
-        if(isLocked())return;
-        display.clear();
+        lcd.clear();
     }
 
+    //Takes control of screen for period in question then clears it after use
+    
     /*void LCDI2C::clearLine(byte lineNumber){
         if(isLocked() || display == NULL)return;
         display->clearLine(lineNumber);
