@@ -16,7 +16,7 @@ namespace Chetch{
 
         if(SwitchDevice::begin()){
             //Initialise the physical pins (other than the first one which is handled above by switch begin)
-            for(byte i = firstPin + 1; i < lastPin; i++){
+            for(byte i = firstPin + 1; i <= lastPin; i++){
                 initPin(i);
             }
             begun = true;

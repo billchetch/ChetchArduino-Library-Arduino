@@ -68,7 +68,12 @@ namespace Chetch{
             if(currentPinState != pinState){
                 //if there is a change of pin state then if we were already recording we simply reset
                 //if we weren't recording then we start'
-                recording = recording == 0 ? millis() : 0;
+                if(recording == 0){
+                    recording = millis();
+                    if(recording == 0)recording = 1; //
+                } else {
+                    recording = 0;
+                }
                 pinState = currentPinState;
             } else if(recording > 0 && millis() - recording >= tolerance){ 
                 //so here we are reording and have gone over tolerance so we trigger and reset
