@@ -93,6 +93,7 @@ namespace Chetch{
             //Serial.println("Ok message is ready to send");
             lastMillis = millis();
             enqueueMessageToSend(MESSAGE_ID_REPORT);
+            raiseEvent(EVENT_REPORT_READY);
         }
     }
 } //end namespace scope
