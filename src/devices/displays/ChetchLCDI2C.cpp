@@ -1,7 +1,6 @@
 #include "ChetchUtils.h"
 #include "ChetchArduinoBoard.h"
 #include "ChetchLCDI2C.h"
-#include <MemoryFree.h>
 
 
 namespace Chetch{
@@ -31,11 +30,6 @@ namespace Chetch{
             
         }
         return handled;
-    }
-    
-    void LCDI2C::updateDisplay(byte updateTag){
-        DisplayDevice::updateDisplay(updateTag);
-        
     }
 
     void LCDI2C::clearDisplay(){

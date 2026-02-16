@@ -81,18 +81,23 @@ namespace Chetch{
             bool isLocked(){ return lockDuration > 0; }
 
             T getDisplay(){ return pDisplay; }
-            virtual void updateDisplay(byte tag = 0){
+            
+            void updateDisplay(byte tag = 0){
                 update = true; 
                 updateTag = tag; 
             }
+            
             virtual void clearDisplay() = 0;
+            
             void setCursor(unsigned int cx, unsigned int cy){ 
                 if(isLocked())return;
                 getDisplay()->setCursor(cx, cy); 
             }
+
             template <typename S> void print(S s){ getDisplay()->print(s); }
 
-
+            //too common not to shorthand
+            void print(char* s){ print<char*>(s); }
     }; //end class
 } //end namespae
 #endif

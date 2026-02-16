@@ -44,7 +44,6 @@ namespace Chetch{
             void loop() override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
-            void updateDisplay(byte tag = 0) override;
             void clearDisplay() override;
     };
 } //end namespace
