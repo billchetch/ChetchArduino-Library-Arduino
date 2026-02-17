@@ -95,6 +95,7 @@ namespace Chetch{
             virtual void clearDisplay() = 0;
 
             virtual void clearLine(unsigned int ln){
+                if(isLocked())return;
                 setCursor(0, ln);
                 for(unsigned int i = 0; i < cols; i++){
                     print<char>(' ');
