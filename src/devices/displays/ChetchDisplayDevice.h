@@ -29,6 +29,9 @@ namespace Chetch{
         private:
             T pDisplay; //Should be a pointer to the display
 
+            unsigned int rows = 0;
+            unsigned int cols = 0;
+
             unsigned int lockDuration = 0;
             unsigned long lockedAt = 0;
             
@@ -39,8 +42,10 @@ namespace Chetch{
             byte updateTag = 0;
 
         public:
-            DisplayDevice(T pDisplay, RefreshRate refreshRate = RefreshRate::REFRESH_50Hz){ 
+            DisplayDevice(T pDisplay, unsigned int rows = 0, unsigned int cols = 0, RefreshRate refreshRate = RefreshRate::REFRESH_50Hz){ 
                 this->pDisplay = pDisplay; 
+                this->rows = rows;
+                this->cols = cols;
                 this->refreshRate = refreshRate;
             } 
 
@@ -88,6 +93,13 @@ namespace Chetch{
             }
             
             virtual void clearDisplay() = 0;
+
+            virtual void clearLine(unsigned int ln){
+                setCursor(0, ln);
+                for(unsigned int i = 0; i < cols; i++){
+                    print<char>(' ');
+                }   
+            }
             
             void setCursor(unsigned int cx, unsigned int cy){ 
                 if(isLocked())return;
