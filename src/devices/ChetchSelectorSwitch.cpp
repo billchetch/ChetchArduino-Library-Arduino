@@ -1,14 +1,14 @@
-#include "ChetchPinSelector.h"
+#include "ChetchSelectorSwitch.h"
 
 namespace Chetch{
     
-    PinSelector::PinSelector(SwitchDevice::SwitchMode mode, byte firstPin, byte lastPin, int tolerance, bool onState) : SwitchDevice(mode, firstPin, tolerance, onState){
+    SelectorSwitch::SelectorSwitch(SwitchDevice::SwitchMode mode, byte firstPin, byte lastPin, int tolerance, bool onState) : SwitchDevice(mode, firstPin, tolerance, onState){
         this->firstPin = firstPin > lastPin ? lastPin : firstPin;
         this->lastPin = lastPin < firstPin ? firstPin : lastPin;
     }
    
 
-    bool PinSelector::begin(){
+    bool SelectorSwitch::begin(){
         if(firstPin == lastPin){
             begun = false;
             return false;
@@ -26,7 +26,7 @@ namespace Chetch{
         }
     }
 
-    void PinSelector::loop(){
+    void SelectorSwitch::loop(){
 
         if(selectedPin == 0 && millis() - lastChecked > getTolerance() + 10){
             if(!isOn()){
@@ -40,7 +40,7 @@ namespace Chetch{
         SwitchDevice::loop();
     }
 
-    void PinSelector::setStatusInfo(ArduinoMessage* message){
+    void SelectorSwitch::setStatusInfo(ArduinoMessage* message){
         ArduinoDevice::setStatusInfo(message);
         
         message->add(getMode());
@@ -48,7 +48,7 @@ namespace Chetch{
     }
 
     
-    void PinSelector::trigger(){
+    void SelectorSwitch::trigger(){
         SwitchDevice::trigger();
 
         selectedPin = isOn() ? getPin() : 0;

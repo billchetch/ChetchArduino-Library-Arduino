@@ -44,8 +44,7 @@ namespace Chetch{
         public:
             DisplayDevice(T pDisplay, unsigned int rows = 0, unsigned int cols = 0, RefreshRate refreshRate = RefreshRate::REFRESH_50Hz){ 
                 this->pDisplay = pDisplay; 
-                this->rows = rows;
-                this->cols = cols;
+                setDimensions(rows, cols);
                 this->refreshRate = refreshRate;
             } 
 
@@ -101,6 +100,11 @@ namespace Chetch{
                 updateTag = tag; 
             }
             
+            void setDimensions(unsigned int rows, unsigned int cols){
+                this->rows = rows;
+                this->cols = cols;
+            }
+
             virtual void clearDisplay() = 0;
 
             virtual void clearLine(unsigned int ln){

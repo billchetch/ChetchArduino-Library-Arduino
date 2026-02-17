@@ -1,5 +1,5 @@
-#ifndef CHETCH_ARDUINO_PIN_SELECTOR_H
-#define CHETCH_ARDUINO_PIN_SELECTOR_H
+#ifndef CHETCH_ARDUINO_SELECTOR_SWITCH_H
+#define CHETCH_ARDUINO_SELECTOR_SWITCHH
 
 
 #include <Arduino.h>
@@ -9,9 +9,9 @@
 #include "devices/ChetchSwitchDevice.h"
 
 namespace Chetch{
-    class PinSelector : public SwitchDevice {
+    class SelectorSwitch : public SwitchDevice {
         public:
-            typedef void (*SelectListener)(PinSelector*, byte); //this, the pin number of the selected pin
+            typedef void (*SelectListener)(SelectorSwitch*, byte); //this, the pin number of the selected pin
 
         private:
             byte firstPin = 0;
@@ -23,7 +23,7 @@ namespace Chetch{
             SelectListener selectListener = NULL;
 
         public:
-            PinSelector(SwitchDevice::SwitchMode mode, byte firstPin, byte maxPins, int tolerance = 100, bool onState = LOW);
+            SelectorSwitch(SwitchDevice::SwitchMode mode, byte firstPin, byte maxPins, int tolerance = 100, bool onState = LOW);
             
             void addSelectListener(SelectListener listener){ selectListener = listener; }
 

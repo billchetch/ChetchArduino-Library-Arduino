@@ -4,7 +4,7 @@
 
 
 namespace Chetch{
-    LCDI2C::LCDI2C(byte cols, byte rows, RefreshRate refreshRate) : DisplayDevice(&lcd, refreshRate), lcd(DEFAULT_I2C_ADDRESS, cols, rows) {
+    LCDI2C::LCDI2C(byte cols, byte rows, RefreshRate refreshRate) : DisplayDevice(&lcd, rows, cols, refreshRate), lcd(DEFAULT_I2C_ADDRESS, cols, rows) {
         //empty
     }
     
