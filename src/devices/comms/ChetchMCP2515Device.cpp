@@ -234,6 +234,10 @@ namespace Chetch{
         return getMessageForDevice(device->id, messageType, tag);
     }
 
+    ArduinoMessage* MCP2515Device::getMessageForBoard(ArduinoMessage::MessageType messageType, byte tag){
+        return getMessageForDevice(Board->getID(), messageType, tag);
+    }
+
     bool MCP2515Device::sendMessageForDevice(ArduinoDevice* device, byte messageID){
         ArduinoMessage* msg = getMessageForDevice(device);
         device->populateOutboundMessage(msg, messageID);

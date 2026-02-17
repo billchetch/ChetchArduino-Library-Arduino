@@ -48,6 +48,7 @@ namespace Chetch{
         ArduinoDevice::setStatusInfo(message);
         
         message->add(mode);
+        message->add(onState);
         message->add(pinState);
     }
 
