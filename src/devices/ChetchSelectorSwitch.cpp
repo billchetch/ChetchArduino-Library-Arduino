@@ -41,9 +41,9 @@ namespace Chetch{
     }
 
     void SelectorSwitch::setStatusInfo(ArduinoMessage* message){
-        ArduinoDevice::setStatusInfo(message);
+        SwitchDevice::setStatusInfo(message);
         
-        message->add(getMode());
+        message->add(lastPin);
         message->add(selectedPin);
     }
 
