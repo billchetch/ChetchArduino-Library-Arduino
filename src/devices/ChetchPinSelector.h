@@ -27,6 +27,7 @@ namespace Chetch{
             
             void addSelectListener(SelectListener listener){ selectListener = listener; }
 
+            void setStatusInfo(ArduinoMessage* message) override;
             bool begin() override;
             void loop() override;
             

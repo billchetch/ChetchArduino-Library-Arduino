@@ -31,6 +31,7 @@ namespace Chetch{
             void setPin(byte pin); //allow pin change (good for derived functionality)
             byte getPin(){ return pin; };
             int getTolerance(){ return tolerance; }
+            SwitchMode getMode(){ return mode; }
 
         public: 
             

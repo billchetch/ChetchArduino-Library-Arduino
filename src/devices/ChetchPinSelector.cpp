@@ -39,6 +39,14 @@ namespace Chetch{
 
         SwitchDevice::loop();
     }
+
+    void PinSelector::setStatusInfo(ArduinoMessage* message){
+        ArduinoDevice::setStatusInfo(message);
+        
+        message->add(getMode());
+        message->add(selectedPin);
+    }
+
     
     void PinSelector::trigger(){
         SwitchDevice::trigger();

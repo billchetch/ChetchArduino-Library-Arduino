@@ -50,6 +50,7 @@ namespace Chetch{
             } 
 
             void addDisplayHandler(DisplayHandler handler){ displayHandler = handler; }
+            
             void loop() override{
                 ArduinoDevice::loop();
                 
@@ -75,6 +76,14 @@ namespace Chetch{
                     
                 }
                 return handled;
+            }
+
+            void setStatusInfo(ArduinoMessage* message) override{
+                ArduinoDevice::setStatusInfo(message);
+                
+                message->add(rows);
+                message->add(cols);
+                message->add(refreshRate);
             }
 
             void lock(unsigned int lockFor){
