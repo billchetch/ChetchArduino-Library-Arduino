@@ -124,6 +124,15 @@ namespace Chetch{
 
             //too common not to shorthand
             void print(char* s){ print<char*>(s); }
+
+            void printLine(char* s, unsigned int ln = 0){
+                setCursor(0, ln);
+                print(s);
+                int n = min(cols - strlen(s), 0);
+                for(int i = 0; i < n; i++){
+                    print<char>(' ');
+                }
+            }
     }; //end class
 } //end namespae
 #endif
