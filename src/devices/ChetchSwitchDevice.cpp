@@ -125,6 +125,10 @@ namespace Chetch{
             digitalWrite(pin, pinState);
         }
         raiseEvent(EVENT_SWITCH_TRIGGERED, isOn());
+
+        if(switchListener != NULL){
+            switchListener(this, isOn());
+        }
     }
 
     void SwitchDevice::turn(bool on){

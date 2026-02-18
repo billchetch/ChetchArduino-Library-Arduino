@@ -37,6 +37,7 @@ namespace Chetch{
     void OLEDTextDisplay::clearDisplay(){
         if(isLocked())return;
         oled.clearDisplay();
+        setCursor(0, 0);
     }
 
     void OLEDTextDisplay::setFontSize(TextSize textSize){

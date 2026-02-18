@@ -14,7 +14,7 @@
 #elif defined(ARDUINO_AVR_UNO)
     #define DEFAULT_I2C_ADDRESS 0x27 //other common addresses are: 0x3F
 #else
-    #define I2C_ADDRESS 0
+    #define DEFAULT_I2C_ADDRESS 0
 #endif
 
 

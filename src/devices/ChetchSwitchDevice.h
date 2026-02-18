@@ -18,6 +18,8 @@ namespace Chetch{
 
             static const byte ERROR_SWITCH_MODE = 101;
 
+            typedef void (*SwitchListener)(SwitchDevice*, bool); 
+
         private:
             SwitchMode mode;
             byte pin = 0;
@@ -25,6 +27,8 @@ namespace Chetch{
             bool onState;
             int tolerance = 0;
             unsigned long recording = 0;
+
+            SwitchListener switchListener = NULL;
 
         protected:
             void initPin(byte pin);
@@ -37,6 +41,8 @@ namespace Chetch{
             
             SwitchDevice();
             SwitchDevice(SwitchMode mode, byte pin, int tolerance, bool onState);
+
+            void addSwitchListener(SwitchListener listener){ switchListener = listener; }
 
             bool begin() override;
             void loop() override;
