@@ -112,7 +112,8 @@ namespace Chetch{
                 setCursor(0, ln);
                 for(unsigned int i = 0; i < cols; i++){
                     print<char>(' ');
-                }   
+                }
+                setCursor(0, ln);
             }
             
             void setCursor(unsigned int cx, unsigned int cy){ 
