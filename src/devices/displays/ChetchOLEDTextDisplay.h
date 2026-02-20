@@ -46,6 +46,8 @@ namespace Chetch{
             void loop() override;
             //bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
+            void initialiseDisplay() override {}
+            bool isDisplayConnected() override { return true; } //TODO: properly!!!
             void clearDisplay() override;
             void setFontSize(TextSize textSize);
                         

@@ -40,9 +40,12 @@ namespace Chetch{
         public:
             LCDI2C(byte cols, byte rows, RefreshRate refreshRate = REFRESH_50Hz);
             
-            bool begin() override;
-            void loop() override;
-            bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
+            void initialiseDisplay() override;
+            bool isDisplayConnected() override;
+
+            //bool begin() override;
+            //void loop() override;
+            //bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
             void clearDisplay() override;
     };

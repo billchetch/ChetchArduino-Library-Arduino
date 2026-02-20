@@ -8,21 +8,49 @@ namespace Chetch{
         //empty
     }
     
-    bool LCDI2C::begin(){
+    void LCDI2C::initialiseDisplay(){
+        if(begun){
+            Wire.end();
+            delay(1);
+        }
+        
+        Wire.begin();
+        Wire.setClock(400000L);
+        Wire.setWireTimeout(25000, false);
+
+        if(begun){
+            delay(1);
+        }
         lcd.init();
         lcd.backlight();
+        if(begun){
+            delay(1);
+        }
+    }
+
+    bool LCDI2C::isDisplayConnected(){
+        if(Wire.getWireTimeoutFlag() != 0){
+            Wire.clearWireTimeoutFlag();
+        }
+        Wire.beginTransmission(DEFAULT_I2C_ADDRESS); // Start transmission to the I2C addres
+        bool transmitSuccess = Wire.endTransmission() == 0;
+        return transmitSuccess && (Wire.getWireTimeoutFlag() == 0);
+    }
+
+    /*bool LCDI2C::begin(){
+       
         //display.noBacklight();
         begun = true;
         return begun;
-	}
+	}*/
 
-    void LCDI2C::loop(){
+    /*void LCDI2C::loop(){
         DisplayDevice::loop();
 
         //Do stuff here
-    }
+    }*/
 
-    bool LCDI2C::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
+    /*bool LCDI2C::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
         bool handled = DisplayDevice::executeCommand(command, message, response);
         
         if(!handled)
@@ -30,7 +58,9 @@ namespace Chetch{
             
         }
         return handled;
-    }
+    }*/
+
+
 
     void LCDI2C::clearDisplay(){
         lcd.clear();

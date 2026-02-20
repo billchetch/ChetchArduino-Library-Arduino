@@ -13,19 +13,39 @@ namespace Chetch{
         
     { }
 
-	bool OLEDTextDisplay2::begin(){
-        oled.begin(&Adafruit128x32, DEFAULT_I2C_ADDRESS);
-        oled.setFont(font);
+    void OLEDTextDisplay2::initialiseDisplay(){
+        if(begun){
+            Wire.end();
+            delay(1);
+        }
         
-        begun = true;
-        return begun;
-	}
-    
-    void OLEDTextDisplay2::loop(){
-        DisplayDevice::loop();
+        Wire.begin();
+        Wire.setClock(400000L);
+        Wire.setWireTimeout(25000, false);
+
+        if(begun){
+            delay(1);
+        }
+        oled.setFont(font);
+        oled.begin(&Adafruit128x32, DEFAULT_I2C_ADDRESS);
+        if(begun){
+            delay(1);
+        }
     }
 
-    
+    bool OLEDTextDisplay2::isDisplayConnected(){
+        if(Wire.getWireTimeoutFlag() != 0){
+            Wire.clearWireTimeoutFlag();
+        }
+        Wire.beginTransmission(DEFAULT_I2C_ADDRESS); // Start transmission to the I2C addres
+        bool transmitSuccess = Wire.endTransmission() == 0;
+        return transmitSuccess && (Wire.getWireTimeoutFlag() == 0);
+    }
+
+    /*void OLEDTextDisplay2::loop(){
+        DisplayDevice::loop();
+    }*/
+
     void OLEDTextDisplay2::clearDisplay(){
         if(isLocked())return;
         oled.clear();

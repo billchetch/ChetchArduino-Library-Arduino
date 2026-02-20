@@ -2,8 +2,12 @@
 #define CHETCH_ARDUINO_OLED2_H
 
 #include <Arduino.h>
+
+#include <Wire.h>
+
 #include <SSD1306Ascii.h>
-#include <SSD1306AsciiAvrI2c.h>
+#include "SSD1306AsciiWire.h"
+//#include <SSD1306AsciiAvrI2c.h>
 
 #include <ChetchArduinoDevice.h>
 #include <ChetchArduinoMessage.h>
@@ -33,26 +37,29 @@ In short check the SDA and SCL pin order (VCC and GND are normally the same)
 */
 
 namespace Chetch{
-    class OLEDTextDisplay2 : public DisplayDevice<SSD1306AsciiAvrI2c*>{
+    //class OLEDTextDisplay2 : public DisplayDevice<SSD1306AsciiAvrI2c*>{
+    class OLEDTextDisplay2 : public DisplayDevice<SSD1306AsciiWire*>{
         public:
             
 
         private:
-            SSD1306AsciiAvrI2c oled;
+            //SSD1306AsciiAvrI2c oled;
+            SSD1306AsciiWire oled;
             uint8_t* font = System5x7;
-            
+    
         public:
             OLEDTextDisplay2(RefreshRate refreshRate = RefreshRate::REFRESH_10HZ);
+            
             OLEDTextDisplay2(const uint8_t* font, RefreshRate refreshRate = RefreshRate::REFRESH_10HZ);
 
             void setFont(const uint8_t* font){ oled.setFont(font); };
 
-            bool begin() override;
-            void loop() override;
+            //void loop() override;
             //bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
-            void clearDisplay() override;
-                        
+            void initialiseDisplay() override;
+            bool isDisplayConnected() override;
+            void clearDisplay() override;                  
     };
 } //end namespace
 #endif

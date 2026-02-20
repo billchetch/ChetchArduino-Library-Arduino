@@ -36,7 +36,7 @@
 #include "ChetchArduinoMessage.h"
 #include "ChetchArduinoDevice.h"
 
-#define ARDUINO_BOARD_USE_STREAM true
+#define ARDUINO_BOARD_USE_STREAM false
 
 namespace Chetch{
     class ArduinoBoard{
