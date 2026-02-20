@@ -370,6 +370,7 @@ namespace Chetch{
         if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST){
             message->populate<byte>(canInFrame.data);
             targetNode = message->get<byte>(0);
+            
             if(targetNode == 0 || targetNode == getNodeID()){
                 if(message->sender == Board->getID()){
                     response = getMessageForDevice(message->sender, ArduinoMessage::TYPE_STATUS_RESPONSE);

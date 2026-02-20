@@ -36,7 +36,7 @@
 #include "ChetchArduinoMessage.h"
 #include "ChetchArduinoDevice.h"
 
-#define ARDUINO_BOARD_USE_STREAM false
+#define ARDUINO_BOARD_USE_STREAM true
 
 namespace Chetch{
     class ArduinoBoard{
@@ -85,6 +85,10 @@ namespace Chetch{
             MessageQueueItem messageQueue[MAX_QUEUE_SIZE];
 
             Stream* stream;
+
+            //Data supplied by connected device
+            unsigned long unixTimestamp = 0;
+            int timezoneOffset = 0;
 #endif
             bool begun = false;
 
@@ -104,7 +108,10 @@ namespace Chetch{
             bool begin(Stream* stream); //will return false if fails to begin
             void loop();
 
-#if ARDUINO_BOARD_USE_STREAM            
+#if ARDUINO_BOARD_USE_STREAM 
+            unsigned long getUnixTime() { return unixTimestamp + (millis() / 1000); }
+            int getTimezoneOffset() { return timezoneOffset; }
+
             //messaging stuff
             void setErrorInfo(ArduinoMessage* message, ErrorCode errorCode, byte errorSubCode);
             void setResponseInfo(ArduinoMessage* response, ArduinoMessage* message, byte sender);
