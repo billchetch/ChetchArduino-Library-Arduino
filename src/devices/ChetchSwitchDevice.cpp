@@ -47,12 +47,15 @@ namespace Chetch{
     void SwitchDevice::setStatusInfo(ArduinoMessage* message){
         ArduinoDevice::setStatusInfo(message);
         
-        message->add(mode);
+        message->add((byte)mode);
         message->add(onState);
         message->add(pinState);
+        
     }
 
     void SwitchDevice::populateOutboundMessage(ArduinoMessage* message, byte messageID){
+        ArduinoDevice::populateOutboundMessage(message, messageID);
+
         if(messageID == MESSAGE_ID_TRIGGERED){
 
             message->type = ArduinoMessage::TYPE_DATA;

@@ -23,12 +23,15 @@ namespace Chetch{
             SelectListener selectListener = NULL;
 
         public:
-            SelectorSwitch(SwitchDevice::SwitchMode mode, byte firstPin, byte maxPins, int tolerance = 100, bool onState = LOW);
+            SelectorSwitch(SwitchDevice::SwitchMode mode, byte firstPin, byte selectionSize, int tolerance = 100, bool onState = LOW);
             
             void addSelectListener(SelectListener listener){ selectListener = listener; }
 
             bool begin() override;
             void loop() override;
+
+            void setStatusInfo(ArduinoMessage* message) override;
+            void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
             
             void trigger() override;
 
