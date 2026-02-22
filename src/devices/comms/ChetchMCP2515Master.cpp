@@ -27,10 +27,16 @@ namespace Chetch{
 
     void MCP2515Master::loop(){
         if(statusRequested){
-            if(millis() - lastStatusRequest > 20000){
-                if(canForward)canForward = false;
+            if(millis() - lastStatusRequest > FORWARD_TIMEOUT){
+                if(canForward){
+                    canForward = false;
+                    raiseEvent(EVENT_FORWARDING_SET, canForward);
+                }
             } else {
-                if(!canForward)canForward = true;
+                if(!canForward){
+                    canForward = true;
+                    raiseEvent(EVENT_FORWARDING_SET, canForward);
+                }
             }
         }
 

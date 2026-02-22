@@ -23,6 +23,10 @@ namespace Chetch{
             static const byte MESSAGE_ID_FORWARD_RECEIVED = 100;
             static const byte MESSAGE_ID_FORWARD_SENT = 101;
             
+            static const unsigned int FORWARD_TIMEOUT = 20000; //compared to last status request
+
+            static const byte EVENT_FORWARDING_SET = 16;
+            
         private:
             ArduinoMessage frecvmsg;
             ArduinoMessage fsendmsg;
