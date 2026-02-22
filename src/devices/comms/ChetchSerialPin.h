@@ -24,16 +24,16 @@ namespace Chetch{
             byte bitCount = 0;
 
             //For message frames
-            byte* frame;
-            byte frameSize = 0;
-            byte frameIdx = 0;
+            byte* buffer;
+            byte bufferSize = 0;
+            byte bufferIdx = 0;
 
         protected:
             byte pinRead(bool asData);
             bool intervalElapsed(byte slip = 0);
             
         public:
-            SerialPin(byte pin, int interval = 100, byte frameSize = 1);
+            SerialPin(byte pin, int interval = 100, byte bufferSize = 1);
             ~SerialPin();
 
 

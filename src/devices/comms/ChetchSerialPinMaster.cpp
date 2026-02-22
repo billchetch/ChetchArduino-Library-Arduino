@@ -42,16 +42,16 @@ namespace Chetch{
                 bitCount = 0;
                 pinWrite(1);
                 
-                //Increment frame index to get next byte to send
-                frameIdx++;
-                if(frameIdx == frameSize){
+                //Increment buffer index to get next byte to send
+                bufferIdx++;
+                if(bufferIdx == bufferSize){
                     //Serial.print("-> EOT: ");
                     //Serial.println(millis());
                 
                     sending = false;
-                    frameIdx = 0;
+                    bufferIdx = 0;
                 } else {
-                    data = frame[frameIdx]; //get next byte to send
+                    data = buffer[bufferIdx]; //get next byte to send
                 }
             }
         }
@@ -79,14 +79,14 @@ namespace Chetch{
     bool SerialPinMaster::send(byte b){
         if(sending)return false;
 
-        frame[frameIdx] = b;
-        frameIdx++; 
+        buffer[bufferIdx] = b;
+        bufferIdx++; 
 
-        if(frameIdx == frameSize){
-            //send the frame
-            frameIdx = 0;
+        if(bufferIdx == bufferSize){
+            //send the buffer
+            bufferIdx = 0;
             bitCount = 0;
-            data = frame[0]; //get first byte to send
+            data = buffer[0]; //get first byte to send
             sending = true;
         }
         return true;

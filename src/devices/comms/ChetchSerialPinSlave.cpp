@@ -3,6 +3,13 @@
 
 
 namespace Chetch{
+    SerialPinSlave::SerialPinSlave(byte pin, int interval, byte bufferSize) : SerialPin(pin, interval, bufferSize){
+        data2send = new byte[this->bufferSize];
+    }
+
+    SerialPinSlave::~SerialPinSlave(){
+        delete[] data2send;
+    }
 
     bool SerialPinSlave::begin(){
         pinMode(pin, INPUT_PULLUP);
@@ -38,25 +45,37 @@ namespace Chetch{
             data = data | (bit << (bitCount - 1));
             bitCount++;
             
-            if(bitCount >= 9){
+            if(bitCount >= 9){ //byte received
                 //Serial.print("<- EOR: ");
                 //Serial.println(millis());
                 bitCount = 0;
                 ready4comms = false;
                 
-                frame[frameIdx] = data;
-                frameIdx++;
+                buffer[bufferIdx] = data;
+                data2send[bufferIdx] = data; //keep a copy for sending
+
+                bufferIdx++;
                 data = 0;
 
-                if(frameIdx == frameSize){
-                    frameIdx = 0;
+                if(bufferIdx == bufferSize){
+                    bufferIdx = 0;
+                    
+                    enqueueMessageToSend(MESSAGE_ID_SEND_DATA);
                     if(dataListener != NULL){
-                        dataListener(this, frame, frameSize);
+                        dataListener(this, buffer, bufferSize);
                     }
                 }
             }
-        }
-        
+        } //end counting bits  
     }
 
+    void SerialPinSlave::populateOutboundMessage(ArduinoMessage* message, byte messageID){
+        ArduinoDevice::populateOutboundMessage(message, messageID);
+
+        if(messageID == MESSAGE_ID_SEND_DATA){
+
+            message->type = ArduinoMessage::TYPE_DATA;
+            message->addBytes(data2send, bufferSize);
+        }
+    }
 } //end namespace

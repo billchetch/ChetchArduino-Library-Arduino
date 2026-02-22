@@ -15,7 +15,7 @@ namespace Chetch{
             void pinWrite(byte bit);
             
         public:
-            SerialPinMaster(byte pin, int interval = 100, byte frameSize = 1) : SerialPin(pin, interval, frameSize){};
+            SerialPinMaster(byte pin, int interval = 100, byte bufferSize = 1) : SerialPin(pin, interval, bufferSize){};
 
             bool begin() override;
             void loop() override;
