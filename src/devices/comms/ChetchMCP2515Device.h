@@ -220,7 +220,7 @@ namespace Chetch{
         public: //SHOULD BE PRIVATE/PROTECTED
             unsigned int presenceInterval = 0; //how often to broadcast a PRESENCE message
             unsigned long lastPresenceOn = 0;
-            bool presenceSent = false; //to indicate first presence sent
+            bool presenceSent = false; //to indicate first presence (successfully) sent
 
             byte responseID = 0;
             bool remoteInitialised = false;

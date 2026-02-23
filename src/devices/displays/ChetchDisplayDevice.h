@@ -18,7 +18,6 @@ namespace Chetch{
                 REFRESH_10HZ = 100,
                 REFRESH_20HZ = 50,
                 REFRESH_50Hz = 20
-
             };          
 
             enum DisplayPreset{
