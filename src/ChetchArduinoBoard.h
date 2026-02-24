@@ -36,6 +36,7 @@
 #include "ChetchArduinoMessage.h"
 #include "ChetchArduinoDevice.h"
 
+
 #define ARDUINO_BOARD_USE_STREAM true
 
 namespace Chetch{
@@ -44,7 +45,7 @@ namespace Chetch{
             static const byte DEFAULT_BOARD_ID = 1; //the target ID for messaging
             static const byte START_DEVICE_IDS_AT = 8;
 
-#if ARDUINO_BOARD_USE_STREAM            
+#if defined(ARDUINO_BOARD_USE_STREAM)
             static const int MAX_QUEUE_SIZE = MAX_DEVICES;
 
             struct MessageQueueItem{

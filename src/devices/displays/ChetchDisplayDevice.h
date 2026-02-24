@@ -15,6 +15,7 @@ namespace Chetch{
                 NO_REFRESH = 0,
                 REFRESH_1HZ = 1000,
                 REFRESH_2HZ = 500,
+                REFRESH_5HZ = 200,
                 REFRESH_10HZ = 100,
                 REFRESH_20HZ = 50,
                 REFRESH_50Hz = 20
@@ -34,7 +35,7 @@ namespace Chetch{
             unsigned int rows = 0;
             unsigned int cols = 0;
 
-            unsigned int lockDuration = 0;
+            unsigned int lockDuration = 0; //in millis
             unsigned long lockedAt = 0;
             
             DisplayHandler displayHandler = NULL;

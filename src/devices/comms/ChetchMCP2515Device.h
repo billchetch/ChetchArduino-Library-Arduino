@@ -91,7 +91,7 @@ namespace Chetch{
             static const byte MAX_NODE_ID = 15;
             static const byte MIN_NODE_ID = 1;
             static const int NO_FILTER = -1;
-            static const unsigned int PRESENCE_INTERVAL = 2000;
+            static const unsigned int DEFAULT_PRESENCE_INTERVAL = 2000;
             static const byte TIMESTAMP_RESOLUTION = 4; //Shift right by this many bits... lower number makes finer resolution
             static const unsigned int INDICATOR_INTERVAL = 50;
 
@@ -205,7 +205,6 @@ namespace Chetch{
         private:
             bool initialised = false;
             
-            byte nodeID = 0;
             byte indicatorPin = CAN_DEFAULT_INDICATOR_PIN;
             bool indicated = false;
             unsigned long indicatedOn = 0;
@@ -227,6 +226,8 @@ namespace Chetch{
             bool pinged = false;
             
         protected:
+            byte nodeID = 0;
+            
             MessageListener messageReceivedListener = NULL;
             SendValidator sendValidator = NULL;
             ErrorListener errorListener = NULL;
@@ -251,10 +252,11 @@ namespace Chetch{
             bool vcrc5(byte crc, byte* data, byte len);
             
         public:
-            MCP2515Device(byte nodeID = 0, unsigned int presenceInterval = PRESENCE_INTERVAL, int csPin = CAN_DEFAULT_CS_PIN);
+            MCP2515Device(byte nodeID = 0, unsigned int presenceInterval = DEFAULT_PRESENCE_INTERVAL, int csPin = CAN_DEFAULT_CS_PIN);
             ~MCP2515Device();
 
             byte getNodeID(){ return nodeID; }
+            
             void resetErrors();
             int clearReceive();
             bool begin() override;

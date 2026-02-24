@@ -38,7 +38,7 @@ namespace Chetch{
             bool statusRequested = false;
             
         public:
-            MCP2515Master(unsigned int presenceInterval = MCP2515Device::PRESENCE_INTERVAL, int csPin = CAN_DEFAULT_CS_PIN);
+            MCP2515Master(unsigned int presenceInterval = MCP2515Device::DEFAULT_PRESENCE_INTERVAL, int csPin = CAN_DEFAULT_CS_PIN);
 
             bool begin() override;
             void loop() override;
