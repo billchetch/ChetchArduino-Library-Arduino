@@ -37,15 +37,14 @@
 #include "ChetchArduinoDevice.h"
 
 
-#define ARDUINO_BOARD_USE_STREAM true
-
 namespace Chetch{
     class ArduinoBoard{
         public:
             static const byte DEFAULT_BOARD_ID = 1; //the target ID for messaging
             static const byte START_DEVICE_IDS_AT = 8;
 
-#if defined(ARDUINO_BOARD_USE_STREAM)
+
+#if ARDUINO_BOARD_NO_STREAM != 1
             static const int MAX_QUEUE_SIZE = MAX_DEVICES;
 
             struct MessageQueueItem{
@@ -69,14 +68,13 @@ namespace Chetch{
                 DEVICE_ERROR = 100, //To indicate this is an error from the device (not Board)
             };
 
-
         private:
             byte id = DEFAULT_BOARD_ID;
             ArduinoDevice* devices[MAX_DEVICES];
             byte deviceCount = 0;
             byte currentdevice = 0;
 
-#if ARDUINO_BOARD_USE_STREAM            
+#if ARDUINO_BOARD_NO_STREAM != 1
             MessageFrame frame;
             ArduinoMessage inboundMessage;
             ArduinoMessage outboundMessage;
@@ -87,10 +85,11 @@ namespace Chetch{
 
             Stream* stream;
 
-            //Data supplied by connected device
+#endif
+        protected:
             unsigned long unixTimestamp = 0;
             int timezoneOffset = 0;
-#endif
+
             bool begun = false;
 
         public:
@@ -105,14 +104,14 @@ namespace Chetch{
             ArduinoDevice* getDeviceAt(byte idx);
             byte getDeviceCount(){ return deviceCount; };
             int getFreeMemory();
+            unsigned long getUnixTime() { return unixTimestamp + (millis() / 1000); }
+            int getTimezoneOffset() { return timezoneOffset; }
 
             bool begin(Stream* stream); //will return false if fails to begin
             void loop();
 
-#if ARDUINO_BOARD_USE_STREAM 
-            unsigned long getUnixTime() { return unixTimestamp + (millis() / 1000); }
-            int getTimezoneOffset() { return timezoneOffset; }
 
+#if ARDUINO_BOARD_NO_STREAM != 1
             //messaging stuff
             void setErrorInfo(ArduinoMessage* message, ErrorCode errorCode, byte errorSubCode);
             void setResponseInfo(ArduinoMessage* response, ArduinoMessage* message, byte sender);
@@ -126,7 +125,5 @@ namespace Chetch{
             bool isMessageQueueEmpty();
 #endif
     };
-
-    extern ArduinoBoard Board;
 }
 #endif

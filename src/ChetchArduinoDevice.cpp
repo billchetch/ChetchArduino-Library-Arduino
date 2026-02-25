@@ -3,7 +3,7 @@
 #include "ChetchArduinoMessage.h"
 
 namespace Chetch{
-    class ArduinoBoard;
+    ArduinoBoard* ArduinoDevice::Board = NULL;
 
     void ArduinoDevice::addEventListener(EventListener listener) {
         eventListener = listener;

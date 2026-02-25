@@ -1,5 +1,5 @@
 #ifndef CHETCH_ARDUINO_SELECTOR_SWITCH_H
-#define CHETCH_ARDUINO_SELECTOR_SWITCHH
+#define CHETCH_ARDUINO_SELECTOR_SWITCH_H
 
 
 #include <Arduino.h>
@@ -21,7 +21,7 @@ namespace Chetch{
             unsigned long lastChecked = 0;
 
             SelectListener selectListener = NULL;
-
+            
         public:
             SelectorSwitch(SwitchDevice::SwitchMode mode, byte firstPin, byte selectionSize, int tolerance = 100, bool onState = LOW);
             

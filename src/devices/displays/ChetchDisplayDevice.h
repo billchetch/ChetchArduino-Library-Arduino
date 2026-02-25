@@ -27,7 +27,7 @@ namespace Chetch{
                 HELLO_WORLD
             };
 
-            typedef bool (*DisplayHandler)(byte tag, bool displayInitialised); 
+            typedef bool (*DisplayHandler)(DisplayDevice* display, byte tag, bool displayInitialised); 
 
         private:
             T pDisplay; //Should be a pointer to the display
@@ -91,7 +91,7 @@ namespace Chetch{
                             requestInitialiseOn = millis();
                             if(requestInitialiseOn == 0)requestInitialiseOn = 1;
                         } else {
-                            if(displayHandler(updateTag, displayInitialised)){
+                            if(displayHandler(this, updateTag, displayInitialised)){
                                 update = false;
                                 lastUpdated = millis();
                                 lastUpdateTag = updateTag;

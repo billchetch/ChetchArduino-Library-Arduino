@@ -91,7 +91,7 @@ namespace Chetch{
             static const byte MAX_NODE_ID = 15;
             static const byte MIN_NODE_ID = 1;
             static const int NO_FILTER = -1;
-            static const unsigned int DEFAULT_PRESENCE_INTERVAL = 2000;
+            static const unsigned int DEFAULT_PRESENCE_INTERVAL = 5000;
             static const byte TIMESTAMP_RESOLUTION = 4; //Shift right by this many bits... lower number makes finer resolution
             static const unsigned int INDICATOR_INTERVAL = 50;
 

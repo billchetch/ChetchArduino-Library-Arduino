@@ -52,7 +52,7 @@ namespace Chetch{
             typedef bool (*EventListener)(ArduinoDevice*, byte, byte); //event ID and event tag
 
         public:
-            ArduinoBoard* Board = NULL; //TODO: this could be static to save space
+            static ArduinoBoard* Board; 
             byte id = 0;
 
         private:

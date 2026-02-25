@@ -5,7 +5,7 @@ namespace Chetch{
     
     //Constructors
     ArduinoBoard::ArduinoBoard() 
-#if ARDUINO_BOARD_USE_STREAM            
+#if ARDUINO_BOARD_NO_STREAM != 1            
     : frame(MessageFrame::FrameSchema::SMALL_SIMPLE_CHECKSUM, MessageFrame::MessageEncoding::SYSTEM_DEFINED, MAX_FRAME_PAYLOAD_SIZE), 
                                 inboundMessage(MAX_FRAME_PAYLOAD_SIZE), 
                                 outboundMessage(MAX_FRAME_PAYLOAD_SIZE)
@@ -18,7 +18,7 @@ namespace Chetch{
 
 
     bool ArduinoBoard::begin(Stream* stream){
-#if ARDUINO_BOARD_USE_STREAM            
+#if ARDUINO_BOARD_NO_STREAM != 1            
         this->stream = stream;
         inboundMessage.clear();
         outboundMessage.clear();
@@ -63,7 +63,7 @@ namespace Chetch{
         return freeMemory();
     }
     
-#if ARDUINO_BOARD_USE_STREAM            
+#if ARDUINO_BOARD_NO_STREAM != 1            
     //returns true if received a valid message, false otherwise
     bool ArduinoBoard::receiveMessage(){
         if(stream == NULL)return false;
@@ -191,7 +191,7 @@ namespace Chetch{
         //basic error checking here to make sure that we've begun
         if(!begun)return;
 
-#if ARDUINO_BOARD_USE_STREAM
+#if ARDUINO_BOARD_NO_STREAM != 1
         //1. Receieve any message and possilbly reply
         if(receiveMessage()){
             //we have received a VALID message ... so direct it to the appropriate place for handling
@@ -235,7 +235,7 @@ namespace Chetch{
             currentdevice = (currentdevice + 1) % deviceCount;
         }
 
-#if ARDUINO_BOARD_USE_STREAM
+#if ARDUINO_BOARD_NO_STREAM != 1
         //3. Process next message to send in queue
         if(!isMessageQueueEmpty() && outboundMessage.isEmpty()){
             MessageQueueItem qi = dequeueMessageToSend();
@@ -247,6 +247,4 @@ namespace Chetch{
         }
 #endif
     }
-
-    ArduinoBoard Board;
 }
