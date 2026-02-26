@@ -2,8 +2,8 @@
 
 namespace Chetch{
     
-    PageCycler::PageCycler(byte pin, byte maxPages) : SwitchDevice(SwitchDevice::SwitchMode::PASSIVE, pin, 100, LOW){
-        //empty
+    PageCycler::PageCycler(byte pin, byte maxPages) : SelectorSwitch(SwitchDevice::SwitchMode::PASSIVE, pin, 2){
+        this->maxPages = maxPages;
     }
    
 
@@ -15,18 +15,28 @@ namespace Chetch{
     }
 
     void PageCycler::trigger(){
-        SwitchDevice::trigger();
+        SelectorSwitch::trigger();
 
-        //we cycle the page
-        if(currentPage >= maxPages){
-            currentPage = 1;
-        } else {
-            currentPage++;
+        //Forwards or backwards?
+        byte prevPage = currentPage;
+        byte sp = getSelectedPin();
+        if(sp == getFirstPin()){ //backwards
+            if(currentPage > 1){
+                currentPage--;
+            } else {
+                currentPage = maxPages;
+            }       
+        } else if(sp == getFirstPin() + 1) { ///forwards
+            if(currentPage < maxPages){
+                currentPage++;
+            } else {
+                currentPage == 1;
+            }   
         }
 
-        raiseEvent(EVENT_NEXT_PAGE);
+        raiseEvent(EVENT_NEXT_PAGE, currentPage);
 
-        if(pageListener != NULL){
+        if(pageListener != NULL && prevPage != currentPage){
             pageListener(currentPage, maxPages);
         }
     }

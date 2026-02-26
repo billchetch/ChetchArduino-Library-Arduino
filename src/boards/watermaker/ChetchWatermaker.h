@@ -51,9 +51,10 @@ namespace Chetch{
             };
 
             enum DisplayMode : byte{
+                DISPLAY_MODE_NOT_SET= 0,
                 RUNNING = 1,
                 ERROR = 2,
-                CHANGE_MODE = 3,
+                CHANGE_OPERATIONAL_MODE = 3,
                 STARTED = 4,
                 STOPPED = 5,
             };
@@ -92,7 +93,8 @@ namespace Chetch{
             void stop();
             void reset();
             void error(ErrorCode ec);
-
+            void updateDisplay(DisplayMode displayMode = DisplayMode::DISPLAY_MODE_NOT_SET);
+            bool renderDisplay(DisplayMode displayMode, bool displayInitialised = false);
     };
 } //end namespace
 #endif

@@ -27,7 +27,7 @@ namespace Chetch{
                 HELLO_WORLD
             };
 
-            typedef bool (*DisplayHandler)(DisplayDevice* display, byte tag, bool displayInitialised); 
+            typedef bool (*DisplayHandler)(DisplayDevice<T>* display, byte tag, bool displayInitialised); 
 
         private:
             T pDisplay; //Should be a pointer to the display

@@ -6,27 +6,28 @@
 #include <ChetchArduinoDevice.h>
 #include <ChetchArduinoMessage.h>
 
-#include "devices/ChetchSwitchDevice.h"
+#include "devices/ChetchSelectorSwitch.h"
 
 namespace Chetch{
-    class PageCycler : public SwitchDevice {
+    class PageCycler : public SelectorSwitch {
         public:
             const byte EVENT_NEXT_PAGE = 100;
+            const byte EVENT_PREV_PAGE = 100;
 
-            typedef void (*NextPageListener)(byte pageNumber, byte maxPages);
+            typedef void (*PageListener)(byte pageNumber, byte maxPages);
 
         private:
             byte maxPages = 0;
             byte currentPage = 0;
 
-            NextPageListener pageListener = NULL;
+            PageListener pageListener = NULL;
 
         public:
             PageCycler(byte pin, byte maxPages);
             
             byte getCurrentPage(){ return currentPage; }
             byte getMaxPages(){ return maxPages; }
-            void addNextPageListener(NextPageListener listener){ pageListener = listener; }
+            void addPageListener(PageListener listener){ pageListener = listener; }
 
             bool begin() override;
             void trigger() override;

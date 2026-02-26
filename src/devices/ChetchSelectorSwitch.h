@@ -21,6 +21,9 @@ namespace Chetch{
             unsigned long lastChecked = 0;
 
             SelectListener selectListener = NULL;
+
+        protected:
+            byte getFirstPin(){ return firstPin; }
             
         public:
             SelectorSwitch(SwitchDevice::SwitchMode mode, byte firstPin, byte selectionSize, int tolerance = 100, bool onState = LOW);

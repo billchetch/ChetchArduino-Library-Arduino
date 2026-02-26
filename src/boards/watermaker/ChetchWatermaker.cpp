@@ -13,8 +13,12 @@ namespace Chetch{
                         pressurePump(SwitchDevice::SwitchMode::ACTIVE, PRESSURE_PUMP_PIN, SWITCH_TOLERANCE, OUTPUT_ONSTATE)
 
     {
-        
         //Add event handlers to devices
+        display.addDisplayHandler([](LCDI2C* dd, byte updateTag, bool displayInitialised){
+            Watermaker* wm = (Watermaker*)dd->Board;
+            return wm->renderDisplay((DisplayMode)updateTag, displayInitialised);
+        });
+
         
         selector.addSelectListener([](SelectorSwitch* ss, byte selectedPin){
             //Capture this
@@ -51,6 +55,10 @@ namespace Chetch{
                 }
             }
 
+            if(!wm->hasError()){
+                wm->updateDisplay();
+            }
+
             //Send message out
             wm->mcp.sendMessageForDevice(sd, SwitchDevice::MESSAGE_ID_TRIGGERED);
         });
@@ -63,7 +71,7 @@ namespace Chetch{
             }
 
             if(!wm->hasError()){
-                //display.updateDisplay(0);
+                wm->updateDisplay();
             }
 
             wm->mcp.sendMessageForDevice(sd, SwitchDevice::MESSAGE_ID_TRIGGERED);
@@ -123,6 +131,8 @@ namespace Chetch{
         }
         
         currentMode = operationalMode;
+
+        updateDisplay(DisplayMode::CHANGE_OPERATIONAL_MODE);
     }
 
     void Watermaker::start(){
@@ -165,7 +175,7 @@ namespace Chetch{
         startedOn = millis();
         runCount++;
 
-        //display.updateDisplay(DisplayMode::STARTED);
+        updateDisplay(DisplayMode::STARTED);
     }
 
     void Watermaker::stop(){
@@ -176,7 +186,7 @@ namespace Chetch{
         solenoidFresh.turn(false);
         
         stoppedOn = millis();
-        //display.updateDisplay(DisplayMode::STOPPED);
+        updateDisplay(DisplayMode::STOPPED);
     }
 
     void Watermaker::reset(){
@@ -192,5 +202,84 @@ namespace Chetch{
         if(hasError()){
             //display.updateDisplay(DisplayMode::ERROR);
         }
+    }
+
+    void Watermaker::updateDisplay(DisplayMode displayMode){
+        display.updateDisplay(displayMode);
+    }
+
+    bool Watermaker::renderDisplay(DisplayMode displayMode, bool displayInitialised){
+        if(displayInitialised){
+            display.clearDisplay();
+        }
+
+        if(hasError()){
+            display.clearDisplay();
+            display.setCursor(0, 0);
+            display.print(">>>> ERROR: ");
+            display.print(errorCode);
+            display.print(" <<<<");
+
+        } else if(displayMode == DisplayMode::RUNNING && !displayInitialised) {
+            //this is called at regular intervals while running
+            display.setCursor(0, 3);
+            if(isRunning()){
+                unsigned int duration = (unsigned int)((millis() - startedOn) / 1000);
+                display.print("Running: ");
+                display.print(duration);
+                display.print("s   ");
+            }
+        } else {
+            display.clearDisplay();
+
+            //Display selection
+            display.setCursor(0, 0);
+            display.print("Mode: ");
+            switch(currentMode){
+                case MAKE_WATER:
+                display.print("Buat");
+                break;
+
+                case RINSE:
+                display.print("Bilas");
+                break;
+
+                case EXPEL_AIR:
+                display.print("Buang");
+                break;
+            }
+            
+            display.setCursor(0, 1);
+            display.print("FP/PP/SL/ST: ");
+            display.print(feederPump.isOn());
+            display.print(" ");
+            display.print(pressurePump.isOn());
+            display.print(" ");
+            display.print(solenoidSalt.isOn());
+            display.print(" ");
+            display.print(solenoidFresh.isOn());
+
+            display.setCursor(0, 2);
+            display.print("LPS/HPS: ");
+            display.print(lps.isOn());
+            display.print(" ");
+            display.print(hps.isOn());
+
+            if(!isRunning()){
+                display.setCursor(0, 3);
+                if(runCount != 0){
+                    unsigned int duration = (unsigned int)((stoppedOn - startedOn) / 1000);
+                    display.print("Run#:");
+                    display.print(runCount);
+                    display.print(" for ");
+                    display.print(duration);
+                    display.print("s   ");
+                } else {
+                    display.print("Not yet run!");
+                }
+            }
+        }
+
+        return true;
     }
 }
