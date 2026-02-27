@@ -1,6 +1,49 @@
 #ifndef CHETCH_WATERMAKER_H
 #define CHETCH_WATERMAKER_H
 
+/*
+WATERMAKER
+
+Description:
+Combines a mode selector with some pressure switches and a start/stop button to turn on solenoids and pumps according to basic logic of 
+a RO watermaker for extracting fresh water from salt water.
+
+Comms:
+1. CanBus data via MCP2515 .. Pins = 5 (4 pins for SPI + 1 pin for indicator led)
+2. Serial Pin slave .. Pins = 1
+TOTAL PINS = 6
+
+Display:
+1. LCD: Pins = 2 (I2C interface)
+TOTAL PINS = 2
+
+Inputs:
+1. Selector:  Make, Expel Air, Rinse .. Pins = 3 
+2. Start button .. Pins = 1
+3. Lower Pressure Switch .. Pins = 1
+4. High Pressure Switch .. Pins = 1
+TOTAL PINS = 6
+
+Outputs:
+1. Water source (i.e. solenoid valves): To open salt water (for making fresh water) or fresh water (for rinsing) .. Pins = 2
+2. Feeder pump;  Control pump that feeds water from the source .. Pins = 1
+3. HPP:  The high pressure pump (that should only come on if the LPS is on) .. Pins = 1
+TOTAL PINS = 4
+
+
+NOTES:
+
+#2026-02-16
+TODO: The solenoids are currently separate switches but they should be a pinselector device because only one can be on at any one time.
+However as of writing the PinSelector is only written tested for Passive switches
+
+
+History:
+
+2026-02-16: Created
+2026-
+*/
+
 #include "ChetchArduinoBoard.h"
 #include "boards/ChetchCANBusNode.h"
 
@@ -11,6 +54,7 @@
 #define LCD_COLS 20
 #define LCD_ROWS 4
 #define LCD_REFRESH LCDI2C::RefreshRate::REFRESH_5HZ
+#define DISPLAY_UPDATE_INTERVAL 500 //setReportInterval
 
 #define SELECTOR_FIRST_PIN 6  //Make water, Expel air, Rinse
 #define SELECTION_SIZE 3 //see the options above
@@ -58,14 +102,20 @@ namespace Chetch{
                 STARTED = 4,
                 STOPPED = 5,
             };
+
+            struct RunSession{
+                OperationalMode opMode = OperationalMode::NOT_SET;
+                unsigned long startedOn = 0;
+                unsigned long stoppedOn = 0;
+                unsigned int count= 0;
+            };
             
         private:
             OperationalMode currentMode = OperationalMode::NOT_SET;
             ErrorCode errorCode = ErrorCode::NO_ERROR;
 
-            unsigned long startedOn = 0;
-            unsigned long stoppedOn = 0;
-            unsigned int runCount = 0;
+            RunSession sessions[3];
+            RunSession* currentSession;
 
         public:
             LCDI2C display;

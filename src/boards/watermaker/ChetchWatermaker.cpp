@@ -14,6 +14,16 @@ namespace Chetch{
 
     {
         //Add event handlers to devices
+        display.setReportInterval(DISPLAY_UPDATE_INTERVAL);
+        display.addEventListener([](ArduinoDevice* device, byte eventID, byte eventTag){
+            Watermaker* wm = (Watermaker*)device->Board;
+            if(eventID == ArduinoDevice::EVENT_REPORT_READY){
+                if(wm->isRunning()){
+                    wm->updateDisplay(DisplayMode::RUNNING);
+                }
+            }
+            return false;
+        });
         display.addDisplayHandler([](LCDI2C* dd, byte updateTag, bool displayInitialised){
             Watermaker* wm = (Watermaker*)dd->Board;
             return wm->renderDisplay((DisplayMode)updateTag, displayInitialised);
@@ -99,6 +109,8 @@ namespace Chetch{
         
 
         //Add devices to board
+        //Display
+        addDevice(&display);
 
         //Inputs
         addDevice(&selector);
@@ -131,6 +143,7 @@ namespace Chetch{
         }
         
         currentMode = operationalMode;
+        currentSession = &sessions[currentMode - OperationalMode::MAKE_WATER];
 
         updateDisplay(DisplayMode::CHANGE_OPERATIONAL_MODE);
     }
@@ -172,8 +185,9 @@ namespace Chetch{
         }
 
         feederPump.turn(true);
-        startedOn = millis();
-        runCount++;
+
+        currentSession->startedOn = millis();
+        currentSession->count++;
 
         updateDisplay(DisplayMode::STARTED);
     }
@@ -185,7 +199,7 @@ namespace Chetch{
         solenoidSalt.turn(false);
         solenoidFresh.turn(false);
         
-        stoppedOn = millis();
+        currentSession->stoppedOn = millis();
         updateDisplay(DisplayMode::STOPPED);
     }
 
@@ -197,10 +211,9 @@ namespace Chetch{
         if(isRunning()){
             stop();
         }
-        //Serial.print("Error: "); Serial.println(ec);
         errorCode = ec;
         if(hasError()){
-            //display.updateDisplay(DisplayMode::ERROR);
+            updateDisplay(DisplayMode::ERROR);
         }
     }
 
@@ -224,7 +237,7 @@ namespace Chetch{
             //this is called at regular intervals while running
             display.setCursor(0, 3);
             if(isRunning()){
-                unsigned int duration = (unsigned int)((millis() - startedOn) / 1000);
+                unsigned int duration = (unsigned int)((millis() - currentSession->startedOn) / 1000);
                 display.print("Running: ");
                 display.print(duration);
                 display.print("s   ");
@@ -267,10 +280,10 @@ namespace Chetch{
 
             if(!isRunning()){
                 display.setCursor(0, 3);
-                if(runCount != 0){
-                    unsigned int duration = (unsigned int)((stoppedOn - startedOn) / 1000);
+                if(currentSession->count != 0){
+                    unsigned int duration = (unsigned int)((currentSession->stoppedOn - currentSession->startedOn) / 1000);
                     display.print("Run#:");
-                    display.print(runCount);
+                    display.print(currentSession->count);
                     display.print(" for ");
                     display.print(duration);
                     display.print("s   ");

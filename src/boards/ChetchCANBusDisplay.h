@@ -25,7 +25,7 @@ namespace Chetch{
 
                 pDisplay->addDisplayHandler([](T dd, byte updateTag, bool displayInitialised){
                     CANBusDisplay* cbd = (CANBusDisplay*)dd->Board;
-                    return cbd->renderPage(cbd->pageCycler.getCurrentPage(), updateTag, displayInitialised);
+                    return cbd->renderPage(cbd->pageCycler.getCurrentPageNumber(), cbd->pageCycler.getCurrentPage(), updateTag, displayInitialised);
                 });
                 
                 pageCycler.addPageListener([](PageCycler* pc, byte currentPage, byte maxPages){
@@ -37,7 +37,7 @@ namespace Chetch{
                 addDevice(&pageCycler);
             }
 
-            virtual bool renderPage(byte page, byte updateTag, bool displayInitailised) = 0;
+            virtual bool renderPage(byte pageNumber, PageCycler::Page* page, byte updateTag, bool displayInitailised) = 0;
     };
 } //end namespace
 #endif

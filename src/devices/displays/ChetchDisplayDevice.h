@@ -75,7 +75,7 @@ namespace Chetch{
                     clearDisplay();
                     unlock();
                 }
-
+                    
                 static bool displayInitialised = true;    
                 if(requestInitialiseOn > 0){
                     if(millis() - requestInitialiseOn > 500){
