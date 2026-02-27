@@ -1,3 +1,6 @@
+#ifndef CHETCH_ARDUINO_LCDI2C_H
+#define CHETCH_ARDUINO_LCDI2C_H
+
 #include <Arduino.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
@@ -50,3 +53,4 @@ namespace Chetch{
             void clearDisplay() override;
     };
 } //end namespace
+#endif

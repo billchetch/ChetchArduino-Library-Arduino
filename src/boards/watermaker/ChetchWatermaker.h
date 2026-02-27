@@ -114,10 +114,11 @@ namespace Chetch{
             OperationalMode currentMode = OperationalMode::NOT_SET;
             ErrorCode errorCode = ErrorCode::NO_ERROR;
 
-            RunSession sessions[3];
+            RunSession sessions[SELECTION_SIZE];
             RunSession* currentSession;
 
         public:
+            //Display
             LCDI2C display;
 
             //Inputs
