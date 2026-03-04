@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <ChetchArduinoDevice.h>
 #include <ChetchArduinoMessage.h>
+#include "ChetchInterrupt.h"
 
 namespace Chetch{
     class Counter : public ArduinoDevice {

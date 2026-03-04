@@ -112,6 +112,9 @@ namespace Chetch{
                         if(!send(message->getArgument(i), bytec))break;
                     }
                     break;
+
+                default:
+                    break;
             }
         }
         

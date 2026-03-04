@@ -110,9 +110,11 @@ namespace Chetch{
         instanceIndex = addInstance(this);
         if(instanceIndex >= 0){
             useTimer = true;
+            begun = true;
         } else {
-            return false;
+            begun = false;
         }
+        return begun;
     }
 
     void ZMPT101B::populateOutboundMessage(ArduinoMessage* message, byte messageID){
@@ -176,7 +178,6 @@ namespace Chetch{
         
         if (bufferIdx >= BUFFER_SIZE) {
             //per batch values
-            int prevVoltage = 0;
             int hzCountStartedOn = -1;
             int hzCountEndedOn = 0;
             int currentPosition = 0; //1 means above 10v, -1 means below 10v, 0 unknown
@@ -200,7 +201,7 @@ namespace Chetch{
                 //sum the squares for rms later
                 summedVoltages += ((long)currentVoltage * (long)currentVoltage);
 
-                if (currentPosition == 1 && prevPosition == -1 || currentPosition == -1 && prevPosition == 1) {
+                if ((currentPosition == 1 && prevPosition == -1) || (currentPosition == -1 && prevPosition == 1)) {
                     if (hzCountStartedOn == -1) {
                         hzCountStartedOn = i;
                     }
@@ -392,7 +393,7 @@ namespace Chetch{
                 return voltageDirection;
 
             default:
-                return -1;
+                return Direction::Stable;
         }
     }
 } //end namespace

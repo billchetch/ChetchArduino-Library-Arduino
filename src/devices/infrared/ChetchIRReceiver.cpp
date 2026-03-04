@@ -36,6 +36,9 @@ namespace Chetch{
 				record(false);
 				response->add(recording);
 				break;
+
+			default:
+				break;
 		}
 
 		return true;

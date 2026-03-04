@@ -45,7 +45,7 @@ namespace Chetch{
         private:
             //SSD1306AsciiAvrI2c oled;
             SSD1306AsciiWire oled;
-            uint8_t* font = System5x7;
+            const uint8_t* font = System5x7;
     
         public:
             OLEDTextDisplay2(RefreshRate refreshRate = RefreshRate::REFRESH_10HZ);

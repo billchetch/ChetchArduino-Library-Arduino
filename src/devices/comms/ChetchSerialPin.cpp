@@ -33,7 +33,7 @@ namespace Chetch{
     }
 
     bool SerialPin::intervalElapsed(byte slip){
-        return (millis() - lastPinIO) > (interval + slip);
+        return (millis() - lastPinIO) > (unsigned long)(interval + slip);
     }
 
     byte SerialPin::pinRead(bool asData){

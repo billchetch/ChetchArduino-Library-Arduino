@@ -88,9 +88,8 @@ namespace Chetch{
             byte *getArgument(byte argIdx);
             bool hasArgument(byte argIdx);
             
-
             template<typename T> T get(byte argIdx){
-                T retVal = 0;
+                T retVal;
                 if(hasArgument(argIdx)){
                     for(int i = 0; i < getArgumentSize(argIdx); i++){
                         ((byte *)&retVal)[i] = getArgument(argIdx)[i];

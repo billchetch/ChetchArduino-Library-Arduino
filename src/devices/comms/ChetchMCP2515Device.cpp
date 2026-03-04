@@ -252,6 +252,7 @@ namespace Chetch{
         MCP2515::ERROR err = mcp2515.readMessage(&canInFrame);
         switch(err){
             case MCP2515::ERROR_OK:
+            {
                 //Clear message and split out the ID
                 amsg.clear();
                 byte messageType = (canInFrame.can_id >> 24) & 0x1F; //first 5 bits
@@ -265,7 +266,7 @@ namespace Chetch{
                 unsigned long edata = (unsigned long)sourceNodeID << 24 | (unsigned long)messageType << 16;
                 if(!vcrc5(tagAndCRC & 0x1F, canInFrame.data, canInFrame.can_dlc)){
                     //data error
-                    raiseError(CRC_ERROR, edata | tagAndCRC & 0x1F);
+                    raiseError(CRC_ERROR, edata | (tagAndCRC & 0x1F));
                     return;
                 }
 
@@ -305,7 +306,7 @@ namespace Chetch{
                         }
                         unsigned long ent = nd->getEstimatedNodeTime();
                         if(!nd->setNodeTime(amsg.get<unsigned long>(0), amsg.get<unsigned int>(1))){
-                            raiseError(SYNC_ERROR, (unsigned long)sourceNodeID << 24 | 0x00FFFFFF & ent);
+                            raiseError(SYNC_ERROR, (unsigned long)sourceNodeID << 24 | (0x00FFFFFF & ent));
                             return;
                         } else {
                             //TODO: process other message values
@@ -325,6 +326,7 @@ namespace Chetch{
 
                 handleReceivedMessage(sourceNodeID, &amsg);
                 break;
+            }
 
             case MCP2515::ERROR_FAIL:
                 raiseError(READ_FAIL);
@@ -365,8 +367,7 @@ namespace Chetch{
         ArduinoMessage* response;
         byte targetNode = 0;
         ArduinoDevice* device = NULL;
-        int i = 0;
-
+        
         if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST){
             message->populate<byte>(canInFrame.data);
             targetNode = message->get<byte>(0);
@@ -601,12 +602,12 @@ namespace Chetch{
         if(filterNum >= 5)return false;
 
         MCP2515::ERROR err;
-        err = mcp2515.setFilterMask(maskNum, true, mask);
+        err = mcp2515.setFilterMask((MCP2515::MASK)maskNum, true, mask);
         if(err != MCP2515::ERROR_OK){
             return false;
         }
 
-        err = mcp2515.setFilter(filterNum, true, filter);
+        err = mcp2515.setFilter((MCP2515::RXF)filterNum, true, filter);
         if(err != MCP2515::ERROR_OK){
             return false;
         }

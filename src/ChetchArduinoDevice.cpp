@@ -17,9 +17,9 @@ namespace Chetch{
     }
 
     void ArduinoDevice::setErrorInfo(ArduinoMessage* message, byte errorSubCode){
-#if ARDUINO_BOARD_USE_STREAM
+//Requires Stream
         Board->setErrorInfo(message, ArduinoBoard::ErrorCode::DEVICE_ERROR, errorSubCode);
-#endif
+//End //Requires Stream
     }
 
     void ArduinoDevice::setStatusInfo(ArduinoMessage* message){
@@ -47,7 +47,7 @@ namespace Chetch{
                 break;
 
             case ArduinoMessage::TYPE_COMMAND:
-                DeviceCommand command = (DeviceCommand)message->get<DeviceCommand>(0);
+                DeviceCommand command = message->get<DeviceCommand>(0);
                 if(executeCommand(command, message, response)){
                     response->type = ArduinoMessage::TYPE_COMMAND_RESPONSE;
                     response->add((byte)command);
@@ -65,9 +65,9 @@ namespace Chetch{
     }
 
     bool ArduinoDevice::enqueueMessageToSend(byte messageID, byte messageTag){
-#if ARDUINO_BOARD_USE_STREAM
+//Requires Stream
         return Board->enqueueMessageToSend(this, messageID, messageTag);
-#endif
+//End //Requires Stream
     }
 
     bool ArduinoDevice::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
@@ -89,7 +89,7 @@ namespace Chetch{
 
 
     void ArduinoDevice::loop(){
-        if(reportInterval > 0 && millis() - lastMillis >= reportInterval){
+        if(reportInterval > 0 && millis() - lastMillis >= (unsigned long)reportInterval){
             //Serial.println("Ok message is ready to send");
             lastMillis = millis();
             enqueueMessageToSend(MESSAGE_ID_REPORT);

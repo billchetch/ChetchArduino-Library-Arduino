@@ -5,11 +5,11 @@ namespace Chetch{
     
     //Constructors
     ArduinoBoard::ArduinoBoard() 
-#if ARDUINO_BOARD_NO_STREAM != 1            
+//Requires Stream
     : frame(MessageFrame::FrameSchema::SMALL_SIMPLE_CHECKSUM, MessageFrame::MessageEncoding::SYSTEM_DEFINED, MAX_FRAME_PAYLOAD_SIZE), 
                                 inboundMessage(MAX_FRAME_PAYLOAD_SIZE), 
                                 outboundMessage(MAX_FRAME_PAYLOAD_SIZE)
-#endif
+//End //Requires Stream
     {
         for(byte i = 0; i < MAX_DEVICES; i++){
             devices[i] = NULL;
@@ -18,11 +18,11 @@ namespace Chetch{
 
 
     bool ArduinoBoard::begin(Stream* stream){
-#if ARDUINO_BOARD_NO_STREAM != 1            
+//Requires Stream
         this->stream = stream;
         inboundMessage.clear();
         outboundMessage.clear();
-#endif
+//End //Requires Stream
         for(int i = 0; i < deviceCount; i++){
             if(!devices[i]->begin() || !devices[i]->hasBegun()){ //in case we forget to set the begun flag
                 return false;
@@ -63,7 +63,7 @@ namespace Chetch{
         return freeMemory();
     }
     
-#if ARDUINO_BOARD_NO_STREAM != 1            
+//Requires Stream
     //returns true if received a valid message, false otherwise
     bool ArduinoBoard::receiveMessage(){
         if(stream == NULL)return false;
@@ -185,13 +185,13 @@ namespace Chetch{
         }
         return qi;
     }
-#endif
+//Requires Stream
 
     void ArduinoBoard::loop(){
         //basic error checking here to make sure that we've begun
         if(!begun)return;
 
-#if ARDUINO_BOARD_NO_STREAM != 1
+//Requires Stream
         //1. Receieve any message and possilbly reply
         if(receiveMessage()){
             //we have received a VALID message ... so direct it to the appropriate place for handling
@@ -228,14 +228,15 @@ namespace Chetch{
         } else if(!outboundMessage.isEmpty()){ //if the receiveMessage populated an outbound message (e.g. error)
             sendMessage();
         }
-#endif
+//End //Requires Stream
+
         //2. Loop next device
         if(deviceCount > 0 && devices[currentdevice] != NULL){
             devices[currentdevice]->loop(); //will update device state, possible set flags etc. to then pouplate outbound message
             currentdevice = (currentdevice + 1) % deviceCount;
         }
 
-#if ARDUINO_BOARD_NO_STREAM != 1
+//Requires Stream
         //3. Process next message to send in queue
         if(!isMessageQueueEmpty() && outboundMessage.isEmpty()){
             MessageQueueItem qi = dequeueMessageToSend();
@@ -245,6 +246,6 @@ namespace Chetch{
             outboundMessage.tag = qi.messageTag;
             sendMessage();
         }
-#endif
+//End //Requires Stream
     }
 }

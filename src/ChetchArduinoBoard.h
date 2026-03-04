@@ -44,7 +44,7 @@ namespace Chetch{
             static const byte START_DEVICE_IDS_AT = 8;
 
 
-#if ARDUINO_BOARD_NO_STREAM != 1
+//Requires Stream
             static const int MAX_QUEUE_SIZE = MAX_DEVICES;
 
             struct MessageQueueItem{
@@ -52,7 +52,7 @@ namespace Chetch{
                 byte messageID; 
                 byte messageTag;  //currently not used 1/2/25
             };
-#endif
+//End //Requires Stream
             enum class ErrorCode{
                 NO_ERROR = 0,
                 MESSAGE_FRAME_ERROR = 10, //To indicate this is a Frame error
@@ -74,7 +74,7 @@ namespace Chetch{
             byte deviceCount = 0;
             byte currentdevice = 0;
 
-#if ARDUINO_BOARD_NO_STREAM != 1
+//Requires Stream
             MessageFrame frame;
             ArduinoMessage inboundMessage;
             ArduinoMessage outboundMessage;
@@ -85,7 +85,7 @@ namespace Chetch{
 
             Stream* stream;
 
-#endif
+//End //Requires Stream
         protected:
             unsigned long unixTimestamp = 0;
             int timezoneOffset = 0;
@@ -111,7 +111,7 @@ namespace Chetch{
             void loop();
 
 
-#if ARDUINO_BOARD_NO_STREAM != 1
+//Requires Stream
             //messaging stuff
             void setErrorInfo(ArduinoMessage* message, ErrorCode errorCode, byte errorSubCode);
             void setResponseInfo(ArduinoMessage* response, ArduinoMessage* message, byte sender);
@@ -123,7 +123,7 @@ namespace Chetch{
             MessageQueueItem dequeueMessageToSend();
             bool isMessageQueueFull();
             bool isMessageQueueEmpty();
-#endif
+//End //Requires Stream
     };
 }
 #endif

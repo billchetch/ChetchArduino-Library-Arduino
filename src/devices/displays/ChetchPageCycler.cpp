@@ -66,7 +66,7 @@ namespace Chetch{
             if(currentPageNumber < maxPages){
                 currentPageNumber++;
             } else {
-                currentPageNumber == 1;
+                currentPageNumber = 1;
             }   
         }
 

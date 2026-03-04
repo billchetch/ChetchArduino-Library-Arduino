@@ -79,13 +79,13 @@ namespace Chetch{
                     recording = 0;
                 }
                 pinState = currentPinState;
-            } else if(recording > 0 && millis() - recording >= tolerance){ 
+            } else if(recording > 0 && millis() - recording >= (unsigned long)tolerance){ 
                 //so here we are reording and have gone over tolerance so we trigger and reset
                 trigger();
                 recording = 0;
             }
         } else {
-            if(recording > 0 && millis() - recording >= tolerance){
+            if(recording > 0 && millis() - recording >= (unsigned long)tolerance){
                 trigger();
                 recording = 0;
             }

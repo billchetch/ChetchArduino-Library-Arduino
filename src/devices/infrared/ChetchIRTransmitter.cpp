@@ -65,6 +65,9 @@ namespace Chetch{
 					return false;
 				}
 
+			default:
+				break;
+
 		} //end command  switch
 			
 		return handled;

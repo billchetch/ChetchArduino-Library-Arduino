@@ -34,7 +34,6 @@ namespace Chetch{
             //Serial.print("<- SOR: ");
             //Serial.println(millis());
         } else if(bitCount > 0 && intervalElapsed(bitCount == 1 ? interval/4 : 0)){
-            unsigned int ival = millis() - lastPinIO;
             byte bit = pinRead(true);
             /*Serial.print("<< B");
             Serial.print(bitCount);

@@ -24,7 +24,7 @@ namespace Chetch{
             }
             return false;
         });
-        display.addDisplayHandler([](LCDI2C* dd, byte updateTag, bool displayInitialised){
+        display.addDisplayHandler([](ArduinoDevice* dd, byte updateTag, bool displayInitialised){
             Watermaker* wm = (Watermaker*)dd->Board;
             return wm->renderDisplay((DisplayMode)updateTag, displayInitialised);
         });
@@ -182,6 +182,8 @@ namespace Chetch{
                 solenoidFresh.turn(true);
                 solenoidSalt.turn(false);
                 break;
+            default:
+                break;
         }
 
         feederPump.turn(true);
@@ -250,16 +252,19 @@ namespace Chetch{
             display.print("Mode: ");
             switch(currentMode){
                 case MAKE_WATER:
-                display.print("Buat");
-                break;
+                    display.print("Buat");
+                    break;
 
                 case RINSE:
-                display.print("Bilas");
-                break;
+                    display.print("Bilas");
+                    break;
 
                 case EXPEL_AIR:
-                display.print("Buang");
-                break;
+                    display.print("Buang");
+                    break;
+
+                default:
+                    break;
             }
             
             display.setCursor(0, 1);

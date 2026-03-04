@@ -87,7 +87,7 @@ namespace Chetch{
             }
         } else if(message->type== ArduinoMessage::TYPE_RESET){
             indicate(true);
-            ResetRegime regime = message->get<ResetRegime>(0);
+            //ResetRegime regime = message->get<ResetRegime>(0);
             
             init(true);
 

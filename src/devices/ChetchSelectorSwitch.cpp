@@ -24,7 +24,7 @@ namespace Chetch{
 
     void SelectorSwitch::loop(){
 
-        if(selectedPin == 0 && millis() - lastChecked > getTolerance() + 10){
+        if(selectedPin == 0 && millis() - lastChecked > getTolerance() + 10UL){
             if(!isOn()){
                 byte nextPin = getPin() + 1;
                 if(nextPin > lastPin)nextPin = firstPin;
