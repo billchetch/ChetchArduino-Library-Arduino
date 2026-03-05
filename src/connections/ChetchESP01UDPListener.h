@@ -1,28 +1,27 @@
 
-#ifndef CHETCH_ARDUINO_ESP01TCPLISTENER_H
-#define CHETCH_ARDUINO_ESP01TCPLISTENER_H
+#ifndef CHETCH_ARDUINO_ESP01UDPLISTENER_H
+#define CHETCH_ARDUINO_ESP01UDPLISTENER_H
 
 #include <Arduino.h>
 
 //#include <WiFiEsp.h> //WiFiEsp_h
 #include <WiFiEspAT.h> //_WIFI_ESP_AT_H_
 
-#define SERVER_PORT 80
+#define UDP_PORT 18880
 
 namespace Chetch{
-    class ESP01TCPListener : public Stream{
+    class ESP01UDPListener : public Stream{
         protected:
 #ifdef WiFiEsp_h        
-            WiFiEspServer server;
-            WiFiEspClient client;
+            ??
+            ??
 #endif
 #ifdef _WIFI_ESP_AT_H_
-            WiFiServer server;
-            WiFiClient client;
+            WiFiUDP udp;
 #endif
-
+            int udpPort = 0;
         public:
-            ESP01TCPListener();
+            ESP01UDPListener(int udpPort);
             
             int connectToNetwork();
             bool isConnectedToNetwork();

@@ -88,7 +88,7 @@ namespace Chetch{
                     setErrorInfo(&outboundMessage, ErrorCode::MESSAGE_FRAME_ERROR, (byte)frame.error);
                     frame.reset();
                     return false;
-                } //end frame validate
+                } //end frame validate*/
             }
         } //end stream read
 
@@ -105,7 +105,6 @@ namespace Chetch{
         }
         //ready for reuse
         outboundMessage.clear();
-        
     }
 
     void ArduinoBoard::setErrorInfo(ArduinoMessage* message, ErrorCode errorCode, byte errorSubCode){
@@ -196,6 +195,7 @@ namespace Chetch{
         if(receiveMessage()){
             //we have received a VALID message ... so direct it to the appropriate place for handling
             outboundMessage.clear();
+            
             switch(inboundMessage.target){
                 case ArduinoMessage::NO_TARGET:
                     setErrorInfo(&outboundMessage, ErrorCode::TARGET_NOT_SUPPLIED, inboundMessage.target);
