@@ -20,8 +20,13 @@ namespace Chetch{
             WiFiUDP udp;
 #endif
             int udpPort = 0;
+            byte* buffer;
+            int bytesRead = 0;
+            byte bufferIdx = 0;
+
         public:
-            ESP01UDPListener(int udpPort);
+            ESP01UDPListener(int udpPort, byte maxPacketSize = 255);
+            ~ESP01UDPListener();
             
             int connectToNetwork();
             bool isConnectedToNetwork();

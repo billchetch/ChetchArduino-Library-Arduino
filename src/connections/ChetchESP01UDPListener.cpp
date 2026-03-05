@@ -2,9 +2,14 @@
 
 
 namespace Chetch{
-    ESP01UDPListener::ESP01UDPListener(int udpPort)
+    ESP01UDPListener::ESP01UDPListener(int udpPort, byte maxPacketSize)
     {
         this->udpPort = udpPort;
+        buffer = new byte[maxPacketSize];
+    }
+
+    ESP01UDPListener::~ESP01UDPListener(){
+        delete[] buffer;
     }
 
     int ESP01UDPListener::connectToNetwork(){
@@ -45,33 +50,37 @@ namespace Chetch{
 
     int ESP01UDPListener::available(){
         int n = udp.parsePacket(); 
-        if(n > 0){
+        if(n > 0 && bytesRead == 0){
             Serial.print("Available bytes: ");
             Serial.println(n);
-            /*while(udp.available()){
-                Serial.print("Byte: ");
-                Serial.println(udp.read());
-            }*/
+            udp.read(buffer, n);
+            bytesRead = n;
+            bufferIdx = 0;
         }
-        return n;
+        return bytesRead - bufferIdx;
     }
 
     int ESP01UDPListener::peek(){
-        return udp.peek();
+        return -1;
     }
 
     int ESP01UDPListener::read() {
-        Serial.print("Reading bytes: ");
-        Serial.print(udp.available());
-        
-        int b = udp.read();
-        Serial.print("Byte: ");
-        Serial.println(b);
-        return b; //-1;*/
+        if(bufferIdx >= bytesRead){
+            bytesRead = 0; //so we can read in the next packet
+            return -1;
+        } else {
+            byte b = buffer[bufferIdx];
+            bufferIdx++;
+            Serial.print("Read byte: ");
+            Serial.println(b);
+            return (int)b; //-1;*/
+        }
     }
 
     size_t ESP01UDPListener::write(byte b){
-        //return udp.write(b);
-        return 0;
+        Serial.print("Write byte: ");
+        Serial.println(b);
+        return udp.write(b);
+        //return 0;
     }
 }
