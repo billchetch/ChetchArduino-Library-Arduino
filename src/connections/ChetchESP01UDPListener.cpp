@@ -5,6 +5,7 @@ namespace Chetch{
     ESP01UDPListener::ESP01UDPListener(int udpPort, byte maxPacketSize)
     {
         this->udpPort = udpPort;
+        this->maxPacketSize = maxPacketSize;
         buffer = new byte[maxPacketSize];
     }
 
@@ -49,8 +50,15 @@ namespace Chetch{
     }
 
     int ESP01UDPListener::available(){
+        if(bytesRead == 0 && bufferIdx > 0){
+            udp.beginPacket(udp.remoteIP(), udp.remotePort());
+            udp.write(buffer, bufferIdx + 1);
+            udp.endPacket();
+            bufferIdx = 0;
+        }
+
         int n = udp.parsePacket(); 
-        if(n > 0 && bytesRead == 0){
+        if(n > 0 && n <= maxPacketSize && bytesRead == 0){
             Serial.print("Available bytes: ");
             Serial.println(n);
             udp.read(buffer, n);
@@ -67,6 +75,7 @@ namespace Chetch{
     int ESP01UDPListener::read() {
         if(bufferIdx >= bytesRead){
             bytesRead = 0; //so we can read in the next packet
+            bufferIdx = 0;
             return -1;
         } else {
             byte b = buffer[bufferIdx];
@@ -78,9 +87,14 @@ namespace Chetch{
     }
 
     size_t ESP01UDPListener::write(byte b){
-        Serial.print("Write byte: ");
-        Serial.println(b);
-        return udp.write(b);
+        if(bytesRead == 0 && bufferIdx < maxPacketSize){
+            buffer[bufferIdx++] = b;
+            Serial.print("Write byte: ");
+            Serial.println(b);
+            return 1;
+        }
+        else
+            return 0; //udp.write(b);
         //return 0;
     }
 }

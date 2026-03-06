@@ -128,8 +128,10 @@ namespace Chetch{
             setResponseInfo(response, message, getID());
         } else if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST){
             //Anticipate message has server info
-            unixTimestamp = message->get<unsigned long>(0);
-            timezoneOffset = message->get<int>(1);
+            if(message->getArgumentCount() >= 2){
+                unixTimestamp = message->get<unsigned long>(0);
+                timezoneOffset = message->get<int>(1);
+            }
 
             //Now formulate a response
             response->type = ArduinoMessage::TYPE_STATUS_RESPONSE;

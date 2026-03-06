@@ -21,6 +21,7 @@ namespace Chetch{
 #endif
             int udpPort = 0;
             byte* buffer;
+            int maxPacketSize = 0;
             int bytesRead = 0;
             byte bufferIdx = 0;
 
