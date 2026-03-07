@@ -25,12 +25,19 @@ namespace Chetch{
             int bytesRead = 0;
             byte bufferIdx = 0;
 
+            //temp
+            unsigned int mrecv = 0;
+            unsigned int msent = 0;
+            IPAddress remoteIP;
+            uint16_t remotePort;
+
         public:
             ESP01UDPListener(int udpPort, byte maxPacketSize = 255);
             ~ESP01UDPListener();
             
             int connectToNetwork();
             bool isConnectedToNetwork();
+            IPAddress getLocalIP(){ return WiFi.localIP(); }
 
             void begin(Stream* stream);
 
