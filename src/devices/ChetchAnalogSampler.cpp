@@ -30,16 +30,14 @@ namespace Chetch{
                 CADC::startRead(analogPin);
                 sampling = true;
             } else if(!CADC::isReading()){
-                uint16_t result = CADC::readResult();
-                summedSamples += result;
+                lastRead = CADC::readResult();
+                summedSamples += lastRead;
                 sampleCount++;
                 if(isSamplingComplete()){
                     sampling = false;
                     
-                    //trigger listener
-                    if(samplingCompleteListener != NULL){
-                        samplingCompleteListener(this, result, summedSamples, sampleCount);
-                    }
+                    //trigger listener (if overriden the overriding method should call base)
+                    onSamplingComplete();
 
                     //reset
                     summedSamples = 0;
@@ -49,11 +47,17 @@ namespace Chetch{
         }
     } //end loop
 
+    void AnalogSampler::onSamplingComplete(){
+        if(samplingCompleteListener != NULL){
+            samplingCompleteListener(this, lastRead, summedSamples, sampleCount);
+        }
+    }
+
     bool AnalogSampler::isSamplingComplete(){
         return sampleCount == sampleSize;
     }
 
-    double AnalogSampler::getAverageReading(){
+    double AnalogSampler::getValue(){
         if(isSamplingComplete()){
             return (double)summedSamples / (double)sampleSize;
         } else {

@@ -8,5 +8,9 @@ namespace Chetch{
 
     }
 
-
+    void TDSMeter::onSamplingComplete(){
+        AnalogSampler::onSamplingComplete();
+        
+        double val = getValue();
+    }
 }

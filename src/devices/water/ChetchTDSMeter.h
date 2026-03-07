@@ -10,6 +10,8 @@ namespace Chetch{
         public:
             TDSMeter(byte analogPin, unsigned int sampleInterval, uint16_t sampleSize = 1);
 
+            void onSamplingComplete() override;
+
     }; //end class
 } //end namespace
 #endif

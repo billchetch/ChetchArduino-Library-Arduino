@@ -54,21 +54,18 @@ namespace Chetch{
 
     int ESP01UDPListener::available(){
         if(bytesRead == 0 && bufferIdx > 0){
-            Serial.print("Write bytes: ");
-            Serial.println(bufferIdx);
-            
             if(udp.beginPacket(remoteIP, remotePort)){
                 udp.write(buffer, bufferIdx);
                 if(udp.endPacket()){
                     msent++;
-                    Serial.print("Msg sent: ");
+                    Serial.print("-> Msent: ");
                     Serial.println(msent);
                     delay(5);
                 } else {
-                    Serial.print("End packet failure");
+                    Serial.print("EPkt Fail");
                 }
             } else {
-                Serial.println("Cound not begin packet");
+                Serial.println("BPkt Fail");
             }
             bufferIdx = 0;
         }
@@ -78,13 +75,14 @@ namespace Chetch{
             if(mrecv == 0){
                 remoteIP = udp.remoteIP();
                 remotePort = udp.remotePort();
-                Serial.println("Client connected!");
+                Serial.print("From: ");
+                Serial.print(remoteIP);
+                Serial.print(":");
+                Serial.println(remotePort);
             }
 
             mrecv++;
-            Serial.print("Available bytes: ");
-            Serial.println(n);
-            Serial.print("Msg recv: ");
+            Serial.print("<- Mrecv: ");
             Serial.println(mrecv);
             udp.read(buffer, n);
             bytesRead = n;
@@ -107,7 +105,8 @@ namespace Chetch{
             
             bufferIdx++;
             if(bufferIdx >= bytesRead){
-                delay(5);
+                Serial.println("Message read!");
+                delay(10);
                 bytesRead = 0; //so we can read in the next packet
                 bufferIdx = 0;
             }

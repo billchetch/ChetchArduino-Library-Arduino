@@ -19,6 +19,7 @@ namespace Chetch{
             unsigned long summedSamples = 0;
             unsigned int sampleInterval = 0;
             unsigned long lastSampledOn = 0;
+            uint16_t lastRead = 0;
             bool sampling = false;
             
             SamplingCompleteListener samplingCompleteListener = NULL;
@@ -33,7 +34,8 @@ namespace Chetch{
             void loop() override;
 
             bool isSamplingComplete();
-            double getAverageReading();
+            virtual void onSamplingComplete();
+            double getValue();
     }; //End class
 } //End namespace
 #endif
