@@ -10,6 +10,7 @@ namespace Chetch{
         if(aref != CADC::aref()){
             CADC::init(aref);
         }
+        this->aref = aref;
     }
 
     AnalogSampler::~AnalogSampler(){
@@ -28,14 +29,25 @@ namespace Chetch{
             lastSampledOn = millis();
             if(!sampling){
                 CADC::startRead(analogPin);
+                startedSamplingOn = millis();
                 sampling = true;
             } else if(!CADC::isReading()){
-                lastRead = CADC::readResult();
-                summedSamples += lastRead;
+                lastValue = CADC::readResult();
+                if(sampleCount == 0){
+                    firstValue = lastValue;
+                    minValue = firstValue;
+                    maxValue = firstValue;
+                }
+                if(lastValue > maxValue)maxValue = lastValue;
+                if(lastValue < minValue)minValue = lastValue;
+
+                summedSamples += lastValue;
                 sampleCount++;
                 if(isSamplingComplete()){
                     sampling = false;
-                    
+                    samplingDuration = millis() - startedSamplingOn;
+                    meanValue = (double)summedSamples / (double)sampleCount;
+
                     //trigger listener (if overriden the overriding method should call base)
                     onSamplingComplete();
 
@@ -49,7 +61,7 @@ namespace Chetch{
 
     void AnalogSampler::onSamplingComplete(){
         if(samplingCompleteListener != NULL){
-            samplingCompleteListener(this, lastRead, summedSamples, sampleCount);
+            samplingCompleteListener(this);
         }
     }
 
@@ -57,11 +69,7 @@ namespace Chetch{
         return sampleCount == sampleSize;
     }
 
-    double AnalogSampler::getValue(){
-        if(isSamplingComplete()){
-            return (double)summedSamples / (double)sampleSize;
-        } else {
-            return -1.0;
-        }
+    double AnalogSampler::getVoltage(double val){
+        return CADC::getVoltage(val, aref);
     }
 }
