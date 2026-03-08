@@ -44,10 +44,8 @@ namespace Chetch{
 
             message->type = ArduinoMessage::TYPE_DATA;
             
-            //add results
+            //add results (only mean value for now)
             message->add(results.meanValue);
-            message->add(results.minValue);
-            message->add(results.maxValue);
         }
     }
 

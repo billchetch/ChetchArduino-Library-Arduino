@@ -18,7 +18,19 @@ namespace Chetch{
         if(ppm < ppmMin)ppm = (double)ppmMin;
         if(ppm > ppmMax)ppm = (double)ppmMax;
 
+        tdsResults.ppm = ppm;
+        tdsResults.voltage = x;
+
         //Ensure any listeners are called
         AnalogSampler::onSamplingComplete();
+    }
+
+    void TDSMeter::populateOutboundMessage(ArduinoMessage* message, byte messageID){
+        AnalogSampler::populateOutboundMessage(message, messageID);
+
+        if(messageID == MESSAGE_ID_SAMPLING_COMPLETE){
+            //add ppm
+            message->add(tdsResults.ppm);
+        }
     }
 }
