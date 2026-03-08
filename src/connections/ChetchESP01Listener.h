@@ -11,18 +11,22 @@
 
 namespace Chetch{
     class ESP01Listener : public Stream{
+        private:
+            const char* ssid;
+            const char* pass;
+
         protected:
             int port;
 
         public:
-            ESP01Listener(int port);
+            ESP01Listener(const char* ssid, const char* pass, int port);
             
-            virtual int connectToNetwork();
+            int connectToNetwork();
             bool isConnectedToNetwork();
 
-            void begin(Stream* stream);
+            virtual int begin(Stream* stream);
 
-            
+            IPAddress getLocalIP(){ return WiFi.localIP(); };
     };
 }
 #endif

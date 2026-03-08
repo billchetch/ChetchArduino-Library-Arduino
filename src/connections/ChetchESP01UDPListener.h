@@ -3,14 +3,12 @@
 #define CHETCH_ARDUINO_ESP01UDPLISTENER_H
 
 #include <Arduino.h>
+#include "connections/ChetchESP01Listener.h"
 
-//#include <WiFiEsp.h> //WiFiEsp_h
-#include <WiFiEspAT.h> //_WIFI_ESP_AT_H_
-
-#define UDP_PORT 18880
+#define ESP_UDP_DEFAULT_PORT 18800
 
 namespace Chetch{
-    class ESP01UDPListener : public Stream{
+    class ESP01UDPListener : public ESP01Listener{
         protected:
 #ifdef WiFiEsp_h        
             ??
@@ -19,27 +17,24 @@ namespace Chetch{
 #ifdef _WIFI_ESP_AT_H_
             WiFiUDP udp;
 #endif
-            int udpPort = 0;
             byte* buffer;
             int maxPacketSize = 0;
-            int bytesRead = 0;
+            int bytesToRead = 0;
             byte bufferIdx = 0;
+            IPAddress remoteIP;
+            uint16_t remotePort;
 
             //temp
             unsigned int mrecv = 0;
             unsigned int msent = 0;
-            IPAddress remoteIP;
-            uint16_t remotePort;
+            
 
         public:
-            ESP01UDPListener(int udpPort, byte maxPacketSize = 255);
+            ESP01UDPListener(const char* ssid, const char* pass, int port = ESP_UDP_DEFAULT_PORT, byte maxPacketSize = 64);
             ~ESP01UDPListener();
             
-            int connectToNetwork();
-            bool isConnectedToNetwork();
-            IPAddress getLocalIP(){ return WiFi.localIP(); }
-
-            void begin(Stream* stream);
+            //Listener overrides
+            int begin(Stream* stream) override;
 
             //Stream overrides
             int available() override;

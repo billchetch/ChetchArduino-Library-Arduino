@@ -2,24 +2,14 @@
 
 
 namespace Chetch{
-    ESP01TCPListener::ESP01TCPListener() : server(SERVER_PORT)
+    ESP01TCPListener::ESP01TCPListener(const char* ssid, const char* pass, int port) : ESP01Listener(ssid, pass, port),
+                server(port)
     {
-        //empty
+        
     }
 
-    int ESP01TCPListener::connectToNetwork(){
-        char ssid[] = "Bulan Baru Internet";            // your network SSID (name)
-        char pass[] = "bulanbaru";   
-
-        // attempt to connect to WiFi network
-        int status = WL_IDLE_STATUS;
-        while ( status != WL_CONNECTED) {
-            Serial.print("Attempting to connect to WPA SSID: ");
-            Serial.println(ssid);
-            // Connect to WPA/WPA2 network
-            status = WiFi.begin(ssid, pass);
-            delay(2000);
-        }
+    int ESP01TCPListener::begin(Stream* stream){
+        int s = ESP01Listener::begin(stream);
 
         if(isConnectedToNetwork()){
             Serial.print("IP Address: ");
@@ -30,17 +20,7 @@ namespace Chetch{
             Serial.print("Network status: ");
             Serial.print(WiFi.status());
         }
-        return status;
-    }
-
-    bool ESP01TCPListener::isConnectedToNetwork(){
-        return WiFi.status() == WL_CONNECTED;
-    }
-
-    void ESP01TCPListener::begin(Stream* stream){
-        WiFi.init(stream);
-
-        connectToNetwork();
+        return s;
     }
 
     int ESP01TCPListener::available(){

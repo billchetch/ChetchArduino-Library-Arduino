@@ -4,13 +4,10 @@
 
 #include <Arduino.h>
 
-//#include <WiFiEsp.h> //WiFiEsp_h
-#include <WiFiEspAT.h> //_WIFI_ESP_AT_H_
-
-#define SERVER_PORT 80
+#include "connections/ChetchESP01Listener.h"
 
 namespace Chetch{
-    class ESP01TCPListener : public Stream{
+    class ESP01TCPListener : public ESP01Listener{
         protected:
 #ifdef WiFiEsp_h        
             WiFiEspServer server;
@@ -22,12 +19,10 @@ namespace Chetch{
 #endif
 
         public:
-            ESP01TCPListener();
+            ESP01TCPListener(const char* ssid, const char* pass, int port);
             
-            int connectToNetwork();
-            bool isConnectedToNetwork();
-
-            void begin(Stream* stream);
+            //Listener overrides
+            int begin(Stream* stream) override;
 
             //Stream overrides
             int available() override;

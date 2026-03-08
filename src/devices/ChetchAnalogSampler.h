@@ -9,6 +9,15 @@
 namespace Chetch{
     class AnalogSampler : public ArduinoDevice {
         public:
+            static const byte MESSAGE_ID_SAMPLING_COMPLETE = 100;
+
+            struct Results
+            {
+                double meanValue = 0.0;
+                uint16_t minValue = 0;
+                uint16_t maxValue = 0;
+            };
+            
             //function parameters: this, last reading, summed readings, number of readings
             typedef void (*SamplingCompleteListener)(AnalogSampler*); 
 
@@ -18,9 +27,12 @@ namespace Chetch{
 
             uint16_t sampleCount = 0;
             unsigned int sampleInterval = 0;
+            unsigned int waitInterval = 0; //wait a period of time before starting sampling again
             unsigned long lastSampledOn = 0;
             unsigned long startedSamplingOn = 0;
             bool sampling = false;
+
+            Results results;
 
             SamplingCompleteListener samplingCompleteListener = NULL;
 
@@ -41,8 +53,12 @@ namespace Chetch{
             AnalogSampler(byte analogPin, unsigned int sampleInterval, uint16_t sampleSize = 1, CADC::AnalogReference aref = CADC::AnalogReference::AREF_INTERNAL);
             ~AnalogSampler();
 
+            void setWaitInterval(unsigned int waitInteval);
             void addSamplingCompleteListener(SamplingCompleteListener listener){ samplingCompleteListener = listener; }
-            
+
+            void setStatusInfo(ArduinoMessage* message) override;
+            void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
+
             bool begin() override;
             void loop() override;
 

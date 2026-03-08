@@ -2,9 +2,8 @@
 
 
 namespace Chetch{
-    ESP01UDPListener::ESP01UDPListener(int udpPort, byte maxPacketSize)
+    ESP01UDPListener::ESP01UDPListener(const char* ssid, const char* pass, int port, byte maxPacketSize) : ESP01Listener(ssid, pass, port)
     {
-        this->udpPort = udpPort;
         this->maxPacketSize = maxPacketSize;
         buffer = new byte[maxPacketSize];
     }
@@ -13,23 +12,14 @@ namespace Chetch{
         delete[] buffer;
     }
 
-    int ESP01UDPListener::connectToNetwork(){
-        char ssid[] = "Bulan Baru Internet";            // your network SSID (name)
-        char pass[] = "bulanbaru";   
-
-        // attempt to connect to WiFi network
-        int status = WL_IDLE_STATUS;
-        while ( status != WL_CONNECTED) {
-            // Connect to WPA/WPA2 network
-            status = WiFi.begin(ssid, pass);
-            delay(2000);
-        }
+    int ESP01UDPListener::begin(Stream* stream){
+        int s = ESP01Listener::begin(stream);    
 
         if(isConnectedToNetwork()){
             //Serial.print("IP: ");
             //Serial.println(WiFi.localIP());
             //Serial.println("Begin UDP...");
-            if(udp.begin(udpPort)){
+            if(udp.begin(port)){
                 //Serial.println("UDP begun!");
             } else {
                 Serial.println("UDP failed to begin");
@@ -39,56 +29,54 @@ namespace Chetch{
             //Serial.print("Network status: ");
             //Serial.print(WiFi.status());
         }
-        return status;
-    }
-
-    bool ESP01UDPListener::isConnectedToNetwork(){
-        return WiFi.status() == WL_CONNECTED;
-    }
-
-    void ESP01UDPListener::begin(Stream* stream){
-        WiFi.init(stream);
-
-        connectToNetwork();
+        
+        return s;
     }
 
     int ESP01UDPListener::available(){
-        if(bytesRead == 0 && bufferIdx > 0){
-            if(udp.beginPacket(remoteIP, remotePort)){
-                udp.write(buffer, bufferIdx);
-                if(udp.endPacket()){
-                    msent++;
-                    Serial.print("-> Msent: ");
-                    Serial.println(msent);
-                    delay(5);
+        if(bytesToRead > 0){
+            //There are bytes on the buffer remaining to be read
+            return bytesToRead - bufferIdx;
+        } else if(bytesToRead == 0 && bufferIdx > 0){
+            //the are bytes on the buffer that need to be written
+            if(remotePort > 0){
+                //If we have somewhere to send them then try and make a packet
+                if(udp.beginPacket(remoteIP, remotePort)){
+                    //Write to packet
+                    udp.write(buffer, bufferIdx);
+
+                    //test if packet ends (means passed to transmit buffer)
+                    if(udp.endPacket()){
+                        msent++;
+                        Serial.print("-> Msent: ");
+                        Serial.println(msent);
+                        delay(1);
+                    } else {
+                        Serial.print("EPkt Fail");
+                    }
                 } else {
-                    Serial.print("EPkt Fail");
+                    Serial.println("BPkt Fail");
+                } //end udp packet construction
+            } //end check remote port
+            bufferIdx = 0;
+            return 0;
+        } else {
+            //Since there are no bytes on the buffer we see if there are bytes on the network
+            int n = udp.parsePacket();
+            if(n > 0){
+                //record the remote port and ip for sending data without making expensive AT calls
+                if(remotePort == 0){
+                    remoteIP = udp.remoteIP();
+                    remotePort = udp.remotePort();
                 }
-            } else {
-                Serial.println("BPkt Fail");
-            }
-            bufferIdx = 0;
-        }
 
-        int n = udp.parsePacket(); 
-        if(n > 0 && n <= maxPacketSize && bytesRead == 0){
-            if(mrecv == 0){
-                remoteIP = udp.remoteIP();
-                remotePort = udp.remotePort();
-                Serial.print("From: ");
-                Serial.print(remoteIP);
-                Serial.print(":");
-                Serial.println(remotePort);
+                //read bytes in to buffer and set bufferIdx to 0 ready for reading
+                bytesToRead = min(n, maxPacketSize);
+                udp.read(buffer, bytesToRead);
+                bufferIdx = 0;
             }
-
-            mrecv++;
-            Serial.print("<- Mrecv: ");
-            Serial.println(mrecv);
-            udp.read(buffer, n);
-            bytesRead = n;
-            bufferIdx = 0;
+            return n;
         }
-        return bytesRead - bufferIdx;
     }
 
     int ESP01UDPListener::peek(){
@@ -96,31 +84,27 @@ namespace Chetch{
     }
 
     int ESP01UDPListener::read() {
-        if(bufferIdx >= bytesRead){
+        if(bufferIdx >= bytesToRead){ //got to the end of the buffer
             return -1;
         } else {
             byte b = buffer[bufferIdx];
-            //Serial.print("Read byte: ");
-            //Serial.println(b);
-            
             bufferIdx++;
-            if(bufferIdx >= bytesRead){
+            if(bufferIdx >= bytesToRead){
                 Serial.println("Message read!");
-                delay(10);
-                bytesRead = 0; //so we can read in the next packet
+                bytesToRead = 0; //so we can read in the next packet
                 bufferIdx = 0;
+                delay(1);
             }
             return (int)b; //-1;*/
         }
     }
 
     size_t ESP01UDPListener::write(byte b){
-        if(bytesRead == 0 && bufferIdx < maxPacketSize){
+        if(bytesToRead == 0 && bufferIdx < maxPacketSize){
             buffer[bufferIdx++] = b;
             return 1;
         }
         else
             return 0; //
-        return 0;
     }
 }
