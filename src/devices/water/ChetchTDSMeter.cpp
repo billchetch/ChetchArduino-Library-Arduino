@@ -18,6 +18,7 @@ namespace Chetch{
         if(ppm < ppmMin)ppm = (double)ppmMin;
         if(ppm > ppmMax)ppm = (double)ppmMax;
 
+        //store for message creation
         tdsResults.ppm = ppm;
         tdsResults.voltage = x;
 
