@@ -23,9 +23,9 @@ namespace Chetch{
             unsigned int ppmMax = 1000;
 
             TDSResults tdsResults;
-            
+
         public:
-            TDSMeter(byte analogPin, unsigned int sampleInterval, uint16_t sampleSize = 1);
+            TDSMeter(byte analogPin, unsigned int sampleInterval, uint16_t sampleSize = 1, uint16_t waitInterval = 0);
 
             void setRange(unsigned int min, unsigned int max){ ppmMin = min; ppmMax = max; }
             void setTemperature(double t){ temperature = t; }
@@ -33,7 +33,7 @@ namespace Chetch{
             double getPPM(){ return ppm; }
             void onSamplingComplete() override;
 
-            void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
+            void setReportInfo(ArduinoMessage* message) override;
 
     }; //end class
 } //end namespace

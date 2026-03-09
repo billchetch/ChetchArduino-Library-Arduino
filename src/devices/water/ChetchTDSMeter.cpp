@@ -2,8 +2,8 @@
 
 namespace Chetch{
 
-    TDSMeter::TDSMeter(byte analogPin, unsigned int sampleInterval, uint16_t sampleSize) : 
-                    AnalogSampler(analogPin, sampleInterval, sampleSize)
+    TDSMeter::TDSMeter(byte analogPin, unsigned int sampleInterval, uint16_t sampleSize, uint16_t waitInterval) : 
+                    AnalogSampler(analogPin, sampleInterval, sampleSize, waitInterval)
     {
 
     }
@@ -26,12 +26,10 @@ namespace Chetch{
         AnalogSampler::onSamplingComplete();
     }
 
-    void TDSMeter::populateOutboundMessage(ArduinoMessage* message, byte messageID){
-        AnalogSampler::populateOutboundMessage(message, messageID);
+    void TDSMeter::setReportInfo(ArduinoMessage* message){
+        AnalogSampler::setReportInfo(message);
 
-        if(messageID == MESSAGE_ID_SAMPLING_COMPLETE){
-            //add ppm
-            message->add(tdsResults.ppm);
-        }
+        //add ppm
+        message->add(tdsResults.ppm);
     }
 }

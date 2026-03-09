@@ -1,12 +1,12 @@
 #include "ChetchAnalogSampler.h"
 
 namespace Chetch{
-    AnalogSampler::AnalogSampler(byte analogPin, unsigned int sampleInterval, uint16_t sampleSize, CADC::AnalogReference aref){
+    AnalogSampler::AnalogSampler(byte analogPin, unsigned int sampleInterval, uint16_t sampleSize, uint16_t waitInterval, CADC::AnalogReference aref){
         this->analogPin = analogPin;
         this->sampleSize = sampleSize;
         //samples = new uint16_t[sampleSize == 0 ? 1 : sampleSize];
         this->sampleInterval = sampleInterval;
-        waitInterval = sampleInterval;
+        setWaitInterval(waitInterval);
 
         if(aref != CADC::aref()){
             CADC::init(aref);
@@ -19,8 +19,11 @@ namespace Chetch{
     }
 
     void AnalogSampler::setWaitInterval(unsigned int waitInterval){
-        if(waitInterval < sampleInterval)return;
-        this->waitInterval = waitInterval;
+        if(waitInterval < sampleInterval){
+            this->waitInterval = sampleInterval;
+        } else {
+            this->waitInterval = waitInterval;
+        }
     }
 
     bool AnalogSampler::begin(){
@@ -37,16 +40,11 @@ namespace Chetch{
         message->add(sampleInterval);        
     }
 
-    void AnalogSampler::populateOutboundMessage(ArduinoMessage* message, byte messageID){
-        ArduinoDevice::populateOutboundMessage(message, messageID);
+    void AnalogSampler::setReportInfo(ArduinoMessage* message){
+        ArduinoDevice::setReportInfo(message);
 
-        if(messageID == MESSAGE_ID_SAMPLING_COMPLETE){
-
-            message->type = ArduinoMessage::TYPE_DATA;
-            
-            //add results (only mean value for now)
-            message->add(results.meanValue);
-        }
+        //add results (only mean value for now)
+        message->add(results.meanValue);
     }
 
     void AnalogSampler::loop(){
@@ -92,9 +90,6 @@ namespace Chetch{
         results.meanValue = meanValue;
         results.minValue = minValue;
         results.maxValue = maxValue;
-
-        //queue message
-        enqueueMessageToSend(MESSAGE_ID_SAMPLING_COMPLETE);
 
         //Call a listener if there is one
         if(samplingCompleteListener != NULL){
