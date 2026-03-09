@@ -50,7 +50,7 @@ namespace Chetch{
             
 
             //NOTE: that intteruptMode can be 0 (we use a loop instead), or RISING, CHANGE, FALLING.  If we use an interrupt the pinStateToCount is ignored
-            Counter(byte pin, byte interruptMode = 0, unsigned long assignValuesAfter = 1000, unsigned long tolerance = 0, bool pinStateToCount = HIGH);
+            Counter(byte pin, byte interruptMode = 0, unsigned long assignValuesAfter = 1000, unsigned long tolerance = 0, bool pinStateToCount = LOW);
             ~Counter();
 
             void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;

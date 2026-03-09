@@ -57,7 +57,7 @@ namespace Chetch{
 
     bool Counter::begin(){
         //Set the pin
-        pinMode(pin, INPUT);         
+        pinMode(pin, INPUT_PULLUP);         
         bitMask = digitalPinToBitMask(pin);
         inreg = portInputRegister(digitalPinToPort(pin));
         pinState = digitalRead(pin);
@@ -125,7 +125,9 @@ namespace Chetch{
         //in case we don't want to use an interrupt then we have this
         if(interruptMode == 0 && ((bitMask & *inreg) == bitMask) != pinState){ //not using interrupts
             unsigned long mcs = micros();
-            if(tolerance > 0 && count > 0 && mcs - countedOn < tolerance){
+            //we know the pin has changed state so whether we count or not depends on an issue of tolerance
+            bool canCount = count == 0 || tolerance == 0 || (tolerance > 0 && count > 0 && mcs - countedOn < tolerance);
+            if(canCount){
                 pinState  = (bitMask & *inreg) == bitMask;
                 if(pinState == pinStateToCount){
                     countedOn = mcs;
