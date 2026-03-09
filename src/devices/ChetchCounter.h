@@ -53,7 +53,8 @@ namespace Chetch{
             Counter(byte pin, byte interruptMode = 0, unsigned long assignValuesAfter = 1000, unsigned long tolerance = 0, bool pinStateToCount = LOW);
             ~Counter();
 
-            void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
+            void setStatusInfo(ArduinoMessage* message) override;
+            void setReportInfo(ArduinoMessage* message) override;
             virtual void assignValues(); //make virtual so we can override for functionality like RPM
             unsigned long getCount();
             double getHz();

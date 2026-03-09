@@ -100,14 +100,17 @@ namespace Chetch{
         }
     }
 
-    void Counter::populateOutboundMessage(ArduinoMessage* message, byte messageID){
-        ArduinoDevice::populateOutboundMessage(message, messageID);
+    void Counter::setStatusInfo(ArduinoMessage* message){
+        ArduinoDevice::setStatusInfo(message);
 
-        if(messageID == ArduinoDevice::MESSAGE_ID_REPORT){
-            //assign to message
-            message->add(getCount());
-            message->add(getHz());
-        }
+        message->add(assignValuesAfter);
+    }
+
+    void Counter::setReportInfo(ArduinoMessage* message){
+        ArduinoDevice::setReportInfo(message);
+
+        message->add(getCount());
+        message->add(getHz());
     }
 
     void Counter::loop(){
