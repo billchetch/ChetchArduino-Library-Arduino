@@ -81,7 +81,7 @@ namespace Chetch{
 
             virtual bool executeCommand(DeviceCommand command, ArduinoMessage* message, ArduinoMessage* response);
 
-            virtual bool begin() = 0;
+            virtual bool begin() { begun = true; return begun; };
             bool hasBegun(){ return begun; }
             virtual void loop();
     };

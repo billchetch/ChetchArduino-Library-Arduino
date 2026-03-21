@@ -24,7 +24,7 @@ namespace Chetch{
         outboundMessage.clear();
 //End //Requires Stream
         for(int i = 0; i < deviceCount; i++){
-            if(!devices[i]->begin() || !devices[i]->hasBegun()){ //in case we forget to set the begun flag
+            if(!devices[i]->begin()){ //in case we forget to set the begun flag
                 return false;
             }
         }

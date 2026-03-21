@@ -4,7 +4,7 @@ namespace Chetch{
 
     FlowMeter::FlowMeter(byte pin, byte interruptMode, unsigned long tolerance) : Counter(pin, interruptMode, 1000, tolerance)
     {
-
+        //empty
     }
 
     double FlowMeter::getFlowRate(FlowRateUnits units){

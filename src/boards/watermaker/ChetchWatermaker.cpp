@@ -14,7 +14,7 @@ namespace Chetch{
 
     {
         //Add event handlers to devices
-        display.setReportInterval(DISPLAY_UPDATE_INTERVAL);
+        display.setReportInterval(DISPLAY_UPDATE_INTERVAL); //Setting report interval allows for an interval (rather than direct call) based update
         display.addEventListener([](ArduinoDevice* device, byte eventID, byte eventTag){
             Watermaker* wm = (Watermaker*)device->Board;
             if(eventID == ArduinoDevice::EVENT_REPORT_READY){
@@ -28,7 +28,6 @@ namespace Chetch{
             Watermaker* wm = (Watermaker*)dd->Board;
             return wm->renderDisplay((DisplayMode)updateTag, displayInitialised);
         });
-
         
         selector.addSelectListener([](SelectorSwitch* ss, byte selectedPin){
             //Capture this
