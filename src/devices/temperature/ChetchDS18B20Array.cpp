@@ -53,13 +53,7 @@ namespace Chetch{
         }
     }
 
-    bool DS18B20Array::begin(){
-            
-        dallasTemp.begin();
-
-        dallasTemp.setResolution(resolution);
-        dallasTemp.setWaitForConversion(false);
-
+    bool DS18B20Array::locateSensors(){
         sensorCount = dallasTemp.getDeviceCount();
         
         if(sensorCount == 0){
@@ -74,7 +68,17 @@ namespace Chetch{
             temperatures[i] = 0.0f;
         }
 
-        requestTemperatures = true;
+        return true;
+    }
+
+    bool DS18B20Array::begin(){
+            
+        dallasTemp.begin();
+
+        dallasTemp.setResolution(resolution);
+        dallasTemp.setWaitForConversion(false);
+
+        requestTemperatures = locateSensors();
 
         return ArduinoDevice::begin();
     }
@@ -111,6 +115,15 @@ namespace Chetch{
         ArduinoDevice::loop();
 
         unsigned long sinceLastRequested = millis() - lastRequested;
+        if(sensorCount == 0){
+            if(sinceLastRequested > 1000){ //we check every second for sensors
+                lastRequested = millis();
+                requestTemperatures = locateSensors();
+            }
+            return;
+        }
+
+        //If here we have located sensors
         if(requestTemperatures){
             if(sinceLastRequested > requestInterval) {
                 dallasTemp.requestTemperatures();

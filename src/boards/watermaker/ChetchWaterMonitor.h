@@ -46,17 +46,18 @@ namespace Chetch{
             ErrorCode errorCode = ErrorCode::NO_ERROR;
 
             //Devices
-            LCDI2C display;
+            ///LCDI2C display;
             TDSMeter tds;
-            FlowMeter flowMeter;
             DS18B20Array tempArray;
+            FlowMeter flowMeter;
+            
 
         public:
             WaterMonitor(byte nodeID, byte serialPin);
 
             //bool hasError();
-            void updateDisplay(DisplayMode displayMode = DisplayMode::DISPLAY_MODE_NOT_SET);
-            bool renderDisplay(DisplayMode displayMode, bool displayInitialised = false);            
+            //void updateDisplay(DisplayMode displayMode = DisplayMode::DISPLAY_MODE_NOT_SET);
+            //bool renderDisplay(DisplayMode displayMode, bool displayInitialised = false);            
 
     }; //end class
 } //end namespcae

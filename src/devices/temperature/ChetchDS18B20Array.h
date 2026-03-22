@@ -43,6 +43,7 @@ namespace Chetch{
             void setReportInfo(ArduinoMessage* message) override;
             void loop() override;
             
+            bool locateSensors();
             byte getSensorCount();
             float* getTemperatures();
             void readTemperatures();
