@@ -14,7 +14,7 @@ namespace Chetch{
 
     {
         //Legacy stuff
-        setInidicatorPin(9);
+        mcp.setInidicatorPin(9);
 
         //Add event handlers to devices
         display.setReportInterval(DISPLAY_UPDATE_INTERVAL); //Setting report interval allows for an interval (rather than direct call) based update
