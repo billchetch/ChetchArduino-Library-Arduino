@@ -105,6 +105,14 @@ namespace Chetch{
         return temperatures;
     }
 
+    float DS18B20Array::getTemperature(byte idx){
+        if(sensorCount >= idx){
+            return DEVICE_DISCONNECTED_C;
+        } else {
+            return temperatures[idx];
+        }
+    }
+
     void DS18B20Array::readTemperatures(){
         for (byte i = 0; i < sensorCount; i++) {
             temperatures[i] = dallasTemp.getTempC(deviceAddresses[i]);

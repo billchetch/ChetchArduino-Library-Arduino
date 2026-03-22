@@ -19,7 +19,9 @@
 #define TDS_ANALOG_PIN A0 //This needs to be an Analog Pin
 #define TDS_SAMPLE_INTERVAL 1000 //sample every X ms
 
-#define FLOWMETER_COUNT_PIN 4
+#define FLOWMETER1_COUNT_PIN 4
+//#define FLOWMETER2_COUNT_PIN 5
+//....
 #define FLOWMETER_INTERRUPT_MODE 0 //0 doesn't use an interrupt ... if an interrupt is required (e.e. frequent sampling then modify this accordingly (See base class ChetchCounter.h)
 
 #define TEMP_SENSORS_PIN 3 //OneWire pin
@@ -48,13 +50,19 @@ namespace Chetch{
             ///LCDI2C display;
             TDSMeter tds;
             DS18B20Array tempArray;
-            FlowMeter flowMeter;
+            FlowMeter flowMeter1;
             
 
         public:
             WaterMonitor(byte nodeID, byte serialPin);
 
             TDSMeter* getTDSMeter(){ return &tds; }
+
+            double getPPM(){ return tds.getPPM(); }
+            void setTemperature(double temp){ tds.setTemperature(temp); }
+            double getTemperature(){ return tempArray.getTemperature(); }
+            double getFlowRate1(){ return flowMeter1.getFlowRate(); }
+
             //bool hasError();
             //void updateDisplay(DisplayMode displayMode = DisplayMode::DISPLAY_MODE_NOT_SET);
             //bool renderDisplay(DisplayMode displayMode, bool displayInitialised = false);            

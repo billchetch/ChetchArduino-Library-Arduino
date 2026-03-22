@@ -5,7 +5,7 @@ namespace Chetch{
                         //display(LCD_COLS, LCD_ROWS, LCD_REFRESH) ,
                         tds(TDS_ANALOG_PIN, TDS_SAMPLE_INTERVAL),
                         tempArray(TEMP_SENSORS_PIN, TEMP_SENSORS_READ_INTERVAL, TEMP_SENSORS_RESOLUTION),
-                        flowMeter(FLOWMETER_COUNT_PIN, FlowMeter::FlowRateUnits::LITERS_PER_SECOND, FLOWMETER_INTERRUPT_MODE)
+                        flowMeter1(FLOWMETER1_COUNT_PIN, FlowMeter::FlowRateUnits::LITERS_PER_SECOND, FLOWMETER_INTERRUPT_MODE)
     {
         //Add event handlers
         /*display.setReportInterval(DISPLAY_UPDATE_INTERVAL); //Setting report interval allows for an interval (rather than direct call) based update
@@ -34,7 +34,7 @@ namespace Chetch{
             sendBusMessage(ta, ArduinoDevice::MESSAGE_ID_REPORT);
         });
 
-        flowMeter.addFlowRateListener([](FlowMeter* fmtr, double flowRate){
+        flowMeter1.addFlowRateListener([](FlowMeter* fmtr, double flowRate){
             sendBusMessage(fmtr, ArduinoDevice::MESSAGE_ID_REPORT);
         });
 
@@ -42,7 +42,7 @@ namespace Chetch{
         //addDevice(&display);
         addDevice(&tds);
         addDevice(&tempArray);
-        addDevice(&flowMeter);
+        addDevice(&flowMeter1);
     }
 
     /*

@@ -7,6 +7,7 @@ namespace Chetch{
     class FlowMeter : public Counter {
         public:
             enum FlowRateUnits : byte{
+                USE_DEFAULT = 0,
                 ML_PER_SECOND = 1, //default reading due to assumed sensitivity/range issues
                 LITERS_PER_SECOND = 2, 
                 LITERS_PER_MINUTE = 3,
@@ -16,14 +17,14 @@ namespace Chetch{
 
         private:
             double calibrationCoeff = 2.25; //MLPS: This default value is for YF-S201 ... might want to create a list/enum/defines for this
-            FlowRateUnits units;
+            FlowRateUnits defaultUnits;
             FlowRateListener rateListener = NULL;
 
         public:
             FlowMeter(byte pin, FlowRateUnits units = FlowRateUnits::ML_PER_SECOND, byte interruptMode = 0, unsigned long tolerance = 0);
 
             void addFlowRateListener(FlowRateListener listener){ rateListener = listener; }
-            double getFlowRate(FlowRateUnits units = FlowRateUnits::ML_PER_SECOND);
+            double getFlowRate(FlowRateUnits units = FlowRateUnits::USE_DEFAULT);
             void assignValues() override;
             void setReportInfo(ArduinoMessage* message) override;
     }; //end class

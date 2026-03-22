@@ -4,11 +4,14 @@ namespace Chetch{
 
     FlowMeter::FlowMeter(byte pin, FlowRateUnits units, byte interruptMode, unsigned long tolerance) : Counter(pin, interruptMode, 1000, tolerance)
     {
-        this->units = units;
+        defaultUnits = units;
     }
 
     double FlowMeter::getFlowRate(FlowRateUnits units){
         double mlps = calibrationCoeff* getHz();
+        if(units == FlowRateUnits::USE_DEFAULT){
+            units = defaultUnits;
+        }
         switch(units){
             case ML_PER_SECOND:
                 return mlps;
@@ -29,13 +32,13 @@ namespace Chetch{
         Counter::assignValues();
 
         if(rateListener != NULL){
-            rateListener(this, getFlowRate(units));
+            rateListener(this, getFlowRate());
         }
     }
 
     void FlowMeter::setReportInfo(ArduinoMessage* message){
         Counter::setReportInfo(message);
 
-        message->add(getFlowRate(units));
+        message->add(getFlowRate());
     }
 }

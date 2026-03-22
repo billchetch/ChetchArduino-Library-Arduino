@@ -46,6 +46,7 @@ namespace Chetch{
             bool locateSensors();
             byte getSensorCount();
             float* getTemperatures();
+            float getTemperature(byte idx = 0);
             void readTemperatures();
     }; //end class
 } //end namespae
