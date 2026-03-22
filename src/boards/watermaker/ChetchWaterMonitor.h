@@ -4,11 +4,10 @@
 #include "ChetchArduinoBoard.h"
 #include "boards/ChetchCANBusNode.h"
 
-#include "devices/displays/ChetchLCDI2C.h"
+//#include "devices/displays/ChetchLCDI2C.h"
 #include "devices/water/ChetchTDSMeter.h"
 #include "devices/water/ChetchFlowMeter.h"
 #include "devices/temperature/ChetchDS18B20Array.h"
-
 
 
 #define LCD_COLS 20
@@ -55,6 +54,7 @@ namespace Chetch{
         public:
             WaterMonitor(byte nodeID, byte serialPin);
 
+            TDSMeter* getTDSMeter(){ return &tds; }
             //bool hasError();
             //void updateDisplay(DisplayMode displayMode = DisplayMode::DISPLAY_MODE_NOT_SET);
             //bool renderDisplay(DisplayMode displayMode, bool displayInitialised = false);            

@@ -2,6 +2,11 @@
 
 namespace Chetch{
     
+    bool CANBusBase::sendBusMessage(ArduinoDevice* device, byte messageID){
+        CANBusBase* canbus = (CANBusBase*)device->Board;
+        return canbus->getMCP()->sendMessageForDevice(device, messageID);
+    }
+
     CANBusBase::CANBusBase(MCP2515Device* pmcp, SerialPin* pspin) : ArduinoBoard(){
         this->pmcp = pmcp;
         this->pspin = pspin;

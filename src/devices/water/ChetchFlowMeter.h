@@ -12,14 +12,19 @@ namespace Chetch{
                 LITERS_PER_MINUTE = 3,
             };
 
+            typedef void (*FlowRateListener)(FlowMeter*, double);  //object, flow rate
+
         private:
             double calibrationCoeff = 2.25; //MLPS: This default value is for YF-S201 ... might want to create a list/enum/defines for this
+            FlowRateUnits units;
+            FlowRateListener rateListener = NULL;
 
         public:
-            FlowMeter(byte pin, byte interruptMode = 0, unsigned long tolerance = 0);
+            FlowMeter(byte pin, FlowRateUnits units = FlowRateUnits::ML_PER_SECOND, byte interruptMode = 0, unsigned long tolerance = 0);
 
+            void addFlowRateListener(FlowRateListener listener){ rateListener = listener; }
             double getFlowRate(FlowRateUnits units = FlowRateUnits::ML_PER_SECOND);
-
+            void assignValues() override;
             void setReportInfo(ArduinoMessage* message) override;
     }; //end class
 }//end namespace

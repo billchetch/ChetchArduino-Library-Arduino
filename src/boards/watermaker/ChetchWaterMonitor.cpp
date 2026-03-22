@@ -5,7 +5,7 @@ namespace Chetch{
                         //display(LCD_COLS, LCD_ROWS, LCD_REFRESH) ,
                         tds(TDS_ANALOG_PIN, TDS_SAMPLE_INTERVAL),
                         tempArray(TEMP_SENSORS_PIN, TEMP_SENSORS_READ_INTERVAL, TEMP_SENSORS_RESOLUTION),
-                        flowMeter(FLOWMETER_COUNT_PIN, FLOWMETER_INTERRUPT_MODE)
+                        flowMeter(FLOWMETER_COUNT_PIN, FlowMeter::FlowRateUnits::LITERS_PER_SECOND, FLOWMETER_INTERRUPT_MODE)
     {
         //Add event handlers
         /*display.setReportInterval(DISPLAY_UPDATE_INTERVAL); //Setting report interval allows for an interval (rather than direct call) based update
@@ -20,6 +20,23 @@ namespace Chetch{
             WaterMonitor* wm = (WaterMonitor*)dd->Board;
             return wm->renderDisplay((DisplayMode)updateTag, displayInitialised);
         });*/
+        
+        tds.addSamplingCompleteListener([](AnalogSampler *smpl){
+            //weirdness to avoid closure issues
+            sendBusMessage(smpl, ArduinoDevice::MESSAGE_ID_REPORT);
+        });
+
+        tempArray.addReadListener([](DS18B20Array *ta, byte sensorCount, float* temps){
+            WaterMonitor* wm = (WaterMonitor*)ta->Board;
+            if(sensorCount == 1){
+                wm->getTDSMeter()->setTemperature(temps[0]);
+            }
+            sendBusMessage(ta, ArduinoDevice::MESSAGE_ID_REPORT);
+        });
+
+        flowMeter.addFlowRateListener([](FlowMeter* fmtr, double flowRate){
+            sendBusMessage(fmtr, ArduinoDevice::MESSAGE_ID_REPORT);
+        });
 
         //Add devices
         //addDevice(&display);
