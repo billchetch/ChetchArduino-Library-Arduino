@@ -33,7 +33,7 @@ TOTAL PINS = 4
 
 NOTES:
 
-#2026-02-16
+Date: 2026-02-16
 TODO: The solenoids are currently separate switches but they should be a pinselector device because only one can be on at any one time.
 However as of writing the PinSelector is only written tested for Passive switches
 
