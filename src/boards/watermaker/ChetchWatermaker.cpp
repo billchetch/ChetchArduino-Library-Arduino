@@ -13,6 +13,9 @@ namespace Chetch{
                         pressurePump(SwitchDevice::SwitchMode::ACTIVE, PRESSURE_PUMP_PIN, SWITCH_TOLERANCE, OUTPUT_ONSTATE)
 
     {
+        //Legacy stuff
+        setInidicatorPin(9);
+
         //Add event handlers to devices
         display.setReportInterval(DISPLAY_UPDATE_INTERVAL); //Setting report interval allows for an interval (rather than direct call) based update
         display.addEventListener([](ArduinoDevice* device, byte eventID, byte eventTag){
