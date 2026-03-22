@@ -23,7 +23,7 @@ namespace Chetch{
 
             MCP2515Device* getMCP(){ return pmcp; }
 
-            virtual void handleReceivedMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData);
+            virtual void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData);
     };
 }
 #endif

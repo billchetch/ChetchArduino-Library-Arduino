@@ -29,7 +29,7 @@ namespace Chetch{
         tempArray.addReadListener([](DS18B20Array *ta, byte sensorCount, float* temps){
             WaterMonitor* wm = (WaterMonitor*)ta->Board;
             if(sensorCount == 1){
-                wm->getTDSMeter()->setTemperature(temps[0]);
+                wm->setTemperature(temps[0]);
             }
             sendBusMessage(ta, ArduinoDevice::MESSAGE_ID_REPORT);
         });

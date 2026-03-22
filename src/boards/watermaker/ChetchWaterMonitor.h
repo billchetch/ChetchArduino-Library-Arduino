@@ -56,8 +56,6 @@ namespace Chetch{
         public:
             WaterMonitor(byte nodeID, byte serialPin);
 
-            TDSMeter* getTDSMeter(){ return &tds; }
-
             double getPPM(){ return tds.getPPM(); }
             void setTemperature(double temp){ tds.setTemperature(temp); }
             double getTemperature(){ return tempArray.getTemperature(); }
