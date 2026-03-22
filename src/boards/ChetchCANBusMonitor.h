@@ -1,9 +1,13 @@
-#ifndef CHETCH_CAN_BUS_NODE_H
-#define CHETCH_CAN_BUS_NODE_H
+#ifndef CHETCH_CAN_BUS_MONITOR_H
+#define CHETCH_CAN_BUS_MONITOR_H
 
 #include "ChetchCANBusBase.h"
-#include "devices/comms/ChetchMCP2515Master.h"
-#include "devices/comms/ChetchSerialPinMaster.h"
+#include "devices/comms/ChetchMCP2515Monitor.h"
+#include "devices/comms/ChetchSerialPinSlave.h"
+
+/*
+A can bus monitor board uses the monitor mcp to wrap bus messages and route them to the stream
+*/
 
 
 namespace Chetch{
@@ -12,11 +16,11 @@ namespace Chetch{
         public:
             
         protected:
-            MCP2515Master mcp;
-            SerialPinMaster spin;
+            MCP2515Monitor mcp;
+            SerialPinSlave spin;
 
         public:
-            CANBusMonitor(byte serialPin);
+            CANBusMonitor(byte nodeID, byte serialPin);
 
     };
 } //end namespace

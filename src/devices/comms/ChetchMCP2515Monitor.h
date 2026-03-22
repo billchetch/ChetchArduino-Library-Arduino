@@ -1,5 +1,5 @@
-#ifndef CHETCH_MCP2515_MASTER_H
-#define CHETCH_MCP2515_MASTER_H
+#ifndef CHETCH_MCP2515_MONITOR_H
+#define CHETCH_MCP2515_MONITOR_H
 
 #include <Arduino.h>
 
@@ -18,7 +18,7 @@ See base class for full info
 */
 
 namespace Chetch{
-    class MCP2515Master : public MCP2515Device{
+    class MCP2515Monitor : public MCP2515Device{
         public:            
             static const byte MESSAGE_ID_FORWARD_RECEIVED = 100;
             static const byte MESSAGE_ID_FORWARD_SENT = 101;
@@ -38,9 +38,8 @@ namespace Chetch{
             bool statusRequested = false;
             
         public:
-            MCP2515Master(unsigned int presenceInterval = MCP2515Device::DEFAULT_PRESENCE_INTERVAL, int csPin = CAN_DEFAULT_CS_PIN);
+            MCP2515Monitor(byte nodeID, unsigned int presenceInterval = MCP2515Device::DEFAULT_PRESENCE_INTERVAL, int csPin = CAN_DEFAULT_CS_PIN);
 
-            bool begin() override;
             void loop() override;
             
             void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response) override;

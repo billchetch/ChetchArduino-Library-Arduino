@@ -23,7 +23,7 @@
 #define FLOWMETER_COUNT_PIN 4
 #define FLOWMETER_INTERRUPT_MODE 0 //0 doesn't use an interrupt ... if an interrupt is required (e.e. frequent sampling then modify this accordingly (See base class ChetchCounter.h)
 
-#define TEMP_SENSORS_PIN A0 //OneWire pin
+#define TEMP_SENSORS_PIN 3 //OneWire pin
 #define TEMP_SENSORS_READ_INTERVAL 1000 //read every X ms
 #define TEMP_SENSORS_RESOLUTION 9 //this determines read accuracy (9 = 0.5C accuracy)
 

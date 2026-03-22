@@ -80,14 +80,14 @@ D0: RX0IF (CANINTF[0]) Receive-Buffer-0-Full Interrupt Flag
 
 #define CAN_AS_LOOPBACK false
 #define CAN_DEFAULT_CS_PIN 10
-#define CAN_DEFAULT_INDICATOR_PIN 9
+#define CAN_DEFAULT_INDICATOR_PIN 7 //leave 8 and 9 for Software Serial
 //#define COUNT_ERROR_CODES 12 //Comment out if not counting error codes
 
 namespace Chetch{
     class MCP2515Device : public ArduinoDevice{
         public:
             static const byte ARDUINO_MESSAGE_SIZE = 22; //8 possible arguments each of 1 byte (cos CanFrame is 8 bytes)
-            static const byte MASTER_NODE_ID = 1;
+            
             static const byte MAX_NODE_ID = 15;
             static const byte MIN_NODE_ID = 1;
             static const int NO_FILTER = -1;
@@ -272,6 +272,7 @@ namespace Chetch{
 
             void indicate(bool on, bool force = false);
             bool canIndicate(IndicateMode mode){ return (mode & indicateMode) == mode; }
+            void setIndicatorPin(byte pin){ indicatorPin = pin; }
             void setIndicateMode(IndicateMode mode){ indicateMode = mode; }
             void loop() override;
             void setStatusInfo(ArduinoMessage* response) override;

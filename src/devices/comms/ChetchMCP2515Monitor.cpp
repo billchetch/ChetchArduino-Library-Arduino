@@ -1,12 +1,12 @@
 #include "ChetchUtils.h"
-#include "ChetchMCP2515Master.h"
+#include "ChetchMCP2515Monitor.h"
 
 /*
  */
 
  
 namespace Chetch{
-    MCP2515Master::MCP2515Master(unsigned int presenceInterval, int csPin) : MCP2515Device(MASTER_NODE_ID, presenceInterval, csPin)
+    MCP2515Monitor::MCP2515Monitor(byte nodeID, unsigned int presenceInterval, int csPin) : MCP2515Device(nodeID, presenceInterval, csPin)
                                             , frecvmsg(22) //Add 12 bytes to allow for additional 'meta' data
                                             , fsendmsg(22) //Add 12 bytes to allow for additional 'meta' data
 
@@ -15,17 +15,7 @@ namespace Chetch{
         setReportInterval(1000); //For reporting bus activity
     }
 
-    bool MCP2515Master::begin(){
-        if(getNodeID() != MASTER_NODE_ID){
-            begun = false;
-            return begun;
-        } else {
-            MCP2515Device::begin();
-            return begun;
-        }
-	}
-
-    void MCP2515Master::loop(){
+    void MCP2515Monitor::loop(){
         if(statusRequested){
             if(millis() - lastStatusRequest > FORWARD_TIMEOUT){
                 if(canForward){
@@ -42,7 +32,8 @@ namespace Chetch{
 
         MCP2515Device::loop();
     }
-    void MCP2515Master::setStatusInfo(ArduinoMessage* message){
+
+    void MCP2515Monitor::setStatusInfo(ArduinoMessage* message){
         ArduinoDevice::setStatusInfo(message);
         message->add(getNodeID());
         MCP2515Device::setStatusInfo(message);
@@ -51,13 +42,13 @@ namespace Chetch{
         statusRequested = true;
     }
 
-    void MCP2515Master::setReportInfo(ArduinoMessage* message){
+    void MCP2515Monitor::setReportInfo(ArduinoMessage* message){
         //MCP2515Device::setReportInfo(message);
         message->add(messageCount);
         messageCount = 0;
     }
 
-    void MCP2515Master::handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response){
+    void MCP2515Monitor::handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response){
         ArduinoDevice::handleInboundMessage(message, response);
 
         if(message->type == ArduinoMessage::TYPE_PING){
@@ -103,7 +94,7 @@ namespace Chetch{
         }
     }
 
-    void MCP2515Master::populateOutboundMessage(ArduinoMessage* message, byte messageID){
+    void MCP2515Monitor::populateOutboundMessage(ArduinoMessage* message, byte messageID){
         MCP2515Device::populateOutboundMessage(message, messageID);
 
         if(messageID == MESSAGE_ID_FORWARD_RECEIVED){
@@ -117,7 +108,7 @@ namespace Chetch{
         }
     }
 
-    bool MCP2515Master::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
+    bool MCP2515Monitor::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
         bool handled = MCP2515Device::executeCommand(command, message, response);
         
         if(!handled)
@@ -153,7 +144,7 @@ namespace Chetch{
         return handled;
     }
     
-    bool MCP2515Master::sendMessage(ArduinoMessage *message){
+    bool MCP2515Monitor::sendMessage(ArduinoMessage *message){
         /*
         NOTE
 
@@ -191,7 +182,7 @@ namespace Chetch{
         }
     }
 
-    void MCP2515Master::handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message){
+    void MCP2515Monitor::handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message){
         /*
         NOTE
 
