@@ -6,36 +6,28 @@
 	//Uno specific code
 	#define MAX_DEVICES 16	
     #define BOARD_NAME "UNO"	
-    #define MAX_FRAME_PAYLOAD_SIZE 32
 #elif defined(ARDUINO_AVR_MEGA2560)
 	//Mega 2560 specific code
 	#define MAX_DEVICES 32
     #define BOARD_NAME "MEGA"
-    #define MAX_FRAME_PAYLOAD_SIZE 64
 #elif defined(ARDUINO_SAM_DUE)
 	#define MAX_DEVICES 16
     #define BOARD_NAME "SAM"
-    #define MAX_FRAME_PAYLOAD_SIZE 32
 #elif defined(ESP8266)
 	#define MAX_DEVICES 16
     #define BOARD_NAME "ESP8266"
-    #define MAX_FRAME_PAYLOAD_SIZE 50
 #elif defined(ARDUINO_AVR_NANO)
     #define MAX_DEVICES 16
     #define BOARD_NAME "NANO"
-    #define MAX_FRAME_PAYLOAD_SIZE 32
 #else
     #define MAX_DEVICES 16
     #define BOARD_NAME "OTHER"
-    #define MAX_FRAME_PAYLOAD_SIZE 32
-//#error Unsupported hardware
+    //#error Unsupported hardware
 #endif
 
 #include <Arduino.h>
-#include "ChetchMessageFrame.h"
-#include "ChetchArduinoMessage.h"
 #include "ChetchArduinoDevice.h"
-
+#include "ChetchArduinoIO.h"
 
 namespace Chetch{
     class ArduinoBoard{
@@ -43,29 +35,9 @@ namespace Chetch{
             static const byte DEFAULT_BOARD_ID = 1; //the target ID for messaging
             static const byte START_DEVICE_IDS_AT = 8;
 
-
-//Requires Stream
-            static const int MAX_QUEUE_SIZE = MAX_DEVICES;
-
-            struct MessageQueueItem{
-                ArduinoDevice* device;
-                byte messageID; 
-                byte messageTag;  //currently not used 1/2/25
-            };
-//End //Requires Stream
             enum class ErrorCode{
                 NO_ERROR = 0,
-                MESSAGE_FRAME_ERROR = 10, //To indicate this is a Frame error
-                MESSAGE_ERROR = 20,
-                TARGET_NOT_VALID = 29,
-                TARGET_NOT_SUPPLIED = 30,
-                TARGET_NOT_FOUND = 31,
-                MESSAGE_TYPE_PROHIBITED = 32, //if a particular target rejects a message type
-                NO_DEVICE_ID = 40,
-                DEVICE_LIMIT_REACHED = 41,
-                DEVICE_ID_ALREADY_USED = 42,
-                DEVICE_NOT_FOUND = 43,
-                DEVICE_ERROR = 100, //To indicate this is an error from the device (not Board)
+                
             };
 
         private:
@@ -74,56 +46,35 @@ namespace Chetch{
             byte deviceCount = 0;
             byte currentdevice = 0;
 
-//Requires Stream
-            MessageFrame frame;
-            ArduinoMessage inboundMessage;
-            ArduinoMessage outboundMessage;
+            ArduinoIOBase* io = NULL;
 
-            int queueStart = 0;
-            int queueCount = 0;
-            MessageQueueItem messageQueue[MAX_QUEUE_SIZE];
-
-            Stream* stream;
-
-//End //Requires Stream
-        protected:
             unsigned long unixTimestamp = 0;
             int timezoneOffset = 0;
 
+        protected:
             bool begun = false;
 
         public:
             //Constructor/Destructor
             ArduinoBoard();
-            //~ArduinoBoard();
+            
+            ArduinoIOBase* getIO(){ return io; }
+
             byte getID(){ return id; }
             void setID(byte id){ this->id = id; }
-
+        
             void addDevice(ArduinoDevice* device);
             ArduinoDevice* getDeviceByID(byte id);
             ArduinoDevice* getDeviceAt(byte idx);
             byte getDeviceCount(){ return deviceCount; };
             int getFreeMemory();
+            
+            virtual bool begin(ArduinoIOBase* io = NULL); //will return false if fails to begin
+            virtual void loop();
+            
+            void setTime(unsigned long unixts, int tzoffset){ unixTimestamp = unixts; timezoneOffset = tzoffset; }
             unsigned long getUnixTime() { return unixTimestamp + (millis() / 1000); }
             int getTimezoneOffset() { return timezoneOffset; }
-
-            bool begin(Stream* stream); //will return false if fails to begin
-            void loop();
-
-
-//Requires Stream
-            //messaging stuff
-            void setErrorInfo(ArduinoMessage* message, ErrorCode errorCode, byte errorSubCode);
-            void setResponseInfo(ArduinoMessage* response, ArduinoMessage* message, byte sender);
-            bool receiveMessage(); //true if message has been received, false otherwise
-            void sendMessage();
-            void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response);
-
-            bool enqueueMessageToSend(ArduinoDevice* device, byte messageID, byte messageTag = 0);
-            MessageQueueItem dequeueMessageToSend();
-            bool isMessageQueueFull();
-            bool isMessageQueueEmpty();
-//End //Requires Stream
     };
 }
 #endif

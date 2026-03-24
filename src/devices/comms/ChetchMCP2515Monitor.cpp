@@ -144,7 +144,7 @@ namespace Chetch{
         return handled;
     }
     
-    bool MCP2515Monitor::sendMessage(ArduinoMessage *message){
+    void MCP2515Monitor::onMessageSent(ArduinoMessage *message){
         /*
         NOTE
 
@@ -153,36 +153,31 @@ namespace Chetch{
         2. Base sendMessage MUST be called in order to forward the message otherwise the message and canOutFrame are not seeded with data
         */
     
-        if(MCP2515Device::sendMessage(message)){ 
-            if(canForward){
-                indicate(true);
+        if(canForward){
+            indicate(true);
 
-                fsendmsg.clear();
-                fsendmsg.tag = message->tag;
-                
-                fsendmsg.addBytes(canOutFrame.data, canOutFrame.can_dlc);
-                
-                fsendmsg.add(canOutFrame.can_id);
-                fsendmsg.add(message->type);
-                if(message->sender == 0){
-                    fsendmsg.add(Board->getID());    
-                } else {
-                    fsendmsg.add((byte)(message->sender + ArduinoBoard::START_DEVICE_IDS_AT - 1));
-                }
-                
-                messageCount++;
-
-                if(!enqueueMessageToSend(MESSAGE_ID_FORWARD_SENT, MESSAGE_ID_FORWARD_SENT)){
-                    raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 10);
-                }
+            fsendmsg.clear();
+            fsendmsg.tag = message->tag;
+            
+            fsendmsg.addBytes(canOutFrame.data, canOutFrame.can_dlc);
+            
+            fsendmsg.add(canOutFrame.can_id);
+            fsendmsg.add(message->type);
+            if(message->sender == 0){
+                fsendmsg.add(Board->getID());    
+            } else {
+                fsendmsg.add((byte)(message->sender + ArduinoBoard::START_DEVICE_IDS_AT - 1));
             }
-            return true;
-        } else {
-            return false;
+            
+            messageCount++;
+
+            if(!enqueueMessageToSend(MESSAGE_ID_FORWARD_SENT, MESSAGE_ID_FORWARD_SENT)){
+                raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 10);
+            }
         }
     }
 
-    void MCP2515Monitor::handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message){
+    void MCP2515Monitor::onMessageReceived(byte sourceNodeID, ArduinoMessage *message){
         /*
         NOTE
 
@@ -193,9 +188,6 @@ namespace Chetch{
         So we can assume the message is valid
         */
 
-        //Call base method first to allow default handling
-        MCP2515Device::handleReceivedMessage(sourceNodeID, message);
-        
         //update message count
         messageCount++;
 

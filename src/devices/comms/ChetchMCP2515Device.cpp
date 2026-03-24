@@ -1,7 +1,6 @@
 #include "ChetchUtils.h"
 #include "ChetchMCP2515Device.h"
 
-
 namespace Chetch{
     MCP2515Device::MCP2515Device(byte nodeID, unsigned int presenceInterval, int csPin) : 
                                     mcp2515(csPin, 4000000), 
@@ -54,8 +53,7 @@ namespace Chetch{
 
     bool MCP2515Device::begin(){
         if(nodeID < MIN_NODE_ID || nodeID > MAX_NODE_ID){
-            begun = false;
-            return begun;
+            return false;
         }
 
         init();
@@ -72,8 +70,7 @@ namespace Chetch{
 
         presenceSent = false;
 
-        begun = true;
-        return begun;
+        return ArduinoDevice::begin();;
 	}
 
      void MCP2515Device::indicate(bool on, bool force){
@@ -325,6 +322,7 @@ namespace Chetch{
                 }
 
                 handleReceivedMessage(sourceNodeID, &amsg);
+                onMessageReceived(sourceNodeID, &amsg);
                 break;
             }
 
@@ -348,11 +346,6 @@ namespace Chetch{
         message->add(mcp2515.errorCountTX());
         message->add(mcp2515.errorCountRX());
         message->add(errorCodeFlags);
-    }
-
-    void MCP2515Device::setPingInfo(ArduinoMessage* message){
-        ArduinoDevice::setPingInfo(message);
-        //TODO: add something more here??
     }
 
     void MCP2515Device::handleReceivedMessage(byte sourceNodeID, ArduinoMessage* message){
@@ -524,6 +517,7 @@ namespace Chetch{
                 if(canIndicate(INDICATE_ON_SEND)){
                     indicate(true);
                 }
+                onMessageSent(message);
                 return true;
 
             case MCP2515::ERROR_FAILTX:
@@ -538,7 +532,6 @@ namespace Chetch{
                 raiseError(MCP2515ErrorCode::UNKNOWN_SEND_ERROR, edata);
                 return false;
         }
-       return true;
     }
 
     uint32_t MCP2515Device::createFilterMask(bool checkNodeID, bool checkMessageType, bool checkSender){
@@ -559,12 +552,6 @@ namespace Chetch{
             mask = mask | 0x00000700;
         }
 
-        /*Serial.println("Mask: ");
-        for (int i = (sizeof(mask) * 8) - 1; i >= 0; i--) { // Loop from bit 7 (MSB) down to 0 (LSB)
-            Serial.print(bitRead(mask, i)); // Print the value of the i-th bit
-            if(i % 8 == 0)Serial.println("----");
-        }*/
-        
         return mask;
     }
 
@@ -586,12 +573,6 @@ namespace Chetch{
         if(sender != NO_FILTER){
             filter = filter | (uint32_t)(sender & 0x0007) << 8;
         }
-
-        /*Serial.println("Filter: ");
-        for (int i = (sizeof(filter) * 8) - 1; i >= 0; i--) { // Loop from bit 7 (MSB) down to 0 (LSB)
-            Serial.print(bitRead(filter, i)); // Print the value of the i-th bit
-            if(i % 8 == 0)Serial.println("----");
-        }*/
 
         return filter;
     }

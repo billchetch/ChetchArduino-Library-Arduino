@@ -11,4 +11,8 @@ namespace Chetch{
 
     }
 
+    bool CANBusMonitor::begin(Stream* stream){
+        io.begin(stream);
+        return CANBusBase::begin(&io);
+    }
 }

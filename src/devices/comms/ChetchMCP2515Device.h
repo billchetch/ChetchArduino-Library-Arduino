@@ -119,13 +119,14 @@ namespace Chetch{
                 CLEAR_ERRORS = 2
             };
 
-            enum IndicateMode{
+            enum IndicateMode : byte{
                 NO_INDICATOR = 0,
                 INDICATE_ON_SEND = 1,
                 INDICATE_ON_RECIEVE = 2,
                 INDICATE_FULL = 3
             };
             
+            //Node Dependency
             class NodeDependency{
                 public: //NOTE: change to private
                     byte nodeID = 0;
@@ -194,7 +195,7 @@ namespace Chetch{
                         return getDiff(timestamp, resolution) > tolerance;
                     }
             };
-
+    
             typedef void (*MessageListener)(MCP2515Device*, byte, ArduinoMessage*, byte*); //device, node, message, canData
             typedef void (*ErrorListener)(MCP2515Device*, MCP2515ErrorCode, unsigned long errorData);
             typedef bool (*SendValidator)(MCP2515Device*, ArduinoMessage*, unsigned long canID, byte* canData);
@@ -259,13 +260,15 @@ namespace Chetch{
             
             void resetErrors();
             int clearReceive();
-            bool begin() override;
             bool allowSending();
+
+            //Node dependency
             bool addNodeDependency(byte nodeID, byte tolerance = 1);
             bool hasDependencies(){ return firstDependency != NULL; }
             NodeDependency* getDependency(byte nodeID);
+        
             
-            virtual void raiseError(MCP2515ErrorCode errorCode, unsigned long errorData = 0);
+            void raiseError(MCP2515ErrorCode errorCode, unsigned long errorData = 0);
 #if defined(COUNT_ERROR_CODES)
             byte* getErrorCounts(){ return errorCounts; }
 #endif
@@ -274,9 +277,10 @@ namespace Chetch{
             bool canIndicate(IndicateMode mode){ return (mode & indicateMode) == mode; }
             void setIndicatorPin(byte pin){ indicatorPin = pin; }
             void setIndicateMode(IndicateMode mode){ indicateMode = mode; }
+            
+            bool begin() override;
             void loop() override;
             void setStatusInfo(ArduinoMessage* response) override;
-            void setPingInfo(ArduinoMessage* response) override;
             
             void addMessageReceivedListener(MessageListener listener){ messageReceivedListener = listener; }
             void addSendValidator(SendValidator validator){ sendValidator = validator; }
@@ -285,13 +289,16 @@ namespace Chetch{
             ArduinoMessage* getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType = ArduinoMessage::TYPE_DATA, byte tag = 0);
             ArduinoMessage* getMessageForDevice(byte deviceID, ArduinoMessage::MessageType messageType, byte tag = 0);
             ArduinoMessage* getMessageForBoard(ArduinoMessage::MessageType messageType, byte tag = 0);
-            bool sendMessageForDevice(ArduinoDevice* device, byte messageID);
             
-            virtual bool sendMessage(ArduinoMessage *message);
+            bool sendMessageForDevice(ArduinoDevice* device, byte messageID);
+            bool sendMessage(ArduinoMessage *message);
+            virtual void onMessageSent(ArduinoMessage *message){};
+
             bool checkReceive();
             void readMessage();
-            virtual void handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message);
-
+            void handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message);
+            virtual void onMessageReceived(byte sourceNodeID, ArduinoMessage *message){};
+            
             uint32_t createFilterMask(bool checkNodeID, bool checkMessageType, bool checkSender);
             uint32_t createFilter(int nodeID, int messageType, int sender);
             bool addFilter(uint32_t mask, uint32_t filter);

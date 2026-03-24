@@ -17,9 +17,11 @@ namespace Chetch{
     }
 
     void ArduinoDevice::setErrorInfo(ArduinoMessage* message, byte errorSubCode){
-//Requires Stream
-        Board->setErrorInfo(message, ArduinoBoard::ErrorCode::DEVICE_ERROR, errorSubCode);
-//End //Requires Stream
+        if(message != NULL){
+            message->type = ArduinoMessage::TYPE_ERROR;
+            message->add((byte)ArduinoIOBase::IOErrorCode::DEVICE_ERROR);
+            message->add(errorSubCode);
+        }
     }
 
     void ArduinoDevice::setStatusInfo(ArduinoMessage* message){
@@ -65,9 +67,12 @@ namespace Chetch{
     }
 
     bool ArduinoDevice::enqueueMessageToSend(byte messageID, byte messageTag){
-//Requires Stream
-        return Board->enqueueMessageToSend(this, messageID, messageTag);
-//End //Requires Stream
+        if(Board != NULL){
+            ArduinoIOBase* io = Board->getIO();
+            if(io != NULL){
+                io->enqueueMessageToSend(this, messageID, messageTag);
+            }
+        }
     }
 
     bool ArduinoDevice::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){

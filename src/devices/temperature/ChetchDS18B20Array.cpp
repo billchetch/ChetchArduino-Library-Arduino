@@ -54,6 +54,10 @@ namespace Chetch{
     }
 
     bool DS18B20Array::locateSensors(){
+        dallasTemp.begin();
+        dallasTemp.setResolution(resolution);
+        dallasTemp.setWaitForConversion(false);
+
         sensorCount = dallasTemp.getDeviceCount();
         
         if(sensorCount == 0){
@@ -73,11 +77,6 @@ namespace Chetch{
 
     bool DS18B20Array::begin(){
             
-        dallasTemp.begin();
-
-        dallasTemp.setResolution(resolution);
-        dallasTemp.setWaitForConversion(false);
-
         requestTemperatures = locateSensors();
 
         return ArduinoDevice::begin();
@@ -106,7 +105,7 @@ namespace Chetch{
     }
 
     float DS18B20Array::getTemperature(byte idx){
-        if(sensorCount >= idx){
+        if(idx >= sensorCount){
             return DEVICE_DISCONNECTED_C;
         } else {
             return temperatures[idx];

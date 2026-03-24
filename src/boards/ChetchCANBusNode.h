@@ -5,8 +5,6 @@
 #include "devices/comms/ChetchMCP2515Node.h"
 #include "devices/comms/ChetchSerialPinSlave.h"
 
-
-
 namespace Chetch{
 
     class CANBusNode : public CANBusBase{

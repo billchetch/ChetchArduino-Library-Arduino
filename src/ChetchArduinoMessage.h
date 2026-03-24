@@ -2,9 +2,10 @@
 #define CHETCH_ARDUINO_MESSAGE_H
 
 #include <Arduino.h>
+#include "ChetchMessage.h"
 
 namespace Chetch{
-    class ArduinoMessage{
+    class ArduinoMessage : Message{
         public:
             static const byte NO_TARGET = 0; //can be used to delcare a braodcast message for example
 
@@ -44,7 +45,7 @@ namespace Chetch{
                 TYPE_PRESENCE_RESPONSE
             };
 	  
-            enum ErrorCode {
+            enum ErrorCode : byte {
                 NO_ERROR = 0,
                 ERROR_UNRECOGNISED_MESSAGE_TYPE = 2,
                 ERROR_INSUFFICIENT_BYTES = 3,

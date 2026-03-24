@@ -18,10 +18,12 @@ namespace Chetch{
         protected:
             MCP2515Monitor mcp;
             SerialPinMaster spin;
+            ArduinoIO io;
 
         public:
             CANBusMaster(byte serialPin);
 
+            bool begin(Stream *stream);
     };
 } //end namespace
 #endif
