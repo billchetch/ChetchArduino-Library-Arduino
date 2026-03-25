@@ -4,6 +4,7 @@
 #include "ChetchCANBusBase.h"
 #include "devices/comms/ChetchMCP2515Monitor.h"
 #include "devices/comms/ChetchSerialPinSlave.h"
+#include "ChetchArduinoIO.h"
 
 /*
 A can bus monitor board uses the monitor mcp to wrap bus messages and route them to the stream

@@ -25,16 +25,20 @@
 #endif
 
 #include <Arduino.h>
+#include "ChetchMessageIO.h"
 #include "ChetchMessageFrame.h"
 #include "ChetchArduinoMessage.h"
 #include "ChetchArduinoDevice.h"
 
 namespace Chetch{
-    class ArduinoBoard;
-
-    class ArduinoIOBase{
-
+    class ArduinoIO : public MessageIO{
         public:
+            struct MessageQueueItem{
+                ArduinoDevice* device;
+                byte messageID; 
+                byte messageTag;  //currently not used 1/2/25
+            };
+
             enum class IOErrorCode{
                 NO_ERROR = 0,
                 MESSAGE_FRAME_ERROR = 10, //To indicate this is a Frame error
@@ -49,29 +53,10 @@ namespace Chetch{
                 DEVICE_NOT_FOUND = 43,
                 DEVICE_ERROR = 100, //To indicate this is an error from the device (not Board)
             };
-       
-        protected:
-            Stream* stream;
-
-        public:
-            ArduinoBoard* Board; 
-            ArduinoIOBase(Stream* stream = NULL);
-
-            //execution stuff
-            virtual void begin(Stream* stream = NULL);
-            virtual bool enqueueMessageToSend(ArduinoDevice* device, byte messageID, byte messageTag = 0) = 0;
-            virtual void loop() = 0;
-    };
-
-    class ArduinoIO : public ArduinoIOBase{
-        public:
-            struct MessageQueueItem{
-                ArduinoDevice* device;
-                byte messageID; 
-                byte messageTag;  //currently not used 1/2/25
-            };
 
         private:
+            Stream* stream;
+
             MessageFrame frame;
             ArduinoMessage inboundMessage;
             ArduinoMessage outboundMessage;
@@ -82,8 +67,8 @@ namespace Chetch{
         public:
             ArduinoIO(Stream* stream = NULL);
 
-            void begin(Stream* stream = NULL) override;
-            bool enqueueMessageToSend(ArduinoDevice* device, byte messageID, byte messageTag = 0) override;
+            void begin(Stream* stream = NULL);
+            bool enqueueMessageToSend(void* device, byte messageID, byte messageTag = 0) override;
             void loop() override;
 
             //messaging stuff

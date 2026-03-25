@@ -11,10 +11,9 @@ namespace Chetch{
         }
     }
 
-    bool ArduinoBoard::begin(ArduinoIOBase* io){
+    bool ArduinoBoard::begin(MessageIO* io){
         if(io != NULL){
-            io->Board = this;
-            io->begin();
+            io->begin(this);
             this->io = io;
         }
 

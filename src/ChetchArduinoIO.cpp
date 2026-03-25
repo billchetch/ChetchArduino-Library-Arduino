@@ -2,20 +2,9 @@
 #include "ChetchArduinoBoard.h"
 
 namespace Chetch{
-    //ArduinoBoard* ArduinoIOBase::Board = NULL;
-
-    ArduinoIOBase::ArduinoIOBase(Stream* stream){
-        this->stream = stream;
-    }
-
-    void ArduinoIOBase::begin(Stream* stream){
-        if(stream != NULL){
-            this->stream = stream;
-        }
-    }
 
     //Constructor
-    ArduinoIO::ArduinoIO(Stream* stream) : ArduinoIOBase(stream),
+    ArduinoIO::ArduinoIO(Stream* stream) : MessageIO(),
                                         frame(MessageFrame::FrameSchema::SMALL_SIMPLE_CHECKSUM, MessageFrame::MessageEncoding::SYSTEM_DEFINED, MAX_FRAME_PAYLOAD_SIZE), 
                                                                     inboundMessage(MAX_FRAME_PAYLOAD_SIZE), 
                                                                     outboundMessage(MAX_FRAME_PAYLOAD_SIZE)
@@ -24,8 +13,8 @@ namespace Chetch{
     }
 
     void ArduinoIO::begin(Stream* stream){
-        ArduinoIOBase::begin(stream);
-
+        this->stream = stream;
+        
         inboundMessage.clear();
         outboundMessage.clear();
     }
@@ -44,6 +33,7 @@ namespace Chetch{
         //2. Check if message has been received, process/respond if there is one
         if(receiveMessage()){
             //for convenicence and clarity use vars for pointers
+            ArduinoBoard* Board = (ArduinoBoard*)owner;
             ArduinoMessage *message = &inboundMessage;
             ArduinoMessage* response = &outboundMessage;
             response->clear(); //clear response as it may be used
@@ -168,12 +158,12 @@ namespace Chetch{
         return queueCount == 0;
     }
 
-    bool ArduinoIO::enqueueMessageToSend(ArduinoDevice* device, byte messageID, byte messageTag){
+    bool ArduinoIO::enqueueMessageToSend(void* device, byte messageID, byte messageTag){
         if(isMessageQueueFull()){
             return false;
         } else {
             int idx = (queueStart + queueCount) % MAX_QUEUE_SIZE;
-            messageQueue[idx].device = device;
+            messageQueue[idx].device = (ArduinoDevice*)device;
             messageQueue[idx].messageID = messageID;
             messageQueue[idx].messageTag = messageTag;
             queueCount++;

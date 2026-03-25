@@ -1,6 +1,7 @@
 #include "ChetchArduinoDevice.h"
 #include "ChetchArduinoBoard.h"
 #include "ChetchArduinoMessage.h"
+#include "ChetchArduinoIO.h"
 
 namespace Chetch{
     ArduinoBoard* ArduinoDevice::Board = NULL;
@@ -19,7 +20,7 @@ namespace Chetch{
     void ArduinoDevice::setErrorInfo(ArduinoMessage* message, byte errorSubCode){
         if(message != NULL){
             message->type = ArduinoMessage::TYPE_ERROR;
-            message->add((byte)ArduinoIOBase::IOErrorCode::DEVICE_ERROR);
+            message->add((byte)ArduinoIO::IOErrorCode::DEVICE_ERROR);
             message->add(errorSubCode);
         }
     }
@@ -68,7 +69,7 @@ namespace Chetch{
 
     bool ArduinoDevice::enqueueMessageToSend(byte messageID, byte messageTag){
         if(Board != NULL){
-            ArduinoIOBase* io = Board->getIO();
+            MessageIO* io = Board->getIO();
             if(io != NULL){
                 io->enqueueMessageToSend(this, messageID, messageTag);
             }

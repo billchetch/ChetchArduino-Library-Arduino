@@ -27,7 +27,7 @@
 
 #include <Arduino.h>
 #include "ChetchArduinoDevice.h"
-#include "ChetchArduinoIO.h"
+#include "ChetchMessageIO.h"
 
 namespace Chetch{
     class ArduinoBoard{
@@ -46,7 +46,7 @@ namespace Chetch{
             byte deviceCount = 0;
             byte currentdevice = 0;
 
-            ArduinoIOBase* io = NULL;
+            MessageIO* io = NULL;
 
             unsigned long unixTimestamp = 0;
             int timezoneOffset = 0;
@@ -58,7 +58,7 @@ namespace Chetch{
             //Constructor/Destructor
             ArduinoBoard();
             
-            ArduinoIOBase* getIO(){ return io; }
+            MessageIO* getIO(){ return io; }
 
             byte getID(){ return id; }
             void setID(byte id){ this->id = id; }
@@ -69,7 +69,7 @@ namespace Chetch{
             byte getDeviceCount(){ return deviceCount; };
             int getFreeMemory();
             
-            virtual bool begin(ArduinoIOBase* io = NULL); //will return false if fails to begin
+            virtual bool begin(MessageIO* io = NULL); //will return false if fails to begin
             virtual void loop();
             
             void setTime(unsigned long unixts, int tzoffset){ unixTimestamp = unixts; timezoneOffset = tzoffset; }
