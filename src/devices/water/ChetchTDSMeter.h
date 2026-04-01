@@ -14,14 +14,16 @@ namespace Chetch{
             struct TDSResults{
                 double ppm = 0.0;
                 double voltage = 0.0;
+                bool lowerBound = false;
+                bool upperBound = false; //only really interested in this
             };
 
         private:
             double temperature = 25.0;
             double ppm = 0.0;
-            unsigned int ppmMin = 0;
-            unsigned int ppmMax = 1000;
-
+            unsigned int ppmMin = 20; //this is to allow for minor voltage fluctuations
+            unsigned int ppmMax = 1000; //max value by normal TDS meter used
+            
             TDSResults tdsResults;
 
         public:
@@ -31,6 +33,7 @@ namespace Chetch{
             void setTemperature(double t){ temperature = t; }
             double getTemperature(){ return temperature; }
             double getPPM(){ return ppm; }
+            TDSResults* getResults(){ return &tdsResults; }
             void onSamplingComplete() override;
 
             void setReportInfo(ArduinoMessage* message) override;

@@ -37,8 +37,6 @@ namespace Chetch{
         protected:
             uint16_t sampleSize = 0;
             unsigned long summedSamples = 0;
-
-        public:
             uint16_t firstValue = 0;
             uint16_t lastValue = 0;
             uint16_t minValue = 0;

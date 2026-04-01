@@ -46,6 +46,7 @@ namespace Chetch{
         private:
             ErrorCode errorCode = ErrorCode::NO_ERROR;
 
+        public:
             //Devices
             ///LCDI2C display;
             TDSMeter tds;
@@ -56,7 +57,7 @@ namespace Chetch{
         public:
             WaterMonitor(byte nodeID, byte serialPin);
 
-            double getPPM(){ return tds.getPPM(); }
+            int getPPM(); 
             void setTemperature(double temp){ tds.setTemperature(temp); }
             double getTemperature(){ return tempArray.getTemperature(); }
             double getFlowRate1(){ return flowMeter1.getFlowRate(); }

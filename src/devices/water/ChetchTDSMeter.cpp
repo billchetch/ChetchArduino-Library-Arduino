@@ -9,19 +9,36 @@ namespace Chetch{
     }
 
     void TDSMeter::onSamplingComplete(){
+        //top and tail mean value
+        double clippedMean = meanValue;
+        if(sampleSize >= 3){
+            unsigned long clippedSum = summedSamples - minValue - maxValue;
+            clippedMean = (double)clippedSum / (double)(sampleSize - 2);
+        }
+
         //temperature adjusted voltage
-        double v = getVoltage(meanValue);
+        double v = getVoltage(clippedMean);
         double x = v/(1.0 + 0.02*(temperature - 25.0));
 
         //cubic curve fit
-        ppm = cA*x*x*x + cB*x*x + cC*x;
-        if(ppm < ppmMin)ppm = (double)ppmMin;
-        if(ppm > ppmMax)ppm = (double)ppmMax;
+        double newppm = cA*x*x*x + cB*x*x + cC*x;
+        ppm = (newppm + ppm) / 2.0; //some smoothing
+        tdsResults.lowerBound = false;
+        tdsResults.upperBound = false;
+        if(ppm < ppmMin){
+            ppm = (double)ppmMin;
+            tdsResults.lowerBound = true;
+        }
+        tdsResults.upperBound = false;
+        if(ppm > ppmMax){
+            ppm = (double)ppmMax;
+            tdsResults.upperBound = true;
+        }
 
         //store for message creation
         tdsResults.ppm = ppm;
         tdsResults.voltage = x;
-
+        
         //Ensure any listeners are called
         AnalogSampler::onSamplingComplete();
     }

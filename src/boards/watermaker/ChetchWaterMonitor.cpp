@@ -5,7 +5,7 @@ namespace Chetch{
                         //display(LCD_COLS, LCD_ROWS, LCD_REFRESH) ,
                         tds(TDS_ANALOG_PIN, TDS_SAMPLE_INTERVAL),
                         tempArray(TEMP_SENSORS_PIN, TEMP_SENSORS_READ_INTERVAL, TEMP_SENSORS_RESOLUTION),
-                        flowMeter1(FLOWMETER1_COUNT_PIN, FlowMeter::FlowRateUnits::LITERS_PER_SECOND, FLOWMETER_INTERRUPT_MODE)
+                        flowMeter1(FLOWMETER1_COUNT_PIN, FlowMeter::FlowRateUnits::LITERS_PER_MINUTE, FLOWMETER_INTERRUPT_MODE)
     {
         //Add event handlers
         /*display.setReportInterval(DISPLAY_UPDATE_INTERVAL); //Setting report interval allows for an interval (rather than direct call) based update
@@ -43,6 +43,16 @@ namespace Chetch{
         addDevice(&tds);
         addDevice(&tempArray);
         addDevice(&flowMeter1);
+    }
+
+    int WaterMonitor::getPPM(){
+        if(tds.getResults()->lowerBound){
+            return -1;
+        } else if(tds.getResults()->upperBound){
+            return 1001;
+        } else {
+            return (unsigned int)tds.getPPM();
+        }
     }
 
     /*

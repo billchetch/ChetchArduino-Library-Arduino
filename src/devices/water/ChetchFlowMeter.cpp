@@ -12,6 +12,8 @@ namespace Chetch{
         if(units == FlowRateUnits::USE_DEFAULT){
             units = defaultUnits;
         }
+        Serial.print("Using units: ");
+        Serial.println(units);
         switch(units){
             case ML_PER_SECOND:
                 return mlps;
@@ -20,7 +22,7 @@ namespace Chetch{
                 return mlps / 1000.0;
             
             case LITERS_PER_MINUTE:
-                return mlps*0.06; (60/1000);
+                return mlps*0.06; //0.06 = (60/1000);
 
             default:
                 return mlps;

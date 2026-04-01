@@ -92,7 +92,8 @@ namespace Chetch{
 
         while(stream->available()){
             byte b = stream->read();
-            
+            Serial.print("Byte=");
+            Serial.println(b);
             if(frame.add(b)){
                 if(frame.validate()){
                     //Frame is good so let's get the payload and try turn it into an adm message

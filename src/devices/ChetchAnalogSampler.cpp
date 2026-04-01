@@ -90,7 +90,7 @@ namespace Chetch{
         results.meanValue = meanValue;
         results.minValue = minValue;
         results.maxValue = maxValue;
-
+        
         //Call a listener if there is one
         if(samplingCompleteListener != NULL){
             samplingCompleteListener(this);
