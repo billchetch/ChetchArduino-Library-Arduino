@@ -78,10 +78,6 @@ D0: RX0IF (CANINTF[0]) Receive-Buffer-0-Full Interrupt Flag
 
 */
 
-#define CAN_AS_LOOPBACK false
-#define CAN_DEFAULT_CS_PIN 10
-#define CAN_DEFAULT_INDICATOR_PIN 7 //leave 8 and 9 for Software Serial
-//#define COUNT_ERROR_CODES 12 //Comment out if not counting error codes
 
 namespace Chetch{
     class MCP2515Device : public ArduinoDevice{

@@ -7,7 +7,8 @@ namespace Chetch{
                                             mcp(nodeID, NODE_PRESENCE_INTERVAL),
                                             spin(serialPin, SERIAL_PIN_INTERVAL, SERIAL_PIN_BUFFER_SIZE) 
     {
-        //empty
+        addDevice(&mcp);
+        addDevice(&spin);   
     }
 
 }

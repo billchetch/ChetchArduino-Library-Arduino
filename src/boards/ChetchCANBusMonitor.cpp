@@ -7,8 +7,8 @@ namespace Chetch{
                                             spin(serialPin, SERIAL_PIN_INTERVAL, SERIAL_PIN_BUFFER_SIZE) 
     {
 
-        //empty
-
+        addDevice(&mcp);
+        addDevice(&spin);   
     }
 
     bool CANBusMonitor::begin(Stream* stream){

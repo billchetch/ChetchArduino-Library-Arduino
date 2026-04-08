@@ -16,10 +16,7 @@ namespace Chetch{
             CANBusBase* busNode = (CANBusBase*)mcpdev->Board;
 
             busNode->handleReceivedBusMessage(nodeID, msg, canData);
-        });
-
-        addDevice(pmcp);
-        addDevice(pspin);
+        }); 
     }
 
     void CANBusBase::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* messsge, byte* canData){

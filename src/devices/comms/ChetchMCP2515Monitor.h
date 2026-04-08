@@ -7,6 +7,11 @@
 #include <ChetchArduinoDevice.h>
 #include <ChetchArduinoMessage.h>
 
+#define CAN_AS_LOOPBACK false
+#define CAN_DEFAULT_CS_PIN 6
+#define CAN_DEFAULT_INDICATOR_PIN 7 //leave 8 and 9 for Software Serial
+//#define COUNT_ERROR_CODES 12 //Comment out if not counting error codes
+
 #include "ChetchMCP2515Device.h"
 
 /*
@@ -24,9 +29,10 @@ namespace Chetch{
             static const byte MESSAGE_ID_FORWARD_SENT = 101;
             
             static const unsigned int FORWARD_TIMEOUT = 20000; //compared to last status request
-
             static const byte EVENT_FORWARDING_SET = 16;
             
+            typedef void (*ForwardingListener)(MCP2515Monitor*, ArduinoMessage*); 
+
         private:
             ArduinoMessage frecvmsg;
             ArduinoMessage fsendmsg;
@@ -34,6 +40,8 @@ namespace Chetch{
             unsigned int messageCount = 0;
 
             bool canForward = false;
+            ForwardingListener forwardingListener;
+
             unsigned long lastStatusRequest = 0;
             bool statusRequested = false;
             
@@ -41,6 +49,9 @@ namespace Chetch{
             MCP2515Monitor(byte nodeID, unsigned int presenceInterval = MCP2515Device::DEFAULT_PRESENCE_INTERVAL, int csPin = CAN_DEFAULT_CS_PIN);
 
             void loop() override;
+
+            bool canForwardMessages(){ return canForward; }
+            void addForwardingListener(ForwardingListener listener){ forwardingListener = listener; }
             
             void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response) override;
             void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
@@ -49,7 +60,6 @@ namespace Chetch{
             void setStatusInfo(ArduinoMessage* response) override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
-            
             void onMessageReceived(byte sourceNodeID, ArduinoMessage *message) override;
             void onMessageSent(ArduinoMessage *message) override;
     };

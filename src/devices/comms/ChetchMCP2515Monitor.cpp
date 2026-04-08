@@ -7,8 +7,8 @@
  
 namespace Chetch{
     MCP2515Monitor::MCP2515Monitor(byte nodeID, unsigned int presenceInterval, int csPin) : MCP2515Device(nodeID, presenceInterval, csPin)
-                                            , frecvmsg(22) //Add 12 bytes to allow for additional 'meta' data
-                                            , fsendmsg(22) //Add 12 bytes to allow for additional 'meta' data
+                                            , frecvmsg(24) 
+                                            , fsendmsg(24) 
 
     { 
         setIndicateMode(NO_INDICATOR);
@@ -56,9 +56,7 @@ namespace Chetch{
         } else if(message->type == ArduinoMessage::TYPE_INITIALISE){
             indicate(true);
             resetErrors();
-            if(messageReceivedListener != NULL){
-                messageReceivedListener(this, getNodeID(), message, NULL);
-            }
+            
             response->add(millis());
             response->add((byte)TIMESTAMP_RESOLUTION);
             response->add(presenceInterval);
@@ -66,16 +64,10 @@ namespace Chetch{
             indicate(true);
             canForward = false;
             statusRequested = false;
-            if(messageReceivedListener != NULL){
-                messageReceivedListener(this, getNodeID(), message, NULL);
-            }
         } else if(message->type == ArduinoMessage::TYPE_ERROR_TEST){
             indicate(true);
             MCP2515ErrorCode ecode = message->get<MCP2515ErrorCode>(0);
             raiseError(ecode, 0); //message->get<unsigned long>(1));
-            if(messageReceivedListener != NULL){
-                messageReceivedListener(this, getNodeID(), message, NULL);
-            }
         } else if(message->type== ArduinoMessage::TYPE_RESET){
             indicate(true);
             //ResetRegime regime = message->get<ResetRegime>(0);
@@ -87,10 +79,6 @@ namespace Chetch{
                 raiseError(READ_FAIL, 3);
             }
             mcp2515.clearInterrupts();
-
-            if(messageReceivedListener != NULL){
-                messageReceivedListener(this, getNodeID(), message, NULL);
-            }
         }
     }
 
@@ -101,10 +89,16 @@ namespace Chetch{
             message->copy(&frecvmsg);
             //IMPORTANT: we identify forwarded messages as having the INFO type (original type is recorded as last parameter)
             message->type = ArduinoMessage::MessageType::TYPE_INFO;
+            if(forwardingListener != NULL){
+                forwardingListener(this, message);
+            }
         } else if(messageID == MESSAGE_ID_FORWARD_SENT){
             message->copy(&fsendmsg);
             //IMPORTANT: we identify forwarded messages as having the INFO type (original type is recorded as last parameter)
             message->type = ArduinoMessage::MessageType::TYPE_INFO;
+            if(forwardingListener != NULL){
+                forwardingListener(this, message);
+            }
         }
     }
 
@@ -145,14 +139,6 @@ namespace Chetch{
     }
     
     void MCP2515Monitor::onMessageSent(ArduinoMessage *message){
-        /*
-        NOTE
-
-        1. This method is used in MCP2515Device::handleReceivedMessage as well as MCP2525Device::loop
-
-        2. Base sendMessage MUST be called in order to forward the message otherwise the message and canOutFrame are not seeded with data
-        */
-    
         if(canForward){
             indicate(true);
 
