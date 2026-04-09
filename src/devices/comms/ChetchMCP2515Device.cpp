@@ -2,7 +2,8 @@
 #include "ChetchMCP2515Device.h"
 
 namespace Chetch{
-    MCP2515Device::MCP2515Device(byte nodeID, unsigned int presenceInterval, int csPin) : 
+
+    MCP2515Device::MCP2515Device(byte nodeID, int csPin, unsigned int presenceInterval) : 
                                     mcp2515(csPin, 4000000), 
                                     amsg(ARDUINO_MESSAGE_SIZE)
     {
@@ -384,7 +385,6 @@ namespace Chetch{
                     }
                 }
             }
-            //handled = true;
         } else if(message->type == ArduinoMessage::TYPE_INITIALISE){
             message->populate<byte>(canInFrame.data);
             targetNode = message->get<byte>(0);
@@ -498,13 +498,9 @@ namespace Chetch{
         byte tagAndCRC = (message->tag << 5) | crc5(canOutFrame.data, canOutFrame.can_dlc);
         unsigned long ms = millis();
         byte timestamp = (byte)((ms >> TIMESTAMP_RESOLUTION) & 0xFF);
-        //Serial.print("Send millis: ");
-        //Serial.println(ms);
-        //Serial.print("Send timestamp: ");
-        //Serial.println(timestamp);
         canOutFrame.can_id = (unsigned long)messageType << 24 | (unsigned long)nodeIDAndSender << 16 | (unsigned long)tagAndCRC << 8 | (unsigned long)timestamp;
         canOutFrame.can_id |= CAN_EFF_FLAG;
-
+        
         if(sendValidator != NULL && !sendValidator(this, &amsg, canOutFrame.can_id, canOutFrame.data)){
             return false;
         }

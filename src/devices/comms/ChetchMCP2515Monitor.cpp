@@ -6,13 +6,13 @@
 
  
 namespace Chetch{
-    MCP2515Monitor::MCP2515Monitor(byte nodeID, unsigned int presenceInterval, int csPin) : MCP2515Device(nodeID, presenceInterval, csPin)
+    MCP2515Monitor::MCP2515Monitor(byte nodeID, int csPin, unsigned int presenceInterval) : MCP2515Device(nodeID, csPin, presenceInterval)
                                             , frecvmsg(24) 
                                             , fsendmsg(24) 
 
     { 
         setIndicateMode(NO_INDICATOR);
-        setReportInterval(1000); //For reporting bus activity
+        //setReportInterval(1000); //For reporting bus activity
     }
 
     void MCP2515Monitor::loop(){
@@ -29,6 +29,7 @@ namespace Chetch{
                 }
             }
         }
+       
 
         MCP2515Device::loop();
     }
@@ -85,17 +86,27 @@ namespace Chetch{
     void MCP2515Monitor::populateOutboundMessage(ArduinoMessage* message, byte messageID){
         MCP2515Device::populateOutboundMessage(message, messageID);
 
+        //IMPORTANT: we identify forwarded messages as having the INFO type
         if(messageID == MESSAGE_ID_FORWARD_RECEIVED){
+            byte tag = message->tag;
             message->copy(&frecvmsg);
-            //IMPORTANT: we identify forwarded messages as having the INFO type (original type is recorded as last parameter)
             message->type = ArduinoMessage::MessageType::TYPE_INFO;
+            message->tag = tag;
+            message->sender = this->id; //because copying will overwrite this data
+            message->target = this->id;
+            
             if(forwardingListener != NULL){
                 forwardingListener(this, message);
             }
         } else if(messageID == MESSAGE_ID_FORWARD_SENT){
-            message->copy(&fsendmsg);
-            //IMPORTANT: we identify forwarded messages as having the INFO type (original type is recorded as last parameter)
+            byte tag = message->tag;
+            message->copy(&fsendmsg); //let the sender and target be determined by fsendmsg
             message->type = ArduinoMessage::MessageType::TYPE_INFO;
+            message->tag = tag;
+            message->sender = this->id; //because copying will overwrite this data
+            message->target = this->id;
+            
+            //IMPORTANT: we identify forwarded messages as having the INFO type (original type is recorded as last parameter)
             if(forwardingListener != NULL){
                 forwardingListener(this, message);
             }
@@ -143,10 +154,7 @@ namespace Chetch{
             indicate(true);
 
             fsendmsg.clear();
-            fsendmsg.tag = message->tag;
-            
             fsendmsg.addBytes(canOutFrame.data, canOutFrame.can_dlc);
-            
             fsendmsg.add(canOutFrame.can_id);
             fsendmsg.add(message->type);
             if(message->sender == 0){
@@ -155,6 +163,9 @@ namespace Chetch{
                 fsendmsg.add((byte)(message->sender + ArduinoBoard::START_DEVICE_IDS_AT - 1));
             }
             
+            //Serial.print(">>CID:");
+            //Serial.println(fsendmsg.get<unsigned long>(1));
+
             messageCount++;
 
             if(!enqueueMessageToSend(MESSAGE_ID_FORWARD_SENT, MESSAGE_ID_FORWARD_SENT)){
@@ -182,7 +193,6 @@ namespace Chetch{
 
             //Now we prepare a message to forward it vias the seria. connection
             frecvmsg.clear();
-            frecvmsg.tag = message->tag;
             
             frecvmsg.addBytes(canInFrame.data, canInFrame.can_dlc);
             
@@ -190,6 +200,8 @@ namespace Chetch{
             frecvmsg.add(message->type);
             frecvmsg.add(message->sender);
             
+            Serial.print("Captured on message RECEIVED for message: ");
+            Serial.println(message->type);
             if(!enqueueMessageToSend(MESSAGE_ID_FORWARD_RECEIVED, MESSAGE_ID_FORWARD_RECEIVED)){
                 raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 11);
             }

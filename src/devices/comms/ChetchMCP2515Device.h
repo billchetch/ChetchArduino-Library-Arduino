@@ -11,10 +11,14 @@
 #include <SPI.h>
 #include <mcp2515.h>
 
+#define CAN_AS_LOOPBACK false
+#define CAN_DEFAULT_INDICATOR_PIN 7 //leave 8 and 9 for Software Serial
+//#define COUNT_ERROR_CODES 12 //Comment out if not counting error codes
+
 /*
 NANO
 INT PIN = D2 (this is not required if looping)
-CS PIN = D10
+CS PIN = D10 (this can be altered mcp)
 MOSI PIN = D11
 MISO PIN = D12
 SCK PIN = D13
@@ -249,7 +253,7 @@ namespace Chetch{
             bool vcrc5(byte crc, byte* data, byte len);
             
         public:
-            MCP2515Device(byte nodeID = 0, unsigned int presenceInterval = DEFAULT_PRESENCE_INTERVAL, int csPin = CAN_DEFAULT_CS_PIN);
+            MCP2515Device(byte nodeID, int csPin, unsigned int presenceInterval);
             ~MCP2515Device();
 
             byte getNodeID(){ return nodeID; }

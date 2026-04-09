@@ -23,10 +23,10 @@ namespace Chetch{
         //1. Check queue for any messages, send if there is one
         if(!isMessageQueueEmpty() && outboundMessage.isEmpty()){
             MessageQueueItem qi = dequeueMessageToSend();
-            qi.device->populateOutboundMessage(&outboundMessage, qi.messageID);
             outboundMessage.target = qi.device->id;
             outboundMessage.sender = qi.device->id;
             outboundMessage.tag = qi.messageTag;
+            qi.device->populateOutboundMessage(&outboundMessage, qi.messageID);
             sendMessage();
         }
 

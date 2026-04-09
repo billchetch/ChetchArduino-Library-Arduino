@@ -7,12 +7,9 @@
 #include <ChetchArduinoDevice.h>
 #include <ChetchArduinoMessage.h>
 
-#define CAN_AS_LOOPBACK false
-#define CAN_DEFAULT_CS_PIN 6
-#define CAN_DEFAULT_INDICATOR_PIN 7 //leave 8 and 9 for Software Serial
-//#define COUNT_ERROR_CODES 12 //Comment out if not counting error codes
 
 #include "ChetchMCP2515Device.h"
+
 
 /*
 Concept of Master is that it is an connection between the CAN bus and the Arduino Board messaging
@@ -27,7 +24,8 @@ namespace Chetch{
         public:            
             static const byte MESSAGE_ID_FORWARD_RECEIVED = 100;
             static const byte MESSAGE_ID_FORWARD_SENT = 101;
-            
+            static const int DEFAULT_CS_PIN = 6;
+
             static const unsigned int FORWARD_TIMEOUT = 20000; //compared to last status request
             static const byte EVENT_FORWARDING_SET = 16;
             
@@ -46,7 +44,7 @@ namespace Chetch{
             bool statusRequested = false;
             
         public:
-            MCP2515Monitor(byte nodeID, unsigned int presenceInterval = MCP2515Device::DEFAULT_PRESENCE_INTERVAL, int csPin = CAN_DEFAULT_CS_PIN);
+            MCP2515Monitor(byte nodeID, int csPin = 6, unsigned int presenceInterval = MCP2515Device::DEFAULT_PRESENCE_INTERVAL);
 
             void loop() override;
 

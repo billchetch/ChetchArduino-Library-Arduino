@@ -7,9 +7,6 @@
 #include <ChetchArduinoDevice.h>
 #include <ChetchArduinoMessage.h>
 
-#define CAN_AS_LOOPBACK false
-#define CAN_DEFAULT_CS_PIN 6
-#define CAN_DEFAULT_INDICATOR_PIN 7 //leave 8 and 9 for Software Serial
 
 #include "ChetchMCP2515Device.h"
 
@@ -20,11 +17,12 @@ See base class for full info
 namespace Chetch{
     class MCP2515Node : public MCP2515Device{
         public:
+            static const int DEFAULT_CS_PIN = 6;
             
         private:
             
         public:
-            MCP2515Node(byte nodeID = 0, unsigned long presenceInterval = MCP2515Device::DEFAULT_PRESENCE_INTERVAL, int csPin = CAN_DEFAULT_CS_PIN);
+            MCP2515Node(byte nodeID = 0, int csPin = MCP2515Node::DEFAULT_CS_PIN, unsigned int presenceInterval = MCP2515Device::DEFAULT_PRESENCE_INTERVAL);
             void setNodeID(byte nodeID){ this->nodeID = nodeID; }
 
             //void loop() override;
