@@ -3,8 +3,8 @@
 
 #include "ChetchCANBusBase.h"
 #include "ChetchArduinoIO.h"
-#include "devices/comms/ChetchMCP2515Monitor.h"
-#include "devices/comms/ChetchSerialPinMaster.h"
+#include "devices/comms/can/ChetchMCP2515Monitor.h"
+#include "devices/comms/serial/ChetchSerialPinMaster.h"
 
 /*
 A can bus master is a 'monitor' board but with a serial pin master to control entire bus

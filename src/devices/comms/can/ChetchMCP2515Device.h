@@ -286,11 +286,12 @@ namespace Chetch{
             void addSendValidator(SendValidator validator){ sendValidator = validator; }
             void addErrorListener(ErrorListener listener){ errorListener = listener; }
 
+            ArduinoMessage* getMessageForHandler(byte handlerID, ArduinoMessage::MessageType messageType, byte tag = 0);
             ArduinoMessage* getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType = ArduinoMessage::TYPE_DATA, byte tag = 0);
-            ArduinoMessage* getMessageForDevice(byte deviceID, ArduinoMessage::MessageType messageType, byte tag = 0);
-            ArduinoMessage* getMessageForBoard(ArduinoMessage::MessageType messageType, byte tag = 0);
+            ArduinoMessage* getMessageForBoard(ArduinoMessage::MessageType messageType = ArduinoMessage::TYPE_DATA, byte tag = 0);
             
             bool sendMessageForDevice(ArduinoDevice* device, byte messageID);
+            bool sendMessageForBoard(byte messageID);
             bool sendMessage(ArduinoMessage *message);
             virtual void onMessageSent(ArduinoMessage *message){};
 

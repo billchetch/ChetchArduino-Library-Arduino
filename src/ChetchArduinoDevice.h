@@ -3,12 +3,13 @@
 
 #include <Arduino.h>
 #include "ChetchArduinoMessage.h"
+#include "ChetchArduinoMessageHandler.h"
 
 
 namespace Chetch{
     class ArduinoBoard;
 
-    class ArduinoDevice{
+    class ArduinoDevice : public ArduinoMessageHandler{
         public:
             enum DeviceCommand : byte{
                 NONE = 0,
@@ -53,8 +54,7 @@ namespace Chetch{
 
         public:
             static ArduinoBoard* Board; 
-            byte id = 0;
-
+            
         private:
             EventListener eventListener = NULL;
 
@@ -71,8 +71,8 @@ namespace Chetch{
             
             bool enqueueMessageToSend(byte messageID, byte messageTag = 0);
             
-            virtual void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response);
-            virtual void populateOutboundMessage(ArduinoMessage* message, byte messageID);
+            void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response) override;
+            void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
             
             void setErrorInfo(ArduinoMessage* message, byte errorSubCode);
             virtual void setReportInfo(ArduinoMessage* message){}; //a hook so we don't have to override this method (not all devices report)

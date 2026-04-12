@@ -2,8 +2,8 @@
 #define CHETCH_CAN_BUS_NODE_H
 
 #include "ChetchCANBusBase.h"
-#include "devices/comms/ChetchMCP2515Node.h"
-#include "devices/comms/ChetchSerialPinSlave.h"
+#include "devices/comms/can/ChetchMCP2515Node.h"
+#include "devices/comms/serial/ChetchSerialPinSlave.h"
 
 namespace Chetch{
 

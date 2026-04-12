@@ -24,7 +24,7 @@ namespace Chetch{
         public:            
             static const byte MESSAGE_ID_FORWARD_RECEIVED = 100;
             static const byte MESSAGE_ID_FORWARD_SENT = 101;
-            static const int DEFAULT_CS_PIN = 6;
+            static const int DEFAULT_CS_PIN = 6; //To free up pins 8 and 9 for AltSoftSerial
 
             static const unsigned int FORWARD_TIMEOUT = 20000; //compared to last status request
             static const byte EVENT_FORWARDING_SET = 16;

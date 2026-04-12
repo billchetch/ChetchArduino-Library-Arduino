@@ -215,31 +215,45 @@ namespace Chetch{
         return crc == crc5(data, len);
     }
 
-    ArduinoMessage* MCP2515Device::getMessageForDevice(byte deviceID, ArduinoMessage::MessageType messageType, byte tag){
+    ArduinoMessage* MCP2515Device::getMessageForHandler(byte handlerID, ArduinoMessage::MessageType messageType, byte tag){
         amsg.clear();
         amsg.type = messageType;
         amsg.tag = tag;
-        if(deviceID < ArduinoBoard::START_DEVICE_IDS_AT){
+        if(handlerID < ArduinoBoard::START_DEVICE_IDS_AT){
             amsg.sender = 0;
         } else {
-            amsg.sender = 1 + (deviceID - ArduinoBoard::START_DEVICE_IDS_AT);
+            amsg.sender = 1 + (handlerID - ArduinoBoard::START_DEVICE_IDS_AT);
         }
 
         return &amsg;
     }
 
     ArduinoMessage* MCP2515Device::getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType, byte tag){
-        return getMessageForDevice(device->id, messageType, tag);
+        return getMessageForHandler(device->getID(), messageType, tag);
     }
 
     ArduinoMessage* MCP2515Device::getMessageForBoard(ArduinoMessage::MessageType messageType, byte tag){
-        return getMessageForDevice(Board->getID(), messageType, tag);
+        return getMessageForHandler(Board->getID(), messageType, tag);
     }
 
     bool MCP2515Device::sendMessageForDevice(ArduinoDevice* device, byte messageID){
         ArduinoMessage* msg = getMessageForDevice(device);
-        device->populateOutboundMessage(msg, messageID);
-        return sendMessage(msg);
+        if(device != NULL){
+            device->populateOutboundMessage(msg, messageID);
+            return sendMessage(msg);
+        } else {
+            return false;
+        }
+    }
+
+    bool MCP2515Device::sendMessageForBoard(byte messageID){
+        ArduinoMessage* msg = getMessageForBoard();
+        if(Board != NULL){
+            Board->populateOutboundMessage(msg, messageID);
+            return sendMessage(msg);
+        } else {
+            return false;
+        }
     }
 
     bool MCP2515Device::checkReceive(){
@@ -368,7 +382,7 @@ namespace Chetch{
             
             if(targetNode == 0 || targetNode == getNodeID()){
                 if(message->sender == Board->getID()){
-                    response = getMessageForDevice(message->sender, ArduinoMessage::TYPE_STATUS_RESPONSE);
+                    response = getMessageForBoard(ArduinoMessage::TYPE_STATUS_RESPONSE);
                     response->add(Board->getID());
                     response->add(millis());
                     response->add(Board->getDeviceCount());
@@ -438,7 +452,7 @@ namespace Chetch{
                 if(device == NULL){
                     raiseError(UNKNOWN_RECEIVE_ERROR, 3);
                 } else {
-                    response = getMessageForDevice(message->sender, ArduinoMessage::TYPE_COMMAND_RESPONSE);
+                    response = getMessageForHandler(message->sender, ArduinoMessage::TYPE_COMMAND_RESPONSE);
                     response->add(command);
                     if(device->executeCommand(command, message, response)){
                         sendMessage(response);

@@ -27,6 +27,7 @@
 #include <Arduino.h>
 #include "ChetchMessageIO.h"
 #include "ChetchMessageFrame.h"
+#include "ChetchArduinoMessageHandler.h"
 #include "ChetchArduinoMessage.h"
 #include "ChetchArduinoDevice.h"
 
@@ -35,7 +36,7 @@ namespace Chetch{
     class ArduinoIO : public MessageIO{
         public:
             struct MessageQueueItem{
-                ArduinoDevice* device;
+                ArduinoMessageHandler* handler;
                 byte messageID; 
                 byte messageTag;  //currently not used 1/2/25
             };
@@ -49,8 +50,6 @@ namespace Chetch{
                 TARGET_NOT_SUPPLIED = 30,
                 TARGET_NOT_FOUND = 31,
                 NO_DEVICE_ID = 40,
-                DEVICE_LIMIT_REACHED = 41,
-                DEVICE_ID_ALREADY_USED = 42,
                 DEVICE_NOT_FOUND = 43,
                 DEVICE_ERROR = 100, //To indicate this is an error from the device (not Board)
             };
@@ -75,6 +74,7 @@ namespace Chetch{
             //messaging stuff
             bool receiveMessage(); //true if message has been received, false otherwise
             void sendMessage();
+            bool sendMessage(ArduinoMessage* message);
 
             void setErrorInfo(ArduinoMessage* message, IOErrorCode errorCode, byte errorSubCode);
             void setErrorInfo(ArduinoMessage* message, byte errorCode, byte errorSubCode);

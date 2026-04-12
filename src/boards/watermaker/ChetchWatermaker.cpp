@@ -13,9 +13,13 @@ namespace Chetch{
                         pressurePump(SwitchDevice::SwitchMode::ACTIVE, PRESSURE_PUMP_PIN, SWITCH_TOLERANCE, OUTPUT_ONSTATE)
 
     {
+        //Board stuff
+        setReportInterval(REPORT_INTERVAL);
+        
+        //Devices
         //Legacy stuff
         mcp.setIndicatorPin(9);
-
+        
         //Add event handlers to devices
         display.setReportInterval(DISPLAY_UPDATE_INTERVAL); //Setting report interval allows for an interval (rather than direct call) based update
         display.addEventListener([](ArduinoDevice* device, byte eventID, byte eventTag){
@@ -63,7 +67,7 @@ namespace Chetch{
                     wm->pressurePump.turn(true);
                 } else {
                     //possible pressure drop!
-                    wm->error(ErrorCode::LOW_PRESSURE);
+                    wm->error(WMErrorCode::LOW_PRESSURE);
                 }
             }
 
@@ -79,7 +83,7 @@ namespace Chetch{
             Watermaker* wm = (Watermaker*)sd->Board;
 
             if(wm->isRunning() && on){
-                wm->error(ErrorCode::HIGH_PRESSURE);
+                wm->error(WMErrorCode::HIGH_PRESSURE);
             }
 
             if(!wm->hasError()){
@@ -132,7 +136,7 @@ namespace Chetch{
     }
 
     bool Watermaker::hasError(){
-        return errorCode != ErrorCode::NO_ERROR;
+        return errorCode != WMErrorCode::NO_ERROR;
     }
 
     void Watermaker::selectMode(OperationalMode operationalMode){
@@ -154,22 +158,22 @@ namespace Chetch{
         if(currentMode == NOT_SET || hasError())return;
         
         if(feederPump.isOn()){
-            error(ErrorCode::FP_INCORRECT);
+            error(WMErrorCode::FP_INCORRECT);
             return;
         }
 
         if(pressurePump.isOn()){
-            error(ErrorCode::PP_INCORRECT);
+            error(WMErrorCode::PP_INCORRECT);
             return;
         }
 
         if(lps.isOn()){
-            error(ErrorCode::LPS_INCORRECT);
+            error(WMErrorCode::LPS_INCORRECT);
             return;
         }
 
         if(hps.isOn()){
-            error(ErrorCode::HPS_INCORRECT);
+            error(WMErrorCode::HPS_INCORRECT);
             return;
         }
 
@@ -204,20 +208,30 @@ namespace Chetch{
         solenoidFresh.turn(false);
         
         currentSession->stoppedOn = millis();
+
         updateDisplay(DisplayMode::STOPPED);
     }
 
     void Watermaker::reset(){
-        error(ErrorCode::NO_ERROR);  
+        error(WMErrorCode::NO_ERROR);  
     }
 
-    void Watermaker::error(ErrorCode ec){  
+    void Watermaker::error(WMErrorCode ec){  
         if(isRunning()){
             stop();
         }
+
+        bool changed = ec != errorCode;
         errorCode = ec;
-        if(hasError()){
+        if(hasError() && changed){
             updateDisplay(DisplayMode::ERROR);
+        }
+
+        if(changed){
+            ArduinoMessage* msg = mcp.getMessageForBoard(ArduinoMessage::MessageType::TYPE_ERROR);
+            msg->add((byte)50);
+            msg->add((byte)errorCode);
+            mcp.sendMessage(msg);
         }
     }
 
@@ -301,5 +315,20 @@ namespace Chetch{
         }
 
         return true;
+    }
+
+    void Watermaker::setReportInfo(ArduinoMessage* message){
+        message->add((byte)errorCode);
+        message->add((byte)currentMode);
+        message->add(isRunning());
+        unsigned int duration = 0;
+        if(isRunning()){
+            duration = (unsigned int)((millis() - currentSession->startedOn) / 1000);
+        }
+        message->add(duration);
+    }
+
+    void Watermaker::onReportReady(){
+        mcp.sendMessageForBoard(MESSAGE_ID_REPORT);
     }
 }

@@ -92,8 +92,8 @@ namespace Chetch{
             message->copy(&frecvmsg);
             message->type = ArduinoMessage::MessageType::TYPE_INFO;
             message->tag = tag;
-            message->sender = this->id; //because copying will overwrite this data
-            message->target = this->id;
+            message->sender = this->getID(); //because copying will overwrite this data
+            message->target = this->getID();
             
             if(forwardingListener != NULL){
                 forwardingListener(this, message);
@@ -103,8 +103,8 @@ namespace Chetch{
             message->copy(&fsendmsg); //let the sender and target be determined by fsendmsg
             message->type = ArduinoMessage::MessageType::TYPE_INFO;
             message->tag = tag;
-            message->sender = this->id; //because copying will overwrite this data
-            message->target = this->id;
+            message->sender = this->getID(); //because copying will overwrite this data
+            message->target = this->getID();
             
             //IMPORTANT: we identify forwarded messages as having the INFO type (original type is recorded as last parameter)
             if(forwardingListener != NULL){
@@ -125,11 +125,11 @@ namespace Chetch{
             byte startAt = 0;
             if(command == ArduinoDevice::REQUEST){
                 reqType = (ArduinoMessage::MessageType)message->get<ArduinoMessage::MessageType>(1);
-                msg = getMessageForDevice(message->sender, reqType, message->tag);
+                msg = getMessageForHandler(message->sender, reqType, message->tag);
                 startAt = 2;
                 byteTotal = 0;
             } else {    
-                msg = getMessageForDevice(message->sender, ArduinoMessage::TYPE_COMMAND, 1);
+                msg = getMessageForHandler(message->sender, ArduinoMessage::TYPE_COMMAND, 1);
                 msg->add((byte)command);
                 startAt = 1;
                 byteTotal = 1;
@@ -143,8 +143,11 @@ namespace Chetch{
                 msg->addBytes(message->getArgument(i), bytec);
             }
 
-            //send using base method so as not to send a message back to the sender of this command
-            handled = MCP2515Device::sendMessage(msg);
+            bool oldCanForward = canForward;
+            canForward = false; //supress forwarding
+            handled = sendMessage(msg);
+            canForward = oldCanForward;
+
         }
         return handled;
     }
@@ -185,6 +188,7 @@ namespace Chetch{
         So we can assume the message is valid
         */
 
+        
         //update message count
         messageCount++;
 
@@ -200,8 +204,6 @@ namespace Chetch{
             frecvmsg.add(message->type);
             frecvmsg.add(message->sender);
             
-            Serial.print("Captured on message RECEIVED for message: ");
-            Serial.println(message->type);
             if(!enqueueMessageToSend(MESSAGE_ID_FORWARD_RECEIVED, MESSAGE_ID_FORWARD_RECEIVED)){
                 raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 11);
             }

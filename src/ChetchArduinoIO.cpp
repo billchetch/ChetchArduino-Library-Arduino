@@ -23,10 +23,10 @@ namespace Chetch{
         //1. Check queue for any messages, send if there is one
         if(!isMessageQueueEmpty() && outboundMessage.isEmpty()){
             MessageQueueItem qi = dequeueMessageToSend();
-            outboundMessage.target = qi.device->id;
-            outboundMessage.sender = qi.device->id;
+            outboundMessage.target = qi.handler->getID();
+            outboundMessage.sender = outboundMessage.target;
             outboundMessage.tag = qi.messageTag;
-            qi.device->populateOutboundMessage(&outboundMessage, qi.messageID);
+            qi.handler->populateOutboundMessage(&outboundMessage, qi.messageID);
             sendMessage();
         }
 
@@ -47,33 +47,13 @@ namespace Chetch{
                 setErrorInfo(response, IOErrorCode::TARGET_NOT_VALID, message->target);
                 setResponseInfo(response, message, boardID);
             } else if(message->target == boardID){ //intending this board
-                if(message->type == ArduinoMessage::TYPE_ECHO){
-                    response->copy(message);
-                    response->type = ArduinoMessage::TYPE_ECHO_RESPONSE;
-                    setResponseInfo(response, message, boardID);
-                } else if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST){
-                    //Anticipate message has server info
-                    if(message->getArgumentCount() >= 2){
-                        //Set unix time stamp and timezone
-                        Board->setTime(message->get<unsigned long>(0), message->get<int>(1));
-                    }
-                    //Now formulate a response to the request
-                    response->type = ArduinoMessage::TYPE_STATUS_RESPONSE;
-                    response->add(BOARD_NAME);
-                    response->add(millis());
-                    response->add(Board->getDeviceCount());
-                    response->add(Board->getFreeMemory());
-                    setResponseInfo(response, message, boardID);
-                } else if(message->type == ArduinoMessage::TYPE_PING){
-                    response->type = ArduinoMessage::TYPE_PING_RESPONSE;
-                    response->add(millis());
-                    setResponseInfo(response, message, boardID);
-                }
+                Board->handleInboundMessage(message, response);
+                setResponseInfo(response, message, boardID);
             } else { //intending a device
                 ArduinoDevice* device = Board->getDeviceByID(message->target);
                 if(device != NULL){
                     device->handleInboundMessage(message, response);
-                    setResponseInfo(response, message, device->id);
+                    setResponseInfo(response, message, device->getID());
                 } else {
                     setErrorInfo(response, IOErrorCode::TARGET_NOT_FOUND, message->target);
                     setResponseInfo(response, message, boardID);
@@ -157,12 +137,12 @@ namespace Chetch{
         return queueCount == 0;
     }
 
-    bool ArduinoIO::enqueueMessageToSend(void* device, byte messageID, byte messageTag){
+    bool ArduinoIO::enqueueMessageToSend(void* handler, byte messageID, byte messageTag){
         if(isMessageQueueFull()){
             return false;
         } else {
             int idx = (queueStart + queueCount) % MAX_QUEUE_SIZE;
-            messageQueue[idx].device = (ArduinoDevice*)device;
+            messageQueue[idx].handler = (ArduinoMessageHandler*)handler;
             messageQueue[idx].messageID = messageID;
             messageQueue[idx].messageTag = messageTag;
             queueCount++;
@@ -173,11 +153,11 @@ namespace Chetch{
     ArduinoIO::MessageQueueItem ArduinoIO::dequeueMessageToSend(){
         MessageQueueItem qi;
         if(isMessageQueueEmpty()){
-            qi.device = NULL;
+            qi.handler = NULL;
             qi.messageID = 0;
             qi.messageTag = 0;
         } else {
-            qi.device = messageQueue[queueStart].device;
+            qi.handler = messageQueue[queueStart].handler;
             qi.messageID = messageQueue[queueStart].messageID;
             qi.messageTag = messageQueue[queueStart].messageTag;
             queueCount--;

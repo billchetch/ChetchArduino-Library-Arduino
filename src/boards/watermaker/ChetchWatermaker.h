@@ -55,6 +55,7 @@ History:
 #define LCD_ROWS 4
 #define LCD_REFRESH LCDI2C::RefreshRate::REFRESH_5HZ
 #define DISPLAY_UPDATE_INTERVAL 500 //setReportInterval
+#define REPORT_INTERVAL 1000
 
 #define SELECTOR_FIRST_PIN 6  //Make water, Expel air, Rinse
 #define SELECTION_SIZE 3 //see the options above
@@ -83,7 +84,7 @@ namespace Chetch{
                 RINSE = 8
             };
 
-            enum ErrorCode : byte{
+            enum WMErrorCode : byte{
                 NO_ERROR = 0,
                 LOW_PRESSURE = 1,
                 HIGH_PRESSURE = 2,
@@ -112,7 +113,7 @@ namespace Chetch{
             
         private:
             OperationalMode currentMode = OperationalMode::NOT_SET;
-            ErrorCode errorCode = ErrorCode::NO_ERROR;
+            WMErrorCode errorCode = WMErrorCode::NO_ERROR;
 
             RunSession sessions[SELECTION_SIZE];
             RunSession* currentSession;
@@ -143,9 +144,12 @@ namespace Chetch{
             void start();
             void stop();
             void reset();
-            void error(ErrorCode ec);
+            void error(WMErrorCode ec);
             void updateDisplay(DisplayMode displayMode = DisplayMode::DISPLAY_MODE_NOT_SET);
             bool renderDisplay(DisplayMode displayMode, bool displayInitialised = false);
+
+            void setReportInfo(ArduinoMessage* message) override;
+            void onReportReady() override;
     };
 } //end namespace
 #endif

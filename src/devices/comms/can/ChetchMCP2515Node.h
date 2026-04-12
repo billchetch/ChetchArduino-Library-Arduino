@@ -17,7 +17,7 @@ See base class for full info
 namespace Chetch{
     class MCP2515Node : public MCP2515Device{
         public:
-            static const int DEFAULT_CS_PIN = 6;
+            static const int DEFAULT_CS_PIN = 10;
             
         private:
             

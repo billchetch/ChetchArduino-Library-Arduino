@@ -2,8 +2,8 @@
 #define CHETCH_CAN_BUS_BASE_H
 
 #include "ChetchArduinoBoard.h"
-#include "devices/comms/ChetchMCP2515Device.h"
-#include "devices/comms/ChetchSerialPin.h"
+#include "devices/comms/can/ChetchMCP2515Device.h"
+#include "devices/comms/serial/ChetchSerialPin.h"
 
 #define NODE_PRESENCE_INTERVAL 10000
 #define SERIAL_PIN_INTERVAL 50 

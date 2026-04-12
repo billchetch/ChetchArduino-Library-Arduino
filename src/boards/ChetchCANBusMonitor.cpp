@@ -8,7 +8,9 @@ namespace Chetch{
     {
 
         addDevice(&mcp);
-        addDevice(&spin);   
+        addDevice(&spin);
+
+        //setReportInterval(1000);
     }
 
     bool CANBusMonitor::begin(Stream* stream){
