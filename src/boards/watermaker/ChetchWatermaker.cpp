@@ -226,13 +226,6 @@ namespace Chetch{
         if(hasError() && changed){
             updateDisplay(DisplayMode::ERROR);
         }
-
-        if(changed){
-            ArduinoMessage* msg = mcp.getMessageForBoard(ArduinoMessage::MessageType::TYPE_ERROR);
-            msg->add((byte)50);
-            msg->add((byte)errorCode);
-            mcp.sendMessage(msg);
-        }
     }
 
     void Watermaker::updateDisplay(DisplayMode displayMode){
