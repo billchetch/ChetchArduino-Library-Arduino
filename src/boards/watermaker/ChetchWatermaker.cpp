@@ -14,7 +14,7 @@ namespace Chetch{
 
     {
         //Board stuff
-        setReportInterval(REPORT_INTERVAL);
+        setReportInterval(REPORT_INTERVAL*10); //value when not running
         
         //Devices
         //Legacy stuff
@@ -198,6 +198,8 @@ namespace Chetch{
         currentSession->count++;
 
         updateDisplay(DisplayMode::STARTED);
+
+        setReportInterval(REPORT_INTERVAL);
     }
 
     void Watermaker::stop(){
@@ -210,6 +212,8 @@ namespace Chetch{
         currentSession->stoppedOn = millis();
 
         updateDisplay(DisplayMode::STOPPED);
+
+        setReportInterval(REPORT_INTERVAL*10);
     }
 
     void Watermaker::reset(){
