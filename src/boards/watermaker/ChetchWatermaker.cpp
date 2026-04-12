@@ -227,8 +227,8 @@ namespace Chetch{
             updateDisplay(DisplayMode::ERROR);
 
             ArduinoMessage* msg = mcp.getMessageForBoard(ArduinoMessage::MessageType::TYPE_ERROR);
-            msg.add(50); //TODO: this isa board custom error value
-            msg.add(errorCode);
+            msg->add((byte)50); //TODO: this isa board custom error value
+            msg->add((byte)errorCode);
             mcp.sendMessage(msg);
         }
     }
