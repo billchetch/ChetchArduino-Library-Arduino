@@ -225,6 +225,11 @@ namespace Chetch{
         errorCode = ec;
         if(hasError() && changed){
             updateDisplay(DisplayMode::ERROR);
+
+            ArduinoMessage* msg = mcp.getMessageForBoard(ArduinoMessage::MessageType::TYPE_ERROR);
+            msg.add(50); //TODO: this isa board custom error value
+            msg.add(errorCode);
+            mcp.sendMessage(msg);
         }
     }
 
