@@ -129,7 +129,7 @@ namespace Chetch{
                 startAt = 2;
                 byteTotal = 0;
             } else {    
-                msg = getMessageForHandler(message->sender, ArduinoMessage::TYPE_COMMAND, 1);
+                msg = getMessageForHandler(message->sender, ArduinoMessage::TYPE_COMMAND, message->tag);
                 msg->add((byte)command);
                 startAt = 1;
                 byteTotal = 1;
@@ -144,6 +144,7 @@ namespace Chetch{
             }
 
             bool oldCanForward = canForward;
+            response->add(byteTotal);
             canForward = false; //supress forwarding
             handled = sendMessage(msg);
             canForward = oldCanForward;
