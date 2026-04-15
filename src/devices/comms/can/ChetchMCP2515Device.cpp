@@ -156,17 +156,17 @@ namespace Chetch{
 
         unsigned long ms = millis();
         ArduinoMessage* msg;
+        
         //We ensure that the first message sent is a presence message and this should be as soon as the device has begun
-        if(presenceInterval > 0 && (ms - lastPresenceOn) > presenceInterval){
+        if(presenceInterval > 0 && (!presenceSent || (ms - lastPresenceOn) > presenceInterval)){
             msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_PRESENCE, 1);
             msg->add(ms);
             msg->add((unsigned int)(ms - lastPresenceOn));
             msg->add(!presenceSent); //if true then resets presence in remote node (i.e. first presence message)
             msg->add(mcp2515.getStatus());
-
-            if(sendMessage(msg)){
-                presenceSent = true;
-            }
+            
+            sendMessage(msg);
+            presenceSent = true;
             lastPresenceOn = millis();
         } else if(broadcastError){
             //send error message

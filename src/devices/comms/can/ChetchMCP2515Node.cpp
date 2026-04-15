@@ -3,6 +3,7 @@
 
 
 namespace Chetch{
+
     MCP2515Node::MCP2515Node(byte nodeID, int csPin, unsigned int presenceInterval) : MCP2515Device(nodeID, csPin, presenceInterval)
     { 
 

@@ -5,7 +5,7 @@
 #include "devices/comms/can/ChetchMCP2515Device.h"
 #include "devices/comms/serial/ChetchSerialPin.h"
 
-#define NODE_PRESENCE_INTERVAL 10000
+#define NODE_PRESENCE_INTERVAL 2000
 #define SERIAL_PIN_INTERVAL 50 
 #define SERIAL_PIN_BUFFER_SIZE 2
 
