@@ -125,11 +125,11 @@ namespace Chetch{
             byte startAt = 0;
             if(command == ArduinoDevice::REQUEST){
                 reqType = (ArduinoMessage::MessageType)message->get<ArduinoMessage::MessageType>(1);
-                msg = getMessageForHandler(message->sender, reqType, message->tag);
+                msg = getMessageForHandler(message->sender, reqType, 1);
                 startAt = 2;
                 byteTotal = 0;
             } else {    
-                msg = getMessageForHandler(message->sender, ArduinoMessage::TYPE_COMMAND, message->tag);
+                msg = getMessageForHandler(message->sender, ArduinoMessage::TYPE_COMMAND, 2);
                 msg->add((byte)command);
                 startAt = 1;
                 byteTotal = 1;
@@ -144,11 +144,14 @@ namespace Chetch{
             }
 
             bool oldCanForward = canForward;
-            response->add(byteTotal);
             canForward = false; //supress forwarding
-            handled = sendMessage(msg);
+            bool success = sendMessage(msg);
+            response->add(success);
             canForward = oldCanForward;
-
+            
+            //This is done to ensure that the command response is directed back to the monitor device
+            message->sender = this->getID();
+            handled = true;
         }
         return handled;
     }
