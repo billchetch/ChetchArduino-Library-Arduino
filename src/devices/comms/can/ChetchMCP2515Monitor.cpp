@@ -44,7 +44,7 @@ namespace Chetch{
     }
 
     void MCP2515Monitor::setReportInfo(ArduinoMessage* message){
-        //MCP2515Device::setReportInfo(message);
+        MCP2515Device::setReportInfo(message);
         message->add(messageCount);
         messageCount = 0;
     }
@@ -87,26 +87,15 @@ namespace Chetch{
         MCP2515Device::populateOutboundMessage(message, messageID);
 
         //IMPORTANT: we identify forwarded messages as having the INFO type
-        if(messageID == MESSAGE_ID_FORWARD_RECEIVED){
+        if(messageID == MESSAGE_ID_FORWARD_RECEIVED || messageID == MESSAGE_ID_FORWARD_SENT){
             byte tag = message->tag;
-            message->copy(&frecvmsg);
+            message->copy(messageID == MESSAGE_ID_FORWARD_RECEIVED ? &frecvmsg : &fsendmsg);
+
             message->type = ArduinoMessage::MessageType::TYPE_INFO;
             message->tag = tag;
             message->sender = this->getID(); //because copying will overwrite this data
             message->target = this->getID();
             
-            if(forwardingListener != NULL){
-                forwardingListener(this, message);
-            }
-        } else if(messageID == MESSAGE_ID_FORWARD_SENT){
-            byte tag = message->tag;
-            message->copy(&fsendmsg); //let the sender and target be determined by fsendmsg
-            message->type = ArduinoMessage::MessageType::TYPE_INFO;
-            message->tag = tag;
-            message->sender = this->getID(); //because copying will overwrite this data
-            message->target = this->getID();
-            
-            //IMPORTANT: we identify forwarded messages as having the INFO type (original type is recorded as last parameter)
             if(forwardingListener != NULL){
                 forwardingListener(this, message);
             }
@@ -145,17 +134,14 @@ namespace Chetch{
 
             bool oldCanForward = canForward;
             canForward = false; //supress forwarding
-            bool success = sendMessage(msg);
-            response->add(success);
+            handled = sendMessage(msg);
             canForward = oldCanForward;
-            
             //This is done to ensure that the command response is directed back to the monitor device
             message->sender = this->getID();
-            handled = true;
         }
         return handled;
     }
-    
+
     void MCP2515Monitor::onMessageSent(ArduinoMessage *message){
         if(canForward){
             indicate(true);

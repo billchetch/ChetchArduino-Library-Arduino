@@ -51,10 +51,9 @@ namespace Chetch{
 
             case ArduinoMessage::TYPE_COMMAND:
                 DeviceCommand command = message->get<DeviceCommand>(0);
-                if(executeCommand(command, message, response)){
-                    response->type = ArduinoMessage::TYPE_COMMAND_RESPONSE;
-                    response->add((byte)command);
-                }
+                response->type = ArduinoMessage::TYPE_COMMAND_RESPONSE;
+                response->add((byte)command);
+                response->add(executeCommand(command, message, response)); //success of not
                 break;
         }
     }
