@@ -14,7 +14,7 @@ namespace Chetch{
         if (eventListener != NULL) {
             return eventListener(this, eventID, eventTag);
         }
-        return false;
+        return true;
     }
 
     void ArduinoDevice::setErrorInfo(ArduinoMessage* message, byte errorSubCode){
@@ -53,7 +53,8 @@ namespace Chetch{
                 DeviceCommand command = message->get<DeviceCommand>(0);
                 response->type = ArduinoMessage::TYPE_COMMAND_RESPONSE;
                 response->add((byte)command);
-                response->add(executeCommand(command, message, response)); //success of not
+                bool success = executeCommand(command, message, response);
+                response->add(success); //success of not
                 break;
         }
     }
@@ -97,8 +98,9 @@ namespace Chetch{
         if(reportInterval > 0 && millis() - lastMillis >= (unsigned long)reportInterval){
             //Serial.println("Ok message is ready to send");
             lastMillis = millis();
-            enqueueMessageToSend(MESSAGE_ID_REPORT);
-            raiseEvent(EVENT_REPORT_READY);
+            if(raiseEvent(EVENT_REPORT_READY)){
+                enqueueMessageToSend(MESSAGE_ID_REPORT);
+            }
         }
     }
 } //end namespace scope

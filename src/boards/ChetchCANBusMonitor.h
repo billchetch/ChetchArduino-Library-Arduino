@@ -24,7 +24,7 @@ namespace Chetch{
         public:
             CANBusMonitor(byte nodeID, byte serialPin);
 
-            bool begin(Stream *stream);
+            bool begin(Stream *stream, byte framePadding = 0);
     };
 } //end namespace
 #endif

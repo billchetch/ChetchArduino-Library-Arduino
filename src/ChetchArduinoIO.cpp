@@ -5,23 +5,32 @@ namespace Chetch{
 
     //Constructor
     ArduinoIO::ArduinoIO(Stream* stream) : MessageIO(),
-                                        frame(MessageFrame::FrameSchema::SMALL_SIMPLE_CHECKSUM, MessageFrame::MessageEncoding::SYSTEM_DEFINED, MAX_FRAME_PAYLOAD_SIZE), 
+                                        inFrame(MessageFrame::FrameSchema::SMALL_SIMPLE_CHECKSUM, MessageFrame::MessageEncoding::SYSTEM_DEFINED, MAX_FRAME_PAYLOAD_SIZE), 
+                                        outFrame(MessageFrame::FrameSchema::SMALL_SIMPLE_CHECKSUM, MessageFrame::MessageEncoding::SYSTEM_DEFINED, MAX_FRAME_PAYLOAD_SIZE), 
                                                                     inboundMessage(MAX_FRAME_PAYLOAD_SIZE), 
                                                                     outboundMessage(MAX_FRAME_PAYLOAD_SIZE)
     {
         //empty
     }
 
-    void ArduinoIO::begin(Stream* stream){
+    void ArduinoIO::begin(Stream* stream, byte framePadding){
         this->stream = stream;
+        this->framePadding = framePadding;
         
         inboundMessage.clear();
         outboundMessage.clear();
     }
 
     void ArduinoIO::loop(){
-        //1. Check queue for any messages, send if there is one
-        if(!isMessageQueueEmpty() && outboundMessage.isEmpty()){
+        //1. If after receiving a message the outbound was pouplated for sending then go ahead and send it
+        if(!outboundMessage.isEmpty()){
+            sendMessage();
+            return;
+        }
+
+
+        //2. If we are here then we know there is nothing in the outbound message so check to see if there is something in the queu and send if so
+        if(!isMessageQueueEmpty()){
             MessageQueueItem qi = dequeueMessageToSend();
             outboundMessage.target = qi.handler->getID();
             outboundMessage.sender = outboundMessage.target;
@@ -30,7 +39,7 @@ namespace Chetch{
             sendMessage();
         }
 
-        //2. Check if message has been received, process/respond if there is one
+        //3. Check if message has been received, process it and respond which will populate outbound to be sent next loop
         if(receiveMessage()){
             //for convenicence and clarity use vars for pointers
             ArduinoBoard* Board = (ArduinoBoard*)owner;
@@ -59,11 +68,6 @@ namespace Chetch{
                     setResponseInfo(response, message, boardID);
                 }
             }
-
-            //if there is some kind of response then send it
-            if(!response->isEmpty()){
-                sendMessage();
-            }
         } //end received message
     }
 
@@ -72,24 +76,37 @@ namespace Chetch{
 
         while(stream->available()){
             byte b = stream->read();
-            if(frame.add(b)){
-                if(frame.validate()){
+            
+            if(inFrame.add(b)){
+                if(inFrame.validate()){
                     //Frame is good so let's get the payload and try turn it into an adm message
                     //note: this clears the inbound message
-                    if(inboundMessage.deserialize(frame.getPayload(), frame.getPayloadSize())){
-                        frame.reset();
+                    if(inboundMessage.deserialize(inFrame.getPayload(), inFrame.getPayloadSize())){
+                        inFrame.reset();
                         return true; //BINGO! received a valid message
                     } else {
                         //an ArduinoMessage deserialization error
                         setErrorInfo(&outboundMessage, IOErrorCode::MESSAGE_ERROR, (byte)inboundMessage.error);
-                        frame.reset();
+                        outboundMessage.target = ((ArduinoBoard*)owner)->getID();
+                        outboundMessage.sender = outboundMessage.target;
+                        outboundMessage.tag = (byte)inboundMessage.error;
+                        inFrame.reset();
                         return false;
                     }
                 } else {
                     //a MessageFrame error
-                    setErrorInfo(&outboundMessage, IOErrorCode::MESSAGE_FRAME_ERROR, (byte)frame.error);
-                    frame.reset();
-                    return false;
+                    if(inFrame.error == MessageFrame::FrameError::NON_VALID_SCHEMA || inFrame.error == MessageFrame::FrameError::NON_VALID_ENCODING){
+                        //We reset the frame and continue reading...
+                        inFrame.reset();
+                    } else {
+                        //We send an error message back to client
+                        setErrorInfo(&outboundMessage, IOErrorCode::MESSAGE_FRAME_ERROR, (byte)inFrame.error);
+                        outboundMessage.target = ((ArduinoBoard*)owner)->getID();
+                        outboundMessage.sender = outboundMessage.target;
+                        outboundMessage.tag = (byte)inFrame.error;
+                        inFrame.reset();
+                        return false;
+                    }
                 } //end frame validate
             }
         } //end stream read
@@ -101,9 +118,10 @@ namespace Chetch{
     void ArduinoIO::sendMessage(){
         if(stream != NULL){
             //TODO:??? maybe handle case of if oubound message is in an error state
-            frame.setPayload(outboundMessage.getBytes(), outboundMessage.getByteCount());
-            frame.write(stream); //write bytes to stream
-            frame.reset();
+            if(outFrame.setPayload(outboundMessage.getBytes(), outboundMessage.getByteCount())){
+                outFrame.write(stream, framePadding, framePadding); //write bytes to stream
+                outFrame.reset();
+            }
         }
         //ready for reuse
         outboundMessage.clear();

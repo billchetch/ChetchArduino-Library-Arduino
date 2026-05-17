@@ -57,7 +57,10 @@ namespace Chetch{
         private:
             Stream* stream;
 
-            MessageFrame frame;
+            MessageFrame inFrame;
+            MessageFrame outFrame;
+            byte framePadding = 0;
+
             ArduinoMessage inboundMessage;
             ArduinoMessage outboundMessage;
             int queueStart = 0;
@@ -67,7 +70,7 @@ namespace Chetch{
         public:
             ArduinoIO(Stream* stream = NULL);
 
-            void begin(Stream* stream = NULL);
+            void begin(Stream* stream = NULL, byte framePadding = 0);
             bool enqueueMessageToSend(void* device, byte messageID, byte messageTag = 0) override;
             void loop() override;
 

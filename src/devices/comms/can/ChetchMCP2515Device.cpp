@@ -165,7 +165,7 @@ namespace Chetch{
             msg->add(!presenceSent); //if true then resets presence in remote node (i.e. first presence message)
             msg->add(mcp2515.getStatus());
             
-            sendMessage(msg);
+            //sendMessage(msg);
             presenceSent = true;
             lastPresenceOn = millis();
         } else if(broadcastError){
@@ -363,13 +363,14 @@ namespace Chetch{
         message->add(errorCodeFlags);
     }
 
+
     void MCP2515Device::handleReceivedMessage(byte sourceNodeID, ArduinoMessage* message){
             
-        //The concern here is that a messageReceivedListener will often send out a message
-        //This would then potentially cause problems with correct forwarding of messages in the case of a master nod
-        //For now we use the flag 'handled' to determine whether a message listener is called or not.
+        //NOTE: if handled is true then the message listener if exists is not called
+        //In the case where a response is sent this must be the case as the response overwrites
+        //the received message which will be misleading if passed to the listener!
         bool handled = false;
-
+        
         //check the message type in case we need to handle messages directed to this device specifically
         ArduinoDevice::DeviceCommand command;
         ArduinoMessage* response;
@@ -382,12 +383,14 @@ namespace Chetch{
             
             if(targetNode == 0 || targetNode == getNodeID()){
                 if(message->sender == Board->getID()){
+
                     response = getMessageForBoard(ArduinoMessage::TYPE_STATUS_RESPONSE);
                     response->add(Board->getID());
                     response->add(millis());
                     response->add(Board->getDeviceCount());
                     response->add(Board->getFreeMemory());
                     sendMessage(response);
+                    handled = true;
                 } else {
                     device = Board->getDeviceByID(message->sender);
                     if(device == NULL){
@@ -395,7 +398,11 @@ namespace Chetch{
                     } else {
                         response = getMessageForDevice(device, ArduinoMessage::TYPE_STATUS_RESPONSE);
                         device->setStatusInfo(response);
-                        sendMessage(response);
+                        if(device->getID() == getID())this->sqCount++;
+                        if(sendMessage(response)){
+                            if(device->getID() == getID())this->srCount++;
+                        }
+                        handled = true;
                     }
                 }
             }
@@ -457,6 +464,7 @@ namespace Chetch{
                     if(device->executeCommand(command, message, response)){
                         sendMessage(response);
                     }
+                    handled = true;
                 }
             }
         }

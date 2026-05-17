@@ -225,6 +225,10 @@ namespace Chetch{
             byte responseID = 0;
             bool remoteInitialised = false;
             bool pinged = false;
+
+            //REMVOE! for debug only this
+            unsigned int sqCount = 0;
+            unsigned int srCount = 0;
             
         protected:
             byte nodeID = 0;

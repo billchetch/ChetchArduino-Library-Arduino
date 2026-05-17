@@ -13,8 +13,8 @@ namespace Chetch{
         //setReportInterval(1000);
     }
 
-    bool CANBusMonitor::begin(Stream* stream){
-        io.begin(stream);
+    bool CANBusMonitor::begin(Stream* stream, byte framePadding){
+        io.begin(stream, framePadding);
         return CANBusBase::begin(&io);
     }
 }
