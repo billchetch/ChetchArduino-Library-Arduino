@@ -25,8 +25,13 @@ namespace Chetch{
 
             void addFlowRateListener(FlowRateListener listener){ rateListener = listener; }
             double getFlowRate(FlowRateUnits units = FlowRateUnits::USE_DEFAULT);
+            
             void assignValues() override;
+            
             void setReportInfo(ArduinoMessage* message) override;
+
+            bool executeCommand(DeviceCommand command, ArduinoMessage* message, ArduinoMessage* response) override;
+
     }; //end class
 }//end namespace
 #endif

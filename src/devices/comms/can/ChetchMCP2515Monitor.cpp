@@ -12,7 +12,7 @@ namespace Chetch{
 
     { 
         setIndicateMode(NO_INDICATOR);
-        //setReportInterval(1000); //For reporting bus activity
+        setReportInterval(1000); //For reporting bus activity
     }
 
     void MCP2515Monitor::loop(){
@@ -45,7 +45,6 @@ namespace Chetch{
 
     void MCP2515Monitor::setReportInfo(ArduinoMessage* message){
         MCP2515Device::setReportInfo(message);
-        messageCount = 7;
         message->add(messageCount);
         messageCount = 0;
     }
@@ -148,9 +147,8 @@ namespace Chetch{
     }
 
     void MCP2515Monitor::onMessageSent(ArduinoMessage *message){
-        if(message->type == ArduinoMessage::MessageType::TYPE_STATUS_REQUEST && (message->sender + ArduinoBoard::START_DEVICE_IDS_AT - 1) == getID()){
-            this->sqCount++;
-        }
+
+        messageCount++;
 
         if(canForward){
             indicate(true);
@@ -170,8 +168,6 @@ namespace Chetch{
                 fsendmsg.add((byte)(message->sender + ArduinoBoard::START_DEVICE_IDS_AT - 1));
             }
             
-            messageCount++;
-
             if(!enqueueMessageToSend(MESSAGE_ID_FORWARD_SENT, MESSAGE_ID_FORWARD_SENT)){
                 //Serial.println("Error Send failed to enqueue!");
                 raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 10);
@@ -193,10 +189,6 @@ namespace Chetch{
         
         //update message count
         messageCount++;
-
-        if(message->type == ArduinoMessage::MessageType::TYPE_STATUS_RESPONSE &&  message->sender == getID()){
-            this->srCount++;
-        }
 
         if(canForward){
             indicate(true);

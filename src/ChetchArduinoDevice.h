@@ -44,6 +44,7 @@ namespace Chetch{
                 REQUEST,
                 SYNCHRONISE,
                 UPDATE,
+                CALIBRATE
             };
 
         public:

@@ -5,7 +5,8 @@ namespace Chetch{
 
     MCP2515Device::MCP2515Device(byte nodeID, int csPin, unsigned int presenceInterval) : 
                                     mcp2515(csPin, 4000000), 
-                                    amsg(ARDUINO_MESSAGE_SIZE)
+                                    imsg(ARDUINO_MESSAGE_SIZE),
+                                    omsg(ARDUINO_MESSAGE_SIZE)
     {
         this->nodeID = nodeID;
         this->presenceInterval = presenceInterval;
@@ -165,7 +166,7 @@ namespace Chetch{
             msg->add(!presenceSent); //if true then resets presence in remote node (i.e. first presence message)
             msg->add(mcp2515.getStatus());
             
-            //sendMessage(msg);
+            sendMessage(msg);
             presenceSent = true;
             lastPresenceOn = millis();
         } else if(broadcastError){
@@ -216,16 +217,16 @@ namespace Chetch{
     }
 
     ArduinoMessage* MCP2515Device::getMessageForHandler(byte handlerID, ArduinoMessage::MessageType messageType, byte tag){
-        amsg.clear();
-        amsg.type = messageType;
-        amsg.tag = tag;
+        omsg.clear();
+        omsg.type = messageType;
+        omsg.tag = tag;
         if(handlerID < ArduinoBoard::START_DEVICE_IDS_AT){
-            amsg.sender = 0;
+            omsg.sender = 0;
         } else {
-            amsg.sender = 1 + (handlerID - ArduinoBoard::START_DEVICE_IDS_AT);
+            omsg.sender = 1 + (handlerID - ArduinoBoard::START_DEVICE_IDS_AT);
         }
 
-        return &amsg;
+        return &omsg;
     }
 
     ArduinoMessage* MCP2515Device::getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType, byte tag){
@@ -266,7 +267,7 @@ namespace Chetch{
             case MCP2515::ERROR_OK:
             {
                 //Clear message and split out the ID
-                amsg.clear();
+                imsg.clear();
                 byte messageType = (canInFrame.can_id >> 24) & 0x1F; //first 5 bits
                 byte nodeIDAndSender = (canInFrame.can_id >> 16) & 0xFF; //whole byte split 4 | 4
                 byte tagAndCRC = (canInFrame.can_id >> 8) & 0xFF; //whole byte split 3 | 5
@@ -282,13 +283,13 @@ namespace Chetch{
                     return;
                 }
 
-                amsg.type = messageType;
-                amsg.tag = (tagAndCRC >> 5) & 0x07;
-                amsg.sender = (nodeIDAndSender & 0x0F);
-                if(amsg.sender == 0){
-                    amsg.sender = Board->getID();
+                imsg.type = messageType;
+                imsg.tag = (tagAndCRC >> 5) & 0x07;
+                imsg.sender = (nodeIDAndSender & 0x0F);
+                if(imsg.sender == 0){
+                    imsg.sender = Board->getID();
                 } else {
-                    amsg.sender = (amsg.sender - 1)+ ArduinoBoard::START_DEVICE_IDS_AT; //last 4 bits make the sender
+                    imsg.sender = (imsg.sender - 1)+ ArduinoBoard::START_DEVICE_IDS_AT; //last 4 bits make the sender
                 } 
                 
                 //Do some basic validationg
@@ -297,12 +298,12 @@ namespace Chetch{
                     return; //ERROR....
                 }
 
-                if(amsg.type < 1 || amsg.type > 31){
+                if(imsg.type < 1 || imsg.type > 31){
                     raiseError(INVALID_MESSAGE, edata | 2);
                     return; //ERROR....
                 }
 
-                if(amsg.tag > 7){
+                if(imsg.tag > 7){
                     raiseError(INVALID_MESSAGE, edata | 3);
                     return; //ERROR....
                 }
@@ -310,14 +311,14 @@ namespace Chetch{
                 //handle node dependency
                 NodeDependency* nd = getDependency(sourceNodeID);
                 if(nd != NULL){
-                    if(amsg.type == ArduinoMessage::MessageType::TYPE_PRESENCE){
-                        amsg.populate<unsigned long, unsigned int, bool, byte>(canInFrame.data);
-                        if(amsg.get<bool>(2)){ //reset node dependency (incase remote node restarted)
+                    if(imsg.type == ArduinoMessage::MessageType::TYPE_PRESENCE){
+                        imsg.populate<unsigned long, unsigned int, bool, byte>(canInFrame.data);
+                        if(imsg.get<bool>(2)){ //reset node dependency (incase remote node restarted)
                             nd->reset();
                             raiseEvent(EVENT_NODE_JOINED, sourceNodeID);
                         }
                         unsigned long ent = nd->getEstimatedNodeTime();
-                        if(!nd->setNodeTime(amsg.get<unsigned long>(0), amsg.get<unsigned int>(1))){
+                        if(!nd->setNodeTime(imsg.get<unsigned long>(0), imsg.get<unsigned int>(1))){
                             raiseError(SYNC_ERROR, (unsigned long)sourceNodeID << 24 | (0x00FFFFFF & ent));
                             return;
                         } else {
@@ -336,8 +337,8 @@ namespace Chetch{
                     indicate(true); 
                 }
 
-                handleReceivedMessage(sourceNodeID, &amsg);
-                onMessageReceived(sourceNodeID, &amsg);
+                handleReceivedMessage(sourceNodeID, &imsg);
+                onMessageReceived(sourceNodeID, &imsg);
                 break;
             }
 
@@ -523,7 +524,7 @@ namespace Chetch{
         canOutFrame.can_id = (unsigned long)messageType << 24 | (unsigned long)nodeIDAndSender << 16 | (unsigned long)tagAndCRC << 8 | (unsigned long)timestamp;
         canOutFrame.can_id |= CAN_EFF_FLAG;
         
-        if(sendValidator != NULL && !sendValidator(this, &amsg, canOutFrame.can_id, canOutFrame.data)){
+        if(sendValidator != NULL && !sendValidator(this, &omsg, canOutFrame.can_id, canOutFrame.data)){
             return false;
         }
 

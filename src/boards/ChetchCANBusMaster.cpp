@@ -3,12 +3,12 @@
 namespace Chetch{
     
     CANBusMaster::CANBusMaster(byte serialPin) : CANBusBase(&mcp, &spin),
-                                            mcp(MASTER_NODE_ID, NODE_PRESENCE_INTERVAL),
+                                            mcp(MASTER_NODE_ID),
                                             spin(serialPin, SERIAL_PIN_INTERVAL, SERIAL_PIN_BUFFER_SIZE) 
     {
 
-        //empty
-
+        addDevice(&mcp);
+        addDevice(&spin);
     }
 
     bool CANBusMaster::begin(Stream* stream){

@@ -44,7 +44,7 @@ namespace Chetch{
             bool statusRequested = false;
             
         public:
-            MCP2515Monitor(byte nodeID, int csPin = 6, unsigned int presenceInterval = MCP2515Device::DEFAULT_PRESENCE_INTERVAL);
+            MCP2515Monitor(byte nodeID, int csPin = DEFAULT_CS_PIN, unsigned int presenceInterval = 0);
 
             void loop() override;
 

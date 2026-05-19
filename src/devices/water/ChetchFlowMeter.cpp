@@ -8,7 +8,7 @@ namespace Chetch{
     }
 
     double FlowMeter::getFlowRate(FlowRateUnits units){
-        double mlps = calibrationCoeff* getHz();
+        double mlps = calibrationCoeff * getHz();
         if(units == FlowRateUnits::USE_DEFAULT){
             units = defaultUnits;
         }
@@ -42,5 +42,30 @@ namespace Chetch{
         Counter::setReportInfo(message);
 
         message->add(getFlowRate());
+    }
+
+    bool FlowMeter::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
+        bool handled = false;
+        double calibratedFlowRate;
+        double flowRate;
+        switch(command){
+            case CALIBRATE:
+                calibratedFlowRate = message->get<double>(1);
+                flowRate = getFlowRate();
+                if(flowRate > 0 && calibratedFlowRate > 0){
+                    calibrationCoeff = calibrationCoeff * (calibratedFlowRate / flowRate);
+                    response->add(calibrationCoeff);
+                    handled = true;
+                } else {
+                    handled = false;
+                }
+                break;
+
+            default:
+                handled = false;
+                break;
+        }
+                
+        return handled;
     }
 }

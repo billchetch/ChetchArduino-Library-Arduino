@@ -201,7 +201,8 @@ namespace Chetch{
             typedef bool (*SendValidator)(MCP2515Device*, ArduinoMessage*, unsigned long canID, byte* canData);
 
             MCP2515 mcp2515; //should be moved to private
-            ArduinoMessage amsg; //shuuld be moved to private
+            ArduinoMessage imsg; //shuuld be moved to private
+            ArduinoMessage omsg; //shuuld be moved to private
 
         private:
             bool initialised = false;
