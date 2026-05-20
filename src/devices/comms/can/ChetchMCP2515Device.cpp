@@ -384,7 +384,8 @@ namespace Chetch{
             
             if(targetNode == 0 || targetNode == getNodeID()){
                 if(message->sender == Board->getID()){
-
+                    //NOTE: we respond to the board based request here as using the defulat board
+                    //setStatusInfo message populator may not work as its desigened to reply to direct messaging
                     response = getMessageForBoard(ArduinoMessage::TYPE_STATUS_RESPONSE);
                     response->add(Board->getID());
                     response->add(millis());
