@@ -39,6 +39,9 @@ namespace Chetch{
             
         private:
             LiquidCrystal_I2C lcd;
+            unsigned long backlightOn = 0;
+            bool backlit = false;
+            int backlightOnFor = 0;
 
         public:
             LCDI2C(byte cols, byte rows, RefreshRate refreshRate = REFRESH_50Hz);
@@ -46,9 +49,11 @@ namespace Chetch{
             void initialiseDisplay() override;
             bool isDisplayConnected() override;
 
+            void backlight(bool on, int onFor = 0);
+
             //bool begin() override;
-            //void loop() override;
-            //bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
+            void loop() override;
+            bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;
 
             void clearDisplay() override;
     };

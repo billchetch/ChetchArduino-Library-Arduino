@@ -131,6 +131,14 @@ namespace Chetch{
         addDevice(&pressurePump);
     }
 
+    bool Watermaker::begin(MessageIO* io){
+        bool retVal = CANBusNode::begin(io);
+        if(retVal){
+            display.backlight(true, 5000);
+        }
+        return retVal;
+    }
+
     bool Watermaker::isRunning(){
         return feederPump.isOn();
     }
@@ -152,6 +160,8 @@ namespace Chetch{
         currentSession = &sessions[currentMode - OperationalMode::MAKE_WATER];
 
         updateDisplay(DisplayMode::CHANGE_OPERATIONAL_MODE);
+
+        display.backlight(true, 5000);
     }
 
     void Watermaker::start(){
@@ -197,6 +207,7 @@ namespace Chetch{
         currentSession->startedOn = millis();
         currentSession->count++;
 
+        display.backlight(true, -1);
         updateDisplay(DisplayMode::STARTED);
 
         setReportInterval(REPORT_INTERVAL);
@@ -212,6 +223,7 @@ namespace Chetch{
         currentSession->stoppedOn = millis();
 
         updateDisplay(DisplayMode::STOPPED);
+        display.backlight(true, 5000);
 
         setReportInterval(REPORT_INTERVAL*10);
     }
@@ -228,6 +240,7 @@ namespace Chetch{
         bool changed = ec != errorCode;
         errorCode = ec;
         if(hasError() && changed){
+            display.backlight(true, -1);
             updateDisplay(DisplayMode::ERROR);
 
             ArduinoMessage* msg = mcp.getMessageForBoard(ArduinoMessage::MessageType::TYPE_ERROR);

@@ -137,6 +137,8 @@ namespace Chetch{
         public:
             Watermaker(byte nodeID, byte serialPin);
 
+            bool begin(MessageIO* io = NULL) override;
+
             bool isRunning();
             bool hasError();
             void selectMode(OperationalMode operationalMode);

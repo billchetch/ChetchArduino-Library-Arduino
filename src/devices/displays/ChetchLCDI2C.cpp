@@ -22,7 +22,7 @@ namespace Chetch{
             delay(1);
         }
         lcd.init();
-        lcd.backlight();
+        backlight(false);
         if(begun){
             delay(1);
         }
@@ -37,6 +37,17 @@ namespace Chetch{
         return transmitSuccess && (Wire.getWireTimeoutFlag() == 0);
     }
 
+    void LCDI2C::backlight(bool on, int onFor){
+        if(on){
+            lcd.backlight();
+            backlightOn = millis();
+            backlightOnFor = onFor;
+        } else {
+            lcd.noBacklight();
+            backlightOnFor = -1;
+        }
+    }
+
     /*bool LCDI2C::begin(){
        
         //display.noBacklight();
@@ -44,21 +55,35 @@ namespace Chetch{
         return begun;
 	}*/
 
-    /*void LCDI2C::loop(){
+    void LCDI2C::loop(){
         DisplayDevice::loop();
 
+        if(backlightOnFor > 0 && millis() - backlightOn > backlightOnFor){
+            backlight(false);
+        }
         //Do stuff here
-    }*/
+    }
 
-    /*bool LCDI2C::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
+    bool LCDI2C::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
         bool handled = DisplayDevice::executeCommand(command, message, response);
         
         if(!handled)
         {
-            
+            switch(command){
+                case ArduinoDevice::DeviceCommand::ON:
+                    backlight(true, -1);
+                    handled = true;
+                    break;
+
+                case ArduinoDevice::DeviceCommand::OFF:
+                    backlight(false);
+                    handled = true;
+                    break;
+
+            }
         }
         return handled;
-    }*/
+    }
 
 
 
