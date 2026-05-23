@@ -15,6 +15,18 @@ namespace Chetch{
         setReportInterval(1000); //For reporting bus activity
     }
 
+    MCP2515Monitor::~MCP2515Monitor(){
+        if(firstNodeData != NULL){
+            NodeData* nd = firstNodeData;
+            NodeData* nextNode = NULL;
+            do{
+                nextNode = nd->nextNode;
+                delete nd;
+            } while(nextNode != NULL);
+            delete firstNodeData;
+        }
+    }
+
     void MCP2515Monitor::loop(){
         if(statusRequested){
             if(millis() - lastStatusRequest > FORWARD_TIMEOUT){
@@ -34,10 +46,6 @@ namespace Chetch{
         MCP2515Device::loop();
     }
 
-    MCP2515Monitor::~MCP2515Monitor(){
-
-    }
-
     void MCP2515Monitor::setStatusInfo(ArduinoMessage* message){
         ArduinoDevice::setStatusInfo(message);
         message->add(getNodeID());
@@ -54,6 +62,7 @@ namespace Chetch{
 
         if(firstNodeData == NULL){
             message->add((byte)0);
+            message->add(7);
         } else {
             if(node2report == NULL)node2report = firstNodeData;
             
@@ -63,7 +72,6 @@ namespace Chetch{
             message->add(node2report->statusResponseCount);
             message->add(node2report->messageCount);
             
-
             node2report = node2report->nextNode;
         }
 
@@ -246,17 +254,18 @@ namespace Chetch{
         }
         
         //Here we know firstNodeData is not NULL
-        NodeData* nd = firstNodeData;
+        NodeData* nd = NULL;
         do{
+            nd = nd == NULL ? firstNodeData : nd->nextNode;
             if(nd->nodeID == nodeID)return nd;
-            nd = nd->nextNode;
-        }while(nd != NULL);
+        }while(nd->nextNode != NULL);
 
         if(createIfNotFound){
             nd->nextNode = new NodeData(nodeID);
             nodeCount++;
+            return nd;
+        } else {
+            return NULL;
         }
-
-        return NULL;
     }
 }
