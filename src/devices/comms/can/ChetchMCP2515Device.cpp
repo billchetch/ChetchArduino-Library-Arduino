@@ -70,7 +70,7 @@ namespace Chetch{
             indicate(false);
         }
 
-        presenceSent = false;
+        presenceSentCount = 0;
 
         return ArduinoDevice::begin();;
 	}
@@ -159,15 +159,13 @@ namespace Chetch{
         ArduinoMessage* msg;
         
         //We ensure that the first message sent is a presence message and this should be as soon as the device has begun
-        if(presenceInterval > 0 && (!presenceSent || (ms - lastPresenceOn) > presenceInterval)){
+        if(presenceInterval > 0 && (presenceSentCount == 0 || (ms - lastPresenceOn) > presenceInterval)){
             msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_PRESENCE, 1);
             msg->add(ms);
             msg->add((unsigned int)(ms - lastPresenceOn));
-            msg->add(!presenceSent); //if true then resets presence in remote node (i.e. first presence message)
-            msg->add(mcp2515.getStatus());
-            
+            msg->add(presenceSentCount++); //if 0 then resets presence in remote node (i.e. first presence message)
+            if(presenceSentCount == 0)presenceSentCount = 1; //to avoid firing like first joined
             sendMessage(msg);
-            presenceSent = true;
             lastPresenceOn = millis();
         } else if(broadcastError){
             //send error message
@@ -312,10 +310,9 @@ namespace Chetch{
                 NodeDependency* nd = getDependency(sourceNodeID);
                 if(nd != NULL){
                     if(imsg.type == ArduinoMessage::MessageType::TYPE_PRESENCE){
-                        imsg.populate<unsigned long, unsigned int, bool, byte>(canInFrame.data);
-                        if(imsg.get<bool>(2)){ //reset node dependency (incase remote node restarted)
+                        imsg.populate<unsigned long, unsigned int, unsigned int>(canInFrame.data);
+                        if(imsg.get<unsigned int>(2) == 0){ //reset node dependency (incase remote node restarted NOTE)
                             nd->reset();
-                            raiseEvent(EVENT_NODE_JOINED, sourceNodeID);
                         }
                         unsigned long ent = nd->getEstimatedNodeTime();
                         if(!nd->setNodeTime(imsg.get<unsigned long>(0), imsg.get<unsigned int>(1))){
@@ -363,7 +360,6 @@ namespace Chetch{
         message->add(mcp2515.errorCountRX());
         message->add(errorCodeFlags);
     }
-
 
     void MCP2515Device::handleReceivedMessage(byte sourceNodeID, ArduinoMessage* message){
             

@@ -95,8 +95,6 @@ namespace Chetch{
             static const byte TIMESTAMP_RESOLUTION = 4; //Shift right by this many bits... lower number makes finer resolution
             static const unsigned int INDICATOR_INTERVAL = 50;
 
-            static const byte EVENT_NODE_JOINED = 1;
-
             enum MCP2515ErrorCode : byte{
                 NO_ERROR = 0,
                 UNKNOWN_RECEIVE_ERROR, //RX error
@@ -221,7 +219,7 @@ namespace Chetch{
         public: //SHOULD BE PRIVATE/PROTECTED
             unsigned int presenceInterval = 0; //how often to broadcast a PRESENCE message
             unsigned long lastPresenceOn = 0;
-            bool presenceSent = false; //to indicate first presence (successfully) sent
+            unsigned int presenceSentCount = 0; //to indicate first presence (successfully) sent note this will be zero on rollover
 
             byte responseID = 0;
             bool remoteInitialised = false;

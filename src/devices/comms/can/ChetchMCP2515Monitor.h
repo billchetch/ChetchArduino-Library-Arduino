@@ -28,6 +28,35 @@ namespace Chetch{
 
             static const unsigned int FORWARD_TIMEOUT = 20000; //compared to last status request
             static const byte EVENT_FORWARDING_SET = 16;
+
+            class NodeData{
+                public:
+                    byte nodeID = 0;
+                    byte issues = 0;
+                    
+                    unsigned int presenceCount = 0; //on rollover this goes straight to 1
+                    unsigned int statusResponseCount = 0;
+                    unsigned int messageCount = 0;
+                    NodeData* nextNode = NULL;
+
+                public:
+                    NodeData(byte nodeID){
+                        this->nodeID = nodeID;
+                    }
+
+                    void update(ArduinoMessage* message){
+                        switch(message->type){
+                            case ArduinoMessage::TYPE_PRESENCE:
+                                presenceCount++;
+                                break;
+
+                            case ArduinoMessage::TYPE_STATUS_RESPONSE:
+                                statusResponseCount++;
+                                break;
+                        }
+                        messageCount++;
+                    }
+            };
             
             typedef void (*ForwardingListener)(MCP2515Monitor*, ArduinoMessage*); 
 
@@ -42,14 +71,20 @@ namespace Chetch{
 
             unsigned long lastStatusRequest = 0;
             bool statusRequested = false;
+
+            NodeData* firstNodeData = NULL;
+            byte nodeCount = 0;
+            NodeData* node2report = NULL;
             
         public:
             MCP2515Monitor(byte nodeID, int csPin = DEFAULT_CS_PIN, unsigned int presenceInterval = 0);
+            ~MCP2515Monitor();
 
             void loop() override;
 
             bool canForwardMessages(){ return canForward; }
             void addForwardingListener(ForwardingListener listener){ forwardingListener = listener; }
+            NodeData* getNodeData(byte nodeID, bool createIfNotFound);
             
             void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response) override;
             void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;

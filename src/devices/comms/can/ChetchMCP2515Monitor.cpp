@@ -34,6 +34,10 @@ namespace Chetch{
         MCP2515Device::loop();
     }
 
+    MCP2515Monitor::~MCP2515Monitor(){
+
+    }
+
     void MCP2515Monitor::setStatusInfo(ArduinoMessage* message){
         ArduinoDevice::setStatusInfo(message);
         message->add(getNodeID());
@@ -46,6 +50,23 @@ namespace Chetch{
     void MCP2515Monitor::setReportInfo(ArduinoMessage* message){
         MCP2515Device::setReportInfo(message);
         message->add(messageCount);
+        message->add(nodeCount);
+
+        if(firstNodeData == NULL){
+            message->add((byte)0);
+        } else {
+            if(node2report == NULL)node2report = firstNodeData;
+            
+            message->add(node2report->nodeID);
+            message->add(node2report->issues);
+            message->add(node2report->presenceCount);
+            message->add(node2report->statusResponseCount);
+            message->add(node2report->messageCount);
+            
+
+            node2report = node2report->nextNode;
+        }
+
         messageCount = 0;
     }
 
@@ -186,7 +207,9 @@ namespace Chetch{
         So we can assume the message is valid
         */
 
-        
+        NodeData* nd = getNodeData(sourceNodeID, true);
+        nd->update(message);
+
         //update message count
         messageCount++;
 
@@ -211,5 +234,29 @@ namespace Chetch{
                 raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 11);
             }
         }
+    }
+
+    MCP2515Monitor::NodeData* MCP2515Monitor::getNodeData(byte nodeID, boolean createIfNotFound){
+        if(firstNodeData == NULL){
+            if(createIfNotFound){
+                firstNodeData = new NodeData(nodeID);
+                nodeCount++;
+            }
+            return firstNodeData;
+        }
+        
+        //Here we know firstNodeData is not NULL
+        NodeData* nd = firstNodeData;
+        do{
+            if(nd->nodeID == nodeID)return nd;
+            nd = nd->nextNode;
+        }while(nd != NULL);
+
+        if(createIfNotFound){
+            nd->nextNode = new NodeData(nodeID);
+            nodeCount++;
+        }
+
+        return NULL;
     }
 }
