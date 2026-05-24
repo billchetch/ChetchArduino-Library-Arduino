@@ -2,6 +2,7 @@
 #define CHETCH_MCP2515_MONITOR_H
 
 #include <Arduino.h>
+#include <limits.h>
 
 #include <ChetchArduinoBoard.h>
 #include <ChetchArduinoDevice.h>
@@ -45,9 +46,20 @@ namespace Chetch{
                     }
 
                     void update(ArduinoMessage* message){
+                        unsigned int n;
+                        bool expectedValue = true;
                         switch(message->type){
                             case ArduinoMessage::TYPE_PRESENCE:
-                                presenceCount++;
+                                n = message->get<unsigned int>(2);    
+                                if(presenceCount != 0){
+                                    if(presenceCount == UINT_MAX){
+                                        expectedValue = n == 1;
+                                    } else {
+                                        expectedValue = n == (presenceCount + 1);
+                                    }
+                                    if(!expectedValue)issues = issues | 0x01;
+                                } 
+                                presenceCount = n;
                                 break;
 
                             case ArduinoMessage::TYPE_STATUS_RESPONSE:

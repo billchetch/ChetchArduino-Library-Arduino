@@ -439,6 +439,10 @@ namespace Chetch{
                 MCP2515ErrorCode ecode = message->get<MCP2515ErrorCode>(1);
                 raiseError(ecode, message->get<unsigned long>(2));
             }
+        } else if(imsg.type == ArduinoMessage::MessageType::TYPE_PRESENCE){
+            if(imsg.getArgumentCount() == 0){
+                imsg.populate<unsigned long, unsigned int, unsigned int>(canInFrame.data);
+            }
         } else if(message->type ==  ArduinoMessage::TYPE_COMMAND && canInFrame.can_dlc > 1){
             if(canInFrame.can_dlc == 2){
                 message->populate<byte, byte>(canInFrame.data);
