@@ -376,7 +376,7 @@ namespace Chetch{
         
         if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST){
             message->populate<byte>(canInFrame.data);
-            targetNode = message->get<byte>(0);
+            targetNode = message->getLast<byte>();
             
             if(targetNode == 0 || targetNode == getNodeID()){
                 if(message->sender == Board->getID()){
@@ -406,7 +406,7 @@ namespace Chetch{
             }
         } else if(message->type == ArduinoMessage::TYPE_INITIALISE){
             message->populate<byte>(canInFrame.data);
-            targetNode = message->get<byte>(0);
+            targetNode = message->getLast<byte>();
             if(targetNode == 0 || targetNode == getNodeID()){
                 indicate(true);    
                 resetErrors();
@@ -414,7 +414,7 @@ namespace Chetch{
             }
         } else if(message->type == ArduinoMessage::TYPE_RESET){
             message->populate<byte>(canInFrame.data);
-            targetNode = message->get<byte>(0);
+            targetNode = message->getLast<byte>();
             if(targetNode == 0 || targetNode == getNodeID()){
                 indicate(true);
                 resetErrors();
@@ -425,7 +425,7 @@ namespace Chetch{
             }
         } else if(message->type ==  ArduinoMessage::TYPE_PING){
             message->populate<byte>(canInFrame.data);
-            targetNode = message->get<byte>(0);
+            targetNode = message->getLast<byte>();
             if(targetNode == 0 || targetNode == getNodeID()){
                 indicate(true);    
                 pinged = true;
@@ -433,7 +433,7 @@ namespace Chetch{
             } 
         } else if(message->type == ArduinoMessage::TYPE_ERROR_TEST){
             message->populate<byte, byte, unsigned long>(canInFrame.data);
-            targetNode = message->get<byte>(0);
+            targetNode = message->getLast<byte>();
             if(targetNode == 0 || targetNode == getNodeID()){
                 indicate(true);
                 MCP2515ErrorCode ecode = message->get<MCP2515ErrorCode>(1);
@@ -449,13 +449,13 @@ namespace Chetch{
             } else if(canInFrame.can_dlc == 3){
                 message->populate<byte, byte, byte>(canInFrame.data);
             } else if(canInFrame.can_dlc == 4){
-                message->populate<byte, int, byte>(canInFrame.data);
+                message->populate<byte, byte,int>(canInFrame.data);
             } else {
                 raiseError(UNKNOWN_RECEIVE_ERROR, 2);
                 return;
             }
-            command = message->get<ArduinoDevice::DeviceCommand>(0);
             targetNode = message->getLast<byte>();
+            command = message->get<ArduinoDevice::DeviceCommand>(0);
             if(targetNode == getNodeID()){
                 device = Board->getDeviceByID(message->sender);
                 if(device == NULL){

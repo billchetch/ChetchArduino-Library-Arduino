@@ -62,7 +62,6 @@ namespace Chetch{
 
         if(firstNodeData == NULL){
             message->add((byte)0);
-            message->add(7);
         } else {
             if(node2report == NULL)node2report = firstNodeData;
             
@@ -70,7 +69,9 @@ namespace Chetch{
             message->add(node2report->issues);
             message->add(node2report->presenceCount);
             message->add(node2report->statusResponseCount);
-            message->add(node2report->messageCount);
+            message->add(node2report->statusRequestCount);
+            message->add(node2report->messageReceivedCount);
+            message->add(node2report->messageSentCount);
             
             node2report = node2report->nextNode;
         }
@@ -152,9 +153,6 @@ namespace Chetch{
                 byteTotal = 0;
             } else {    
                 msg = getMessageForHandler(message->sender, ArduinoMessage::TYPE_COMMAND, 2);
-                msg->add((byte)command);
-                startAt = 1;
-                byteTotal = 1;
             }
 
             //copy message arguments across
@@ -176,6 +174,12 @@ namespace Chetch{
     }
 
     void MCP2515Monitor::onMessageSent(ArduinoMessage *message){
+
+        if(message->getArgumentCount() > 0){
+            byte targetNodeID = message->getLast<byte>();
+            NodeData* nd = getNodeData(targetNodeID, true);
+            if(nd != NULL)nd->update(message);
+        }
 
         messageCount++;
 
@@ -216,7 +220,7 @@ namespace Chetch{
         */
 
         NodeData* nd = getNodeData(sourceNodeID, true);
-        nd->update(message);
+        if(nd != NULL)nd->update(message);
 
         //update message count
         messageCount++;
@@ -245,6 +249,10 @@ namespace Chetch{
     }
 
     MCP2515Monitor::NodeData* MCP2515Monitor::getNodeData(byte nodeID, boolean createIfNotFound){
+        if(nodeID < MCP2515Device::MIN_NODE_ID || nodeID > MCP2515Device::MAX_NODE_ID){
+            return NULL;
+        }
+
         if(firstNodeData == NULL){
             if(createIfNotFound){
                 firstNodeData = new NodeData(nodeID);

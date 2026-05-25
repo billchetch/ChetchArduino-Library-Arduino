@@ -37,7 +37,9 @@ namespace Chetch{
                     
                     unsigned int presenceCount = 0; //on rollover this goes straight to 1
                     unsigned int statusResponseCount = 0;
-                    unsigned int messageCount = 0;
+                    unsigned int statusRequestCount = 0;
+                    unsigned int messageReceivedCount = 0;
+                    unsigned int messageSentCount = 0;
                     NodeData* nextNode = NULL;
 
                 public:
@@ -51,7 +53,7 @@ namespace Chetch{
                         switch(message->type){
                             case ArduinoMessage::TYPE_PRESENCE:
                                 n = message->get<unsigned int>(2);    
-                                if(presenceCount != 0){
+                                if(presenceCount != 0 && n != 0){
                                     if(presenceCount == UINT_MAX){
                                         expectedValue = n == 1;
                                     } else {
@@ -60,13 +62,25 @@ namespace Chetch{
                                     if(!expectedValue)issues = issues | 0x01;
                                 } 
                                 presenceCount = n;
+                                messageReceivedCount++;
                                 break;
 
                             case ArduinoMessage::TYPE_STATUS_RESPONSE:
                                 statusResponseCount++;
+                                if(statusResponseCount != statusRequestCount){
+                                    issues = issues | 0x02;
+                                }
+                                messageReceivedCount++;
+                                break;
+
+                            case ArduinoMessage::TYPE_STATUS_REQUEST:
+                                if(statusResponseCount != statusRequestCount){
+                                    issues = issues | 0x04;
+                                }
+                                statusRequestCount++;
+                                messageSentCount++;
                                 break;
                         }
-                        messageCount++;
                     }
             };
             
