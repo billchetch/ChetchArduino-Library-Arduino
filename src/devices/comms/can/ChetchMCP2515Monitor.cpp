@@ -66,7 +66,8 @@ namespace Chetch{
             if(node2report == NULL)node2report = firstNodeData;
             
             message->add(node2report->nodeID);
-            message->add(node2report->issues);
+            message->add(node2report->status);
+            message->add(node2report->events);
             message->add(node2report->presenceCount);
             message->add(node2report->statusResponseCount);
             message->add(node2report->statusRequestCount);
@@ -178,7 +179,7 @@ namespace Chetch{
         if(message->getArgumentCount() > 0){
             byte targetNodeID = message->getLast<byte>();
             NodeData* nd = getNodeData(targetNodeID, true);
-            if(nd != NULL)nd->update(message);
+            if(nd != NULL)nd->sent(message);
         }
 
         messageCount++;
@@ -220,8 +221,10 @@ namespace Chetch{
         */
 
         NodeData* nd = getNodeData(sourceNodeID, true);
-        if(nd != NULL)nd->update(message);
-
+        if(nd != NULL){
+            nd->received(message);
+        }
+        
         //update message count
         messageCount++;
 
@@ -271,7 +274,7 @@ namespace Chetch{
         if(createIfNotFound){
             nd->nextNode = new NodeData(nodeID);
             nodeCount++;
-            return nd;
+            return nd->nextNode;
         } else {
             return NULL;
         }

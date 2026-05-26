@@ -409,7 +409,6 @@ namespace Chetch{
             targetNode = message->getLast<byte>();
             if(targetNode == 0 || targetNode == getNodeID()){
                 indicate(true);    
-                resetErrors();
                 remoteInitialised = true;
             }
         } else if(message->type == ArduinoMessage::TYPE_RESET){
@@ -431,27 +430,36 @@ namespace Chetch{
                 pinged = true;
                 handled = true;
             } 
-        } else if(message->type == ArduinoMessage::TYPE_ERROR_TEST){
-            message->populate<byte, byte, unsigned long>(canInFrame.data);
+        } else if(message->type == ArduinoMessage::TYPE_ERROR_TEST && canInFrame.can_dlc > 1){
+            unsigned long edata = 0;
+            if(canInFrame.can_dlc == 2){ //error code + node
+                message->populate<byte, byte>(canInFrame.data);
+            } else if(canInFrame.can_dlc == 6){ //erro code + error data + node
+                message->populate<byte, unsigned long, byte>(canInFrame.data);
+                edata = message->get<unsigned long>(1);
+            } else {
+                raiseError(INVALID_MESSAGE, 2);
+                return;
+            }
             targetNode = message->getLast<byte>();
             if(targetNode == 0 || targetNode == getNodeID()){
                 indicate(true);
-                MCP2515ErrorCode ecode = message->get<MCP2515ErrorCode>(1);
-                raiseError(ecode, message->get<unsigned long>(2));
+                MCP2515ErrorCode ecode = message->get<MCP2515ErrorCode>(0);
+                raiseError(ecode, edata);
             }
         } else if(imsg.type == ArduinoMessage::MessageType::TYPE_PRESENCE){
             if(imsg.getArgumentCount() == 0){
                 imsg.populate<unsigned long, unsigned int, unsigned int>(canInFrame.data);
             }
         } else if(message->type ==  ArduinoMessage::TYPE_COMMAND && canInFrame.can_dlc > 1){
-            if(canInFrame.can_dlc == 2){
+            if(canInFrame.can_dlc == 2){ //command + node
                 message->populate<byte, byte>(canInFrame.data);
-            } else if(canInFrame.can_dlc == 3){
+            } else if(canInFrame.can_dlc == 3){ //command + byte arg + node
                 message->populate<byte, byte, byte>(canInFrame.data);
-            } else if(canInFrame.can_dlc == 4){
-                message->populate<byte, byte,int>(canInFrame.data);
+            } else if(canInFrame.can_dlc == 4){ //command + int arg + node
+                message->populate<byte, int, byte>(canInFrame.data);
             } else {
-                raiseError(UNKNOWN_RECEIVE_ERROR, 2);
+                raiseError(INVALID_MESSAGE, 3);
                 return;
             }
             targetNode = message->getLast<byte>();

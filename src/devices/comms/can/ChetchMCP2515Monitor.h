@@ -33,7 +33,8 @@ namespace Chetch{
             class NodeData{
                 public:
                     byte nodeID = 0;
-                    byte issues = 0;
+                    byte status = 0;
+                    byte events = 0;
                     
                     unsigned int presenceCount = 0; //on rollover this goes straight to 1
                     unsigned int statusResponseCount = 0;
@@ -42,45 +43,71 @@ namespace Chetch{
                     unsigned int messageSentCount = 0;
                     NodeData* nextNode = NULL;
 
+                private:
+                    void setStatusBit(byte bitPosition, bool val){
+                        byte mask = 1 << bitPosition - 1;
+                        if(val){
+                            status = status | mask;
+                            events = events | mask;
+                        } else {
+                            status = status & ~mask;
+                        }
+                    }
+
+                    void reset(){
+                        status = 0;
+                        presenceCount = 0; //on rollover this goes straight to 1
+                        statusResponseCount = 0;
+                        statusRequestCount = 0;
+                        messageReceivedCount = 0;
+                        messageSentCount = 0;
+                        events = 1 << 7;
+                    }
+
                 public:
                     NodeData(byte nodeID){
                         this->nodeID = nodeID;
                     }
 
-                    void update(ArduinoMessage* message){
+                    void received(ArduinoMessage* message){
                         unsigned int n;
                         bool expectedValue = true;
                         switch(message->type){
+                            case ArduinoMessage::TYPE_ERROR:
+                                setStatusBit(1, true);
+                                break;
+
                             case ArduinoMessage::TYPE_PRESENCE:
-                                n = message->get<unsigned int>(2);    
-                                if(presenceCount != 0 && n != 0){
+                                n = message->get<unsigned int>(2);
+                                if(n == 0){ //node has joined bus
+                                    reset();
+                                } else if(presenceCount != 0){
                                     if(presenceCount == UINT_MAX){
                                         expectedValue = n == 1;
                                     } else {
                                         expectedValue = n == (presenceCount + 1);
                                     }
-                                    if(!expectedValue)issues = issues | 0x01;
+                                    setStatusBit(2, !expectedValue);
                                 } 
                                 presenceCount = n;
-                                messageReceivedCount++;
                                 break;
 
                             case ArduinoMessage::TYPE_STATUS_RESPONSE:
                                 statusResponseCount++;
-                                if(statusResponseCount != statusRequestCount){
-                                    issues = issues | 0x02;
-                                }
-                                messageReceivedCount++;
-                                break;
-
-                            case ArduinoMessage::TYPE_STATUS_REQUEST:
-                                if(statusResponseCount != statusRequestCount){
-                                    issues = issues | 0x04;
-                                }
-                                statusRequestCount++;
-                                messageSentCount++;
+                                setStatusBit(3, statusResponseCount != statusRequestCount);
                                 break;
                         }
+                        messageReceivedCount++;
+                    }
+
+                    void sent(ArduinoMessage* message){
+                        switch(message->type){
+                            case ArduinoMessage::TYPE_STATUS_REQUEST:
+                                setStatusBit(4, statusResponseCount != statusRequestCount);
+                                statusRequestCount++;
+                                break;
+                        }
+                        messageSentCount++;
                     }
             };
             
