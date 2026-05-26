@@ -79,15 +79,17 @@ namespace Chetch{
 
                             case ArduinoMessage::TYPE_PRESENCE:
                                 n = message->get<unsigned int>(2);
-                                if(n == 0){ //node has joined bus
-                                    reset();
-                                } else if(presenceCount != 0){
-                                    if(presenceCount == UINT_MAX){
-                                        expectedValue = n == 1;
+                                if(presenceCount != 0){
+                                    if(n == 0){ //node has re-joined bus
+                                        reset();
                                     } else {
-                                        expectedValue = n == (presenceCount + 1);
+                                        if(presenceCount == UINT_MAX){
+                                            expectedValue = n == 1;
+                                        } else {
+                                            expectedValue = n == (presenceCount + 1);
+                                        }
+                                        setStatusBit(2, !expectedValue);
                                     }
-                                    setStatusBit(2, !expectedValue);
                                 } 
                                 presenceCount = n;
                                 break;
