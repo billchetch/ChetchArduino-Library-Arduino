@@ -13,6 +13,8 @@ namespace Chetch{
 
     bool CANBusMonitor::begin(Stream* stream, byte framePadding){
         io.begin(stream, framePadding);
+
+        mcp.setOutboundMessage(io.getOutboundMessage());
         return CANBusBase::begin(&io);
     }
 }

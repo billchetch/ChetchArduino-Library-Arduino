@@ -35,6 +35,8 @@ namespace Chetch{
             Watermaker* wm = (Watermaker*)dd->Board;
             return wm->renderDisplay((DisplayMode)updateTag, displayInitialised);
         });
+
+
         
         selector.addSelectListener([](SelectorSwitch* ss, byte selectedPin){
             //Capture this
@@ -265,7 +267,6 @@ namespace Chetch{
             display.print(">>>> ERROR: ");
             display.print(errorCode);
             display.print(" <<<<");
-
         } else if(displayMode == DisplayMode::RUNNING && !displayInitialised) {
             //this is called at regular intervals while running
             display.setCursor(0, 3);
@@ -275,6 +276,11 @@ namespace Chetch{
                 display.print(duration);
                 display.print("s   ");
             }
+        } else if(displayMode == DisplayMode::WELCOME){
+            display.clearDisplay();
+            display.setCursor(0, 0);
+            display.print("Welcome to Bulan Baru");
+            
         } else {
             display.clearDisplay();
 

@@ -6,6 +6,8 @@
 namespace Chetch{
     class FlowMeter : public Counter {
         public:
+            static const byte MESSAGE_ID_FLOW_RATE = 2;
+            
             enum FlowRateUnits : byte{
                 USE_DEFAULT = 0,
                 ML_PER_SECOND = 1, //default reading due to assumed sensitivity/range issues
@@ -27,6 +29,7 @@ namespace Chetch{
             double getFlowRate(FlowRateUnits units = FlowRateUnits::USE_DEFAULT);
             
             void assignValues() override;
+            void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
             
             void setReportInfo(ArduinoMessage* message) override;
 

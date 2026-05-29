@@ -52,7 +52,7 @@ namespace Chetch{
             static const byte EVENT_REPORT_READY = 1;
 
             typedef bool (*EventListener)(ArduinoDevice*, byte, byte); //event ID and event tag
-
+        
         public:
             static ArduinoBoard* Board; 
             

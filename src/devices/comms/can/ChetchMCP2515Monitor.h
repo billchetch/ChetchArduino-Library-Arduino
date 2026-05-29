@@ -37,8 +37,10 @@ namespace Chetch{
                     byte events = 0;
                     
                     unsigned int presenceCount = 0; //on rollover this goes straight to 1
-                    unsigned int statusResponseCount = 0;
                     unsigned int statusRequestCount = 0;
+                    unsigned int statusResponseCount = 0;
+                    unsigned int pingSentCount = 0;
+                    unsigned int pingResponseCount = 0;
                     unsigned int messageReceivedCount = 0;
                     unsigned int messageSentCount = 0;
                     NodeData* nextNode = NULL;
@@ -54,17 +56,20 @@ namespace Chetch{
                         }
                     }
 
-                    void reset(){
+                public:
+                    void clear(){
                         status = 0;
                         presenceCount = 0; //on rollover this goes straight to 1
-                        statusResponseCount = 0;
                         statusRequestCount = 0;
+                        statusResponseCount = 0;
+                        pingSentCount = 0;
+                        pingResponseCount = 0;
                         messageReceivedCount = 0;
                         messageSentCount = 0;
-                        events = 1 << 7;
+                        events = 0;
                     }
 
-                public:
+                
                     NodeData(byte nodeID){
                         this->nodeID = nodeID;
                     }
@@ -81,7 +86,8 @@ namespace Chetch{
                                 n = message->get<unsigned int>(2);
                                 if(presenceCount != 0){
                                     if(n == 0){ //node has re-joined bus
-                                        reset();
+                                        clear();
+                                        events = 1 << 7; //record that it has been cleared
                                     } else {
                                         if(presenceCount == UINT_MAX){
                                             expectedValue = n == 1;
@@ -98,6 +104,11 @@ namespace Chetch{
                                 statusResponseCount++;
                                 setStatusBit(3, statusResponseCount != statusRequestCount);
                                 break;
+
+                            case ArduinoMessage::TYPE_PING_RESPONSE:
+                                pingResponseCount++;
+                                setStatusBit(5, pingResponseCount != pingSentCount);
+                                break;
                         }
                         messageReceivedCount++;
                     }
@@ -108,6 +119,11 @@ namespace Chetch{
                                 setStatusBit(4, statusResponseCount != statusRequestCount);
                                 statusRequestCount++;
                                 break;
+
+                             case ArduinoMessage::TYPE_PING:
+                                setStatusBit(5, pingResponseCount != pingSentCount);
+                                pingSentCount++;
+                                break;
                         }
                         messageSentCount++;
                     }
@@ -116,8 +132,10 @@ namespace Chetch{
             typedef void (*ForwardingListener)(MCP2515Monitor*, ArduinoMessage*); 
 
         private:
-            ArduinoMessage frecvmsg;
-            ArduinoMessage fsendmsg;
+            //ArduinoMessage frecvmsg;
+            //ArduinoMessage fsendmsg;
+
+            ArduinoMessage* outboundMessage = NULL;
 
             unsigned int messageCount = 0;
 
@@ -137,12 +155,13 @@ namespace Chetch{
 
             void loop() override;
 
-            bool canForwardMessages(){ return canForward; }
+            void setOutboundMessage(ArduinoMessage* message){ outboundMessage = message; }
+            bool canForwardMessages(){ return (outboundMessage != NULL && canForward); }
             void addForwardingListener(ForwardingListener listener){ forwardingListener = listener; }
             NodeData* getNodeData(byte nodeID, bool createIfNotFound);
             
             void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response) override;
-            void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
+            //void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
 
             void setReportInfo(ArduinoMessage* message) override;
             void setStatusInfo(ArduinoMessage* response) override;

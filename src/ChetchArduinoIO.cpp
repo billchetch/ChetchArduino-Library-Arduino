@@ -115,16 +115,19 @@ namespace Chetch{
         return false;
     }
 
-    void ArduinoIO::sendMessage(){
+    bool ArduinoIO::sendMessage(){
+        bool retVal = false;
         if(stream != NULL){
             //TODO:??? maybe handle case of if oubound message is in an error state
             if(outFrame.setPayload(outboundMessage.getBytes(), outboundMessage.getByteCount())){
                 outFrame.write(stream, framePadding, framePadding); //write bytes to stream
                 outFrame.reset();
+                retVal = true;
             }
         }
         //ready for reuse
         outboundMessage.clear();
+        return retVal;
     }
 
     void ArduinoIO::setErrorInfo(ArduinoMessage* message, byte errorCode, byte errorSubCode){

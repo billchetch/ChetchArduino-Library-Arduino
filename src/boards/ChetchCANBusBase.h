@@ -13,7 +13,7 @@ namespace Chetch{
     class CANBusBase : public ArduinoBoard{
         public:
             static bool sendBusMessage(ArduinoDevice* device, byte messageID);
-
+            
         private:
             MCP2515Device* pmcp;
             SerialPin* pspin;

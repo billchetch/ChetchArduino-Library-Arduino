@@ -7,8 +7,8 @@
  
 namespace Chetch{
     MCP2515Monitor::MCP2515Monitor(byte nodeID, int csPin, unsigned int presenceInterval) : MCP2515Device(nodeID, csPin, presenceInterval)
-                                            , frecvmsg(24) 
-                                            , fsendmsg(24) 
+                                            /*, frecvmsg(24) 
+                                            , fsendmsg(24) */
 
     { 
         setIndicateMode(NO_INDICATOR);
@@ -69,8 +69,10 @@ namespace Chetch{
             message->add(node2report->status);
             message->add(node2report->events);
             message->add(node2report->presenceCount);
-            message->add(node2report->statusResponseCount);
             message->add(node2report->statusRequestCount);
+            message->add(node2report->statusResponseCount);
+            message->add(node2report->pingSentCount);
+            message->add(node2report->pingResponseCount);
             message->add(node2report->messageReceivedCount);
             message->add(node2report->messageSentCount);
             
@@ -114,7 +116,7 @@ namespace Chetch{
         }
     }
 
-    void MCP2515Monitor::populateOutboundMessage(ArduinoMessage* message, byte messageID){
+    /*void MCP2515Monitor::populateOutboundMessage(ArduinoMessage* message, byte messageID){
         MCP2515Device::populateOutboundMessage(message, messageID);
 
         //IMPORTANT: we identify forwarded messages as having the INFO type
@@ -135,41 +137,61 @@ namespace Chetch{
 
             fmsg->clear();
         }
-    }
+    }*/
 
     bool MCP2515Monitor::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
         bool handled = MCP2515Device::executeCommand(command, message, response);
         
-        if(!handled)
+        if(!handled && message->getArgumentCount() > 1)
         {
-            ArduinoMessage* msg;
-            ArduinoMessage::MessageType reqType;
-            int byteTotal = 0;
-            byte bytec = 0;
-            byte startAt = 0;
-            if(command == ArduinoDevice::REQUEST){
-                reqType = (ArduinoMessage::MessageType)message->get<ArduinoMessage::MessageType>(1);
-                msg = getMessageForHandler(message->sender, reqType, 1);
-                startAt = 2;
-                byteTotal = 0;
-            } else {    
-                msg = getMessageForHandler(message->sender, ArduinoMessage::TYPE_COMMAND, 2);
-            }
+            byte nodeID = message->getLast<byte>();
+            if(nodeID == getNodeID()){
+                switch(command){
+                    case ArduinoDevice::CLEAR:
+                        {
+                            byte node2clear = message->get<byte>(1);
+                            NodeData* nd = getNodeData(node2clear, false);
+                            if(nd != NULL){
+                                nd->clear();
+                                //TODO: enqueue report message to send to force quick update
+                            }
+                        }
+                        break;
 
-            //copy message arguments across
-            for(byte i = startAt; i < message->getArgumentCount(); i++){
-                bytec = message->getArgumentSize(i);
-                byteTotal += bytec;
-                if(byteTotal >= CAN_MAX_DLC)break;
-                msg->addBytes(message->getArgument(i), bytec);
-            }
+                    default:
+                        break;
+                }
+            } else {
 
-            bool oldCanForward = canForward;
-            canForward = false; //supress forwarding
-            handled = sendMessage(msg);
-            canForward = oldCanForward;
-            //This is done to ensure that the command response is directed back to the monitor device
-            message->sender = this->getID();
+                ArduinoMessage* msg;
+                ArduinoMessage::MessageType reqType;
+                int byteTotal = 0;
+                byte bytec = 0;
+                byte startAt = 0;
+                if(command == ArduinoDevice::REQUEST){
+                    reqType = (ArduinoMessage::MessageType)message->get<ArduinoMessage::MessageType>(1);
+                    msg = getMessageForHandler(message->sender, reqType, 1);
+                    startAt = 2;
+                    byteTotal = 0;
+                } else {    
+                    msg = getMessageForHandler(message->sender, ArduinoMessage::TYPE_COMMAND, 2);
+                }
+
+                //copy message arguments across
+                for(byte i = startAt; i < message->getArgumentCount(); i++){
+                    bytec = message->getArgumentSize(i);
+                    byteTotal += bytec;
+                    if(byteTotal >= CAN_MAX_DLC)break;
+                    msg->addBytes(message->getArgument(i), bytec);
+                }
+
+                bool oldCanForward = canForward;
+                canForward = false; //supress forwarding
+                handled = sendMessage(msg);
+                canForward = oldCanForward;
+                //This is done to ensure that the command response is directed back to the monitor device
+                message->sender = this->getID();
+            }
         }
         return handled;
     }
@@ -184,26 +206,30 @@ namespace Chetch{
 
         messageCount++;
 
-        if(canForward){
+        if(canForwardMessages()){
             indicate(true);
 
-            if(!fsendmsg.isEmpty()){
+            //Now we prepare a message to forward it vias the seria. connection
+            if(!outboundMessage->isEmpty()){
                 raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 14);
-                //Serial.println("Send conflict!");
                 return; 
             }
 
-            fsendmsg.addBytes(canOutFrame.data, canOutFrame.can_dlc);
-            fsendmsg.add(canOutFrame.can_id);
-            fsendmsg.add(message->type);
+            outboundMessage->type = ArduinoMessage::MessageType::TYPE_INFO;
+            outboundMessage->tag = MESSAGE_ID_FORWARD_SENT;
+            outboundMessage->sender = this->getID(); //because copying will have overwriten this data
+            outboundMessage->target = this->getID();
+            outboundMessage->addBytes(canOutFrame.data, canOutFrame.can_dlc);
+            outboundMessage->add(canOutFrame.can_id);
+            outboundMessage->add(message->type);
             if(message->sender == 0){
-                fsendmsg.add(Board->getID());    
+                outboundMessage->add(Board->getID());    
             } else {
-                fsendmsg.add((byte)(message->sender + ArduinoBoard::START_DEVICE_IDS_AT - 1));
+                outboundMessage->add((byte)(message->sender + ArduinoBoard::START_DEVICE_IDS_AT - 1));
             }
             
-            if(!enqueueMessageToSend(MESSAGE_ID_FORWARD_SENT, MESSAGE_ID_FORWARD_SENT)){
-                //Serial.println("Error Send failed to enqueue!");
+            if(!Board->getIO()->sendMessage()){
+                //Serial.println("ERRO enqueing message!");
                 raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 10);
             }
         }
@@ -228,23 +254,25 @@ namespace Chetch{
         //update message count
         messageCount++;
 
-        if(canForward){
+        if(canForwardMessages()){
             indicate(true);
 
             //Now we prepare a message to forward it vias the seria. connection
-            if(!frecvmsg.isEmpty()){
+            if(!outboundMessage->isEmpty()){
                 raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 15);
                 return; 
             }
             
+            outboundMessage->type = ArduinoMessage::MessageType::TYPE_INFO;
+            outboundMessage->tag = MESSAGE_ID_FORWARD_RECEIVED;
+            outboundMessage->sender = this->getID(); //because copying will have overwriten this data
+            outboundMessage->target = this->getID();
+            outboundMessage->addBytes(canInFrame.data, canInFrame.can_dlc);
+            outboundMessage->add(canInFrame.can_id);
+            outboundMessage->add(message->type);
+            outboundMessage->add(message->sender);
 
-            frecvmsg.addBytes(canInFrame.data, canInFrame.can_dlc);
-            frecvmsg.add(canInFrame.can_id);
-            frecvmsg.add(message->type);
-            frecvmsg.add(message->sender);
-
-            
-            if(!enqueueMessageToSend(MESSAGE_ID_FORWARD_RECEIVED, MESSAGE_ID_FORWARD_RECEIVED)){
+            if(!Board->getIO()->sendMessage()){
                 //Serial.println("ERRO enqueing message!");
                 raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 11);
             }

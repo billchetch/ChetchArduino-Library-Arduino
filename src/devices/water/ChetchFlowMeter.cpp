@@ -12,8 +12,6 @@ namespace Chetch{
         if(units == FlowRateUnits::USE_DEFAULT){
             units = defaultUnits;
         }
-        Serial.print("Using units: ");
-        Serial.println(units);
         switch(units){
             case ML_PER_SECOND:
                 return mlps;
@@ -35,6 +33,20 @@ namespace Chetch{
 
         if(rateListener != NULL){
             rateListener(this, getFlowRate());
+        }
+    }
+
+    void FlowMeter::populateOutboundMessage(ArduinoMessage* message, byte messageID){
+        switch(messageID){
+            case MESSAGE_ID_FLOW_RATE:
+                message->type = ArduinoMessage::TYPE_DATA;
+                if(message->tag == 0)message->tag = 1; //set to non-zero to distinguish this message
+                message->add(getFlowRate());
+                break;
+
+            default:
+                Counter::populateOutboundMessage(message, messageID);
+                break;
         }
     }
 

@@ -108,7 +108,17 @@ namespace Chetch{
         
                 if(!handled)
                 {
-                    
+                    switch(command){
+                        case UPDATE:
+                            if(message->getArgumentCount() > 1){
+                                updateDisplay(message->get<byte>(1));
+                                handled = true;
+                            }
+                            break;
+
+                        default:
+                            break;
+                    }
                 }
                 return handled;
             }

@@ -102,6 +102,7 @@ namespace Chetch{
                 CHANGE_OPERATIONAL_MODE = 3,
                 STARTED = 4,
                 STOPPED = 5,
+                WELCOME,
             };
 
             struct RunSession{

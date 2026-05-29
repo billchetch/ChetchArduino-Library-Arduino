@@ -76,8 +76,8 @@ namespace Chetch{
 
             //messaging stuff
             bool receiveMessage(); //true if message has been received, false otherwise
-            void sendMessage();
-            bool sendMessage(ArduinoMessage* message);
+            bool sendMessage() override;
+            ArduinoMessage* getOutboundMessage(){ return &outboundMessage; }
 
             void setErrorInfo(ArduinoMessage* message, IOErrorCode errorCode, byte errorSubCode);
             void setErrorInfo(ArduinoMessage* message, byte errorCode, byte errorSubCode);

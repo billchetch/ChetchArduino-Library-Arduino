@@ -37,12 +37,6 @@ namespace Chetch{
                 GENERAL_ERROR = 1, 
             };
 
-            enum DisplayMode : byte{
-                DISPLAY_MODE_NOT_SET= 0,
-                MONITORING = 1,
-                ERROR = 2,
-            };
-
         private:
             ErrorCode errorCode = ErrorCode::NO_ERROR;
 
@@ -60,11 +54,7 @@ namespace Chetch{
             int getPPM(); 
             void setTemperature(double temp){ tds.setTemperature(temp); }
             double getTemperature(){ return tempArray.getTemperature(); }
-            double getFlowRate1(){ return flowMeter1.getFlowRate(); }
-
-            //bool hasError();
-            //void updateDisplay(DisplayMode displayMode = DisplayMode::DISPLAY_MODE_NOT_SET);
-            //bool renderDisplay(DisplayMode displayMode, bool displayInitialised = false);            
+            double getFlowRate1(){ return flowMeter1.getFlowRate(); }          
 
     }; //end class
 } //end namespcae
