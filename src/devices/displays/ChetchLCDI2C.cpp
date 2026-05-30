@@ -71,7 +71,7 @@ namespace Chetch{
         {
             switch(command){
                 case ArduinoDevice::DeviceCommand::ON:
-                    backlight(true, -1);
+                    backlight(true, message->getArgumentCount() > 1 ? message->get<int>(1) : -1);
                     handled = true;
                     break;
 

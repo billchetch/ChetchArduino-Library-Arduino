@@ -110,9 +110,14 @@ namespace Chetch{
                 {
                     switch(command){
                         case UPDATE:
-                            if(message->getArgumentCount() > 1){
-                                updateDisplay(message->get<byte>(1));
-                                handled = true;
+                            updateDisplay(message->getArgumentCount() > 1 ? message->get<byte>(1) : 0);
+                            handled = true;
+                            break;
+
+                        case DIZPLAY:
+                            if(displayHandler != NULL){
+                                byte utag = message->getArgumentCount() > 1 ? message->get<byte>(1) : 0;
+                                handled = displayHandler(this, utag, false);
                             }
                             break;
 

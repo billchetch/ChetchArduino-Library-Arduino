@@ -36,7 +36,6 @@ namespace Chetch{
             return wm->renderDisplay((DisplayMode)updateTag, displayInitialised);
         });
 
-
         
         selector.addSelectListener([](SelectorSwitch* ss, byte selectedPin){
             //Capture this
@@ -137,6 +136,7 @@ namespace Chetch{
         bool retVal = CANBusNode::begin(io);
         if(retVal){
             display.backlight(true, 5000);
+            updateDisplay(DisplayMode::NORMAL);
         }
         return retVal;
     }
@@ -161,7 +161,7 @@ namespace Chetch{
         currentMode = operationalMode;
         currentSession = &sessions[currentMode - OperationalMode::MAKE_WATER];
 
-        updateDisplay(DisplayMode::CHANGE_OPERATIONAL_MODE);
+        updateDisplay(DisplayMode::NORMAL);
 
         display.backlight(true, 5000);
     }
@@ -210,7 +210,7 @@ namespace Chetch{
         currentSession->count++;
 
         display.backlight(true, -1);
-        updateDisplay(DisplayMode::STARTED);
+        updateDisplay();
 
         setReportInterval(REPORT_INTERVAL);
     }
@@ -224,7 +224,7 @@ namespace Chetch{
         
         currentSession->stoppedOn = millis();
 
-        updateDisplay(DisplayMode::STOPPED);
+        updateDisplay();
         display.backlight(true, 5000);
 
         setReportInterval(REPORT_INTERVAL*10);
@@ -261,7 +261,7 @@ namespace Chetch{
             display.clearDisplay();
         }
 
-        if(hasError()){
+        if(hasError() || displayMode == DisplayMode::ERROR){
             display.clearDisplay();
             display.setCursor(0, 0);
             display.print(">>>> ERROR: ");
@@ -276,15 +276,17 @@ namespace Chetch{
                 display.print(duration);
                 display.print("s   ");
             }
-        } else if(displayMode == DisplayMode::WELCOME){
-            display.clearDisplay();
-            display.setCursor(0, 0);
-            display.print("Welcome to Bulan Baru");
-            
         } else {
+            if(displayMode == DisplayMode::DISPLAY_MODE_NOT_SET){
+                displayMode = lastDisplayMode;
+            } else {
+                lastDisplayMode = displayMode;
+            }
+
+
             display.clearDisplay();
 
-            //Display selection
+            //Line 0: Display selection
             display.setCursor(0, 0);
             display.print("Mode: ");
             switch(currentMode){
@@ -304,22 +306,44 @@ namespace Chetch{
                     break;
             }
             
-            display.setCursor(0, 1);
-            display.print("FP/PP/SL/ST: ");
-            display.print(feederPump.isOn());
-            display.print(" ");
-            display.print(pressurePump.isOn());
-            display.print(" ");
-            display.print(solenoidSalt.isOn());
-            display.print(" ");
-            display.print(solenoidFresh.isOn());
+            //Lines 1 and 2
+            switch(displayMode){
+                case DisplayMode::DIAGNOSTIC:
+                    display.backlight(true, -1);
 
-            display.setCursor(0, 2);
-            display.print("LPS/HPS: ");
-            display.print(lps.isOn());
-            display.print(" ");
-            display.print(hps.isOn());
+                    display.setCursor(0, 1);
+                    display.print("FP/PP/SL/ST: ");
+                    display.print(feederPump.isOn());
+                    display.print(" ");
+                    display.print(pressurePump.isOn());
+                    display.print(" ");
+                    display.print(solenoidSalt.isOn());
+                    display.print(" ");
+                    display.print(solenoidFresh.isOn());
 
+                    display.setCursor(0, 2);
+                    display.print("LPS/HPS: ");
+                    display.print(lps.isOn());
+                    display.print(" ");
+                    display.print(hps.isOn());
+                    break;
+
+                case DisplayMode::NORMAL:
+                    display.setCursor(0, 1);
+                    display.print("TDS: ");
+                    display.print("x @ y C");
+                    
+                    display.setCursor(0, 2);
+                    display.print("FR: ");
+                    display.print("0 L/M");
+                    break;
+
+                default:
+                    //Do nothing
+                    break;
+            }
+
+            //Line 3 running history
             if(!isRunning()){
                 display.setCursor(0, 3);
                 if(currentSession->count != 0){

@@ -97,12 +97,10 @@ namespace Chetch{
 
             enum DisplayMode : byte{
                 DISPLAY_MODE_NOT_SET= 0,
-                RUNNING = 1,
-                ERROR = 2,
-                CHANGE_OPERATIONAL_MODE = 3,
-                STARTED = 4,
-                STOPPED = 5,
-                WELCOME,
+                RUNNING,
+                ERROR ,
+                NORMAL,
+                DIAGNOSTIC
             };
 
             struct RunSession{
@@ -118,6 +116,8 @@ namespace Chetch{
 
             RunSession sessions[SELECTION_SIZE];
             RunSession* currentSession;
+
+            DisplayMode lastDisplayMode = DisplayMode::DISPLAY_MODE_NOT_SET;
 
         public:
             //Display

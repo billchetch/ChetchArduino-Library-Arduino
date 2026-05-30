@@ -22,4 +22,12 @@ namespace Chetch{
     void CANBusBase::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* messsge, byte* canData){
         //empty
     }
+
+    void CANBusBase::loop(){
+        ArduinoBoard::loop();
+
+        if(begun){
+            pmcp->readMessage();
+        }
+    }
 }

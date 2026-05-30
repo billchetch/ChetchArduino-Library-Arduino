@@ -153,8 +153,6 @@ namespace Chetch{
         indicate(false);
         ArduinoDevice::loop();
 
-        readMessage();
-
         unsigned long ms = millis();
         ArduinoMessage* msg;
         
@@ -562,22 +560,24 @@ namespace Chetch{
         }
     }
 
-    uint32_t MCP2515Device::createFilterMask(bool checkNodeID, bool checkMessageType, bool checkSender){
+    uint32_t MCP2515Device::createFilterMask(bool checkMessageType, bool checkNodeID, bool checkSender){
         uint32_t mask = 0;
         
+        //CAN ID structure is: Message Type (5 bits) + Node (4 bits) + Sender (4 bits) + Tag (3 bits) + CRC (5 bits) + Timestapm (8 bits) = 29bits
+
         //Node mask
-        if(checkNodeID){
-            mask = mask | 0x00FF0000; //second byte of can ID is considered
+        if(checkMessageType){
+            mask = mask | 0x1F000000; //First 5 bits of ID
         }
 
-        //Type mask (first 5 bites of 3rd byte)
-        if(checkMessageType){
-            mask = mask | 0x0000F800;
+        //Type mask (first 4 bits of 2nd byte
+        if(checkNodeID){
+            mask = mask | 0x00F00000;
         }
 
         //Sender mask (last 3 bites of 3rd byte)
         if(checkSender){
-            mask = mask | 0x00000700;
+            mask = mask | 0x000F0000;
         }
 
         return mask;

@@ -24,6 +24,8 @@ namespace Chetch{
             MCP2515Device* getMCP(){ return pmcp; }
 
             virtual void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData);
+
+            void loop() override;
     };
 }
 #endif
