@@ -25,6 +25,7 @@ namespace Chetch{
             MCP2515Node(byte nodeID = 0, int csPin = MCP2515Node::DEFAULT_CS_PIN, unsigned int presenceInterval = MCP2515Device::DEFAULT_PRESENCE_INTERVAL);
             void setNodeID(byte nodeID){ this->nodeID = nodeID; }
 
+            bool begin() override;
             //void loop() override;
             //void setReportInfo(ArduinoMessage* message) override;
             

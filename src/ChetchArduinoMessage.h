@@ -11,38 +11,45 @@ namespace Chetch{
 
             enum MessageType : byte{
                 TYPE_NONE = 0, 
-                TYPE_REGISTER_LISTENER = 1,
-                TYPE_CUSTOM = 2,
-	            TYPE_INFO = 3,
-	            TYPE_WARNING,
+
+                //BROADCAST Bit 4 = 0 (mask 0xxx)
+                TYPE_WARNING,
 	            TYPE_ERROR,
-	            TYPE_PING,
-	            TYPE_PING_RESPONSE,
+                TYPE_NOTIFICATION,
+                TYPE_ALERT,
+                TYPE_PRESENCE,
+                TYPE_DATA, //normal data
+                TYPE_XDATA, //extended data
+                
+                //TARGETED Bit 4 = 1 (mask 1xxx)
+	            TYPE_PING, 
 	            TYPE_STATUS_REQUEST,
-	            TYPE_STATUS_RESPONSE,
-	            TYPE_COMMAND,
-	            TYPE_ERROR_TEST,
-	            TYPE_ECHO,
-	            TYPE_ECHO_RESPONSE,
-	            TYPE_CONFIGURE,
+                TYPE_COMMAND, 
+	            TYPE_INITIALISE,  
+                TYPE_CONFIGURE, 
+                TYPE_ERROR_TEST, //Intended for ERROR as a response
+                TYPE_RESET, 
+                TYPE_FINALISE, 
+                
+                //RESPONSES Bit 5 = 1 and 4 = 0 (mask 10xxx)
+	            TYPE_PING_RESPONSE, 
+                TYPE_STATUS_RESPONSE,
+	            TYPE_COMMAND_RESPONSE, 
+                TYPE_INITIALISE_RESPONSE, 
 	            TYPE_CONFIGURE_RESPONSE,
-	            TYPE_RESET,
-	            TYPE_INITIALISE,
-	            TYPE_DATA,
-                TYPE_CONNECTION_REQUEST,
+                TYPE_ECHO_RESPONSE,
                 TYPE_CONNECTION_REQUEST_RESPONSE,
+                TYPE_SUBSCRIBE_RESPONSE,
+                
+                //MISC Bit 5 = 1 and 4 = 1 (mask 11xxx)
+                TYPE_INFO, 
+                TYPE_ECHO,
                 TYPE_SHUTDOWN,
                 TYPE_SUBSCRIBE,
                 TYPE_UNSUBSCRIBE,
-	            TYPE_COMMAND_RESPONSE,
-                TYPE_TRACE,
-                TYPE_NOTIFICATION,
-                TYPE_SUBSCRIBE_RESPONSE,
-	            TYPE_INITIALISE_RESPONSE,
-                TYPE_ALERT,
-                TYPE_FINALISE,
-                TYPE_PRESENCE,
-                TYPE_PRESENCE_RESPONSE
+	            TYPE_TRACE,
+                TYPE_REGISTER_LISTENER,
+                CONNECTION_REQUEST
             };
 	  
             enum ErrorCode : byte {

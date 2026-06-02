@@ -119,6 +119,13 @@ namespace Chetch{
 
             DisplayMode lastDisplayMode = DisplayMode::DISPLAY_MODE_NOT_SET;
 
+            byte waterMonitorNodeID = 0;
+            bool waterMonitorPresent = false;
+            
+            double ppm = 0.0;
+            double temp = 0.0;
+            double flowRate1 = 0.0;
+            
         public:
             //Display
             LCDI2C display;
@@ -136,7 +143,7 @@ namespace Chetch{
             SwitchDevice pressurePump;
             
         public:
-            Watermaker(byte nodeID, byte serialPin);
+            Watermaker(byte nodeID, byte serialPin, byte waterMonitorNodeID);
 
             bool begin(MessageIO* io = NULL) override;
 
@@ -153,6 +160,8 @@ namespace Chetch{
 
             void setReportInfo(ArduinoMessage* message) override;
             void onReportReady() override;
+
+            void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData) override;
     };
 } //end namespace
 #endif

@@ -12,7 +12,8 @@
 #include <mcp2515.h>
 
 #define CAN_AS_LOOPBACK false
-#define CAN_DEFAULT_INDICATOR_PIN 7 //leave 8 and 9 for Software Serial
+//#define CAN_AS_LOOPBACK true
+#define CAN_DEFAULT_INDICATOR_PIN 7 //leave 8 and 9 for Software Serial/AltSerial soft
 //#define COUNT_ERROR_CODES 12 //Comment out if not counting error codes
 
 /*
@@ -90,7 +91,10 @@ namespace Chetch{
             
             static const byte MAX_NODE_ID = 15;
             static const byte MIN_NODE_ID = 1;
-            static const int NO_FILTER = -1;
+            
+            static const uint32_t MESSAGE_TYPES_MASK = 0x18000000; //Singles out bits 5 and 4 of the message type portion of CAN ID (byte 4)
+            static const uint32_t NODE_MASK = 0x00F00000; //Singles out bits related to the node ID part of the CAN ID (byte 3)
+
             static const unsigned int DEFAULT_PRESENCE_INTERVAL = 5000;
             static const byte TIMESTAMP_RESOLUTION = 4; //Shift right by this many bits... lower number makes finer resolution
             static const unsigned int INDICATOR_INTERVAL = 50;
@@ -209,11 +213,6 @@ namespace Chetch{
             bool indicated = false;
             unsigned long indicatedOn = 0;
 
-            NodeDependency* firstDependency = NULL; 
-
-            byte maskNum = 0; //max is 1
-            byte filterNum = 0; //max is 5 after regNum == 1 then maskNum increments
-
             IndicateMode indicateMode = INDICATE_ON_SEND;
 
         public: //SHOULD BE PRIVATE/PROTECTED
@@ -232,6 +231,8 @@ namespace Chetch{
         protected:
             byte nodeID = 0;
             
+            NodeDependency* firstDependency = NULL; 
+
             MessageListener messageReceivedListener = NULL;
             SendValidator sendValidator = NULL;
             ErrorListener errorListener = NULL;
@@ -302,10 +303,6 @@ namespace Chetch{
             void readMessage();
             void handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message);
             virtual void onMessageReceived(byte sourceNodeID, ArduinoMessage *message){};
-            
-            uint32_t createFilterMask(bool checkNodeID, bool checkMessageType, bool checkSender);
-            uint32_t createFilter(int nodeID, int messageType, int sender);
-            bool addFilter(uint32_t mask, uint32_t filter);
     };
 } //end namespace
 #endif //end prevent multiple inclusions

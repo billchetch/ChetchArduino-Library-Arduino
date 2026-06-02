@@ -25,6 +25,7 @@ namespace Chetch{
 
             virtual void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData);
 
+            bool begin(MessageIO* io = NULL) override;
             void loop() override;
     };
 }

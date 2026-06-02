@@ -1,7 +1,7 @@
 #include "ChetchWatermaker.h"
 
 namespace Chetch{
-    Watermaker::Watermaker(byte nodeID, byte serialPin) : CANBusNode(nodeID, serialPin),
+    Watermaker::Watermaker(byte nodeID, byte serialPin, byte waterMonitorNodeID) : CANBusNode(nodeID, serialPin),
                         display(LCD_COLS, LCD_ROWS, LCD_REFRESH),
                         selector(SwitchDevice::SwitchMode::PASSIVE, SELECTOR_FIRST_PIN, SELECTION_SIZE, SWITCH_TOLERANCE, LOW),
                         startButton(SwitchDevice::SwitchMode::PASSIVE, START_BUTTON_PIN, SWITCH_TOLERANCE, OUTPUT_ONSTATE),
@@ -15,9 +15,11 @@ namespace Chetch{
     {
         //Board stuff
         setReportInterval(REPORT_INTERVAL*10); //value when not running
+        this->waterMonitorNodeID = waterMonitorNodeID;
+        mcp.addNodeDependency(waterMonitorNodeID);
         
         //Devices
-        //Legacy stuff
+        //Legacy stuff, in newer boards this is set to 7 to allow for use of altserialsoft library
         mcp.setIndicatorPin(9);
         
         //Add event handlers to devices
@@ -329,13 +331,22 @@ namespace Chetch{
                     break;
 
                 case DisplayMode::NORMAL:
-                    display.setCursor(0, 1);
-                    display.print("TDS: ");
-                    display.print("x @ y C");
-                    
-                    display.setCursor(0, 2);
-                    display.print("FR: ");
-                    display.print("0 L/M");
+                    if(!waterMonitorPresent){
+                        display.setCursor(0, 1);
+                        display.print("Monitor offline");
+                    } else {
+                        display.setCursor(0, 1);
+                        display.print("TDS: ");
+                        display.print(ppm);
+                        display.print(" (");
+                        display.print(temp);
+                        display.print("C)");
+                        
+                        display.setCursor(0, 2);
+                        display.print("FR: ");
+                        display.print(flowRate1);
+                        display.print(" L/M");
+                    }
                     break;
 
                 default:
@@ -375,5 +386,44 @@ namespace Chetch{
 
     void Watermaker::onReportReady(){
         mcp.sendMessageForBoard(MESSAGE_ID_REPORT);
+    }
+
+    void Watermaker::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
+        if(sourceNodeID == waterMonitorNodeID){
+            //We focus on data here
+            if(message->type == ArduinoMessage::TYPE_DATA){
+                if(!waterMonitorPresent){
+                    waterMonitorPresent = true;
+                    updateDisplay();
+                }
+
+                //Serial.print("WMON "); Serial.println(message->sender);
+                switch(message->sender){
+                    case 10: //TDS
+                        message->populate<double, double>(canData);
+                        ppm = message->get<double>(1);
+                        break;
+
+                    case 11: //TEMP
+                        message->populate<double>(canData);
+                        temp = message->get<double>(0);
+                        break;
+
+                    case 12: //FLOW RATE
+                        message->populate<double>(canData);
+                        flowRate1 = message->get<double>(0);
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+        } else {
+            //some kind of error this
+            /*Serial.print("HRM: "); 
+            Serial.print(sourceNodeID);   
+            Serial.print(" ");   
+            Serial.println(message->type);*/
+        }
     }
 }

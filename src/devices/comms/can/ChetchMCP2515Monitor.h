@@ -161,8 +161,8 @@ namespace Chetch{
             NodeData* getNodeData(byte nodeID, bool createIfNotFound);
             
             void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response) override;
-            //void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
-
+            void forwardMessage(ArduinoMessage* message, byte messageID);
+            
             void setReportInfo(ArduinoMessage* message) override;
             void setStatusInfo(ArduinoMessage* response) override;
             bool executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response) override;

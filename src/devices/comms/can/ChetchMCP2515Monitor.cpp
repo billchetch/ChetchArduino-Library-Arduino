@@ -116,29 +116,6 @@ namespace Chetch{
         }
     }
 
-    /*void MCP2515Monitor::populateOutboundMessage(ArduinoMessage* message, byte messageID){
-        MCP2515Device::populateOutboundMessage(message, messageID);
-
-        //IMPORTANT: we identify forwarded messages as having the INFO type
-        if(messageID == MESSAGE_ID_FORWARD_RECEIVED || messageID == MESSAGE_ID_FORWARD_SENT){
-            byte tag = message->tag;
-            ArduinoMessage* fmsg = messageID == MESSAGE_ID_FORWARD_RECEIVED ? &frecvmsg : &fsendmsg;
-            message->copy(fmsg);
-
-            message->type = ArduinoMessage::MessageType::TYPE_INFO;
-            message->tag = tag;
-            message->sender = this->getID(); //because copying will have overwriten this data
-            message->target = this->getID();
-            
-
-            if(forwardingListener != NULL){
-                forwardingListener(this, message);
-            }
-
-            fmsg->clear();
-        }
-    }*/
-
     bool MCP2515Monitor::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){
         bool handled = MCP2515Device::executeCommand(command, message, response);
         
@@ -196,7 +173,53 @@ namespace Chetch{
         return handled;
     }
 
+    void MCP2515Monitor::forwardMessage(ArduinoMessage* message, byte messageID ){
+        indicate(true);
+
+        //If main IO has a message pending then send it first
+        if(!outboundMessage->isEmpty()){
+            //raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 12);
+            //return;
+            Board->getIO()->sendMessage();
+        }
+
+        can_frame* canFrame = messageID == MESSAGE_ID_FORWARD_SENT ? &canOutFrame : &canInFrame;
+
+        //sent
+        outboundMessage->type = ArduinoMessage::MessageType::TYPE_INFO;
+        outboundMessage->tag = messageID;
+        outboundMessage->sender = this->getID(); //because copying will have overwriten this data
+        outboundMessage->target = this->getID();
+        outboundMessage->addBytes(canFrame->data, canFrame->can_dlc);
+        outboundMessage->add(canFrame->can_id);
+        outboundMessage->add(message->type);
+        
+        if(messageID == MESSAGE_ID_FORWARD_SENT){
+            if(message->sender == 0){
+                outboundMessage->add(Board->getID());    
+            } else {
+                outboundMessage->add((byte)(message->sender + ArduinoBoard::START_DEVICE_IDS_AT - 1));
+            }
+        } else {
+            outboundMessage->add(message->sender);
+        }
+
+        if(!Board->getIO()->sendMessage()){
+            //Serial.println("ERRO enqueing message!");
+            raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 10);
+        }
+    }
+
     void MCP2515Monitor::onMessageSent(ArduinoMessage *message){
+        /*
+        NOTE
+
+        1. This will only be called by messages put on the CAN bus 
+        i.e only from this node
+        
+        2. 0y here the message will have passed all error checks in MCP2515Device::sendMessage
+        So we can assume the message is valid
+        */
 
         if(message->getArgumentCount() > 0){
             byte targetNodeID = message->getLast<byte>();
@@ -207,31 +230,8 @@ namespace Chetch{
         messageCount++;
 
         if(canForwardMessages()){
-            indicate(true);
-
-            //Now we prepare a message to forward it vias the seria. connection
-            if(!outboundMessage->isEmpty()){
-                raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 14);
-                return; 
-            }
-
-            outboundMessage->type = ArduinoMessage::MessageType::TYPE_INFO;
-            outboundMessage->tag = MESSAGE_ID_FORWARD_SENT;
-            outboundMessage->sender = this->getID(); //because copying will have overwriten this data
-            outboundMessage->target = this->getID();
-            outboundMessage->addBytes(canOutFrame.data, canOutFrame.can_dlc);
-            outboundMessage->add(canOutFrame.can_id);
-            outboundMessage->add(message->type);
-            if(message->sender == 0){
-                outboundMessage->add(Board->getID());    
-            } else {
-                outboundMessage->add((byte)(message->sender + ArduinoBoard::START_DEVICE_IDS_AT - 1));
-            }
             
-            if(!Board->getIO()->sendMessage()){
-                //Serial.println("ERRO enqueing message!");
-                raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 10);
-            }
+            forwardMessage(message, MESSAGE_ID_FORWARD_SENT);
         }
     }
 
@@ -255,27 +255,7 @@ namespace Chetch{
         messageCount++;
 
         if(canForwardMessages()){
-            indicate(true);
-
-            //Now we prepare a message to forward it vias the seria. connection
-            if(!outboundMessage->isEmpty()){
-                raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 15);
-                return; 
-            }
-            
-            outboundMessage->type = ArduinoMessage::MessageType::TYPE_INFO;
-            outboundMessage->tag = MESSAGE_ID_FORWARD_RECEIVED;
-            outboundMessage->sender = this->getID(); //because copying will have overwriten this data
-            outboundMessage->target = this->getID();
-            outboundMessage->addBytes(canInFrame.data, canInFrame.can_dlc);
-            outboundMessage->add(canInFrame.can_id);
-            outboundMessage->add(message->type);
-            outboundMessage->add(message->sender);
-
-            if(!Board->getIO()->sendMessage()){
-                //Serial.println("ERRO enqueing message!");
-                raiseError(MCP2515ErrorCode::CUSTOM_ERROR, 11);
-            }
+            forwardMessage(message, MESSAGE_ID_FORWARD_RECEIVED);
         }
     }
 

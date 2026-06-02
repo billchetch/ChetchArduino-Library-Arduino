@@ -11,16 +11,24 @@ namespace Chetch{
         this->pmcp = pmcp;
         this->pspin = pspin;
 
-        pmcp->addMessageReceivedListener([](MCP2515Device* mcpdev, byte nodeID, ArduinoMessage* msg, byte* canData){
+        
+    }
+
+    void CANBusBase::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
+        //empty
+        
+    }
+
+    bool CANBusBase::begin(MessageIO* io){
+        pmcp->addMessageReceivedListener([](MCP2515Device* mcpdev, byte sourceNodeID, ArduinoMessage* message, byte* canData){
+            
+            
             //Capture this
             CANBusBase* busNode = (CANBusBase*)mcpdev->Board;
 
-            busNode->handleReceivedBusMessage(nodeID, msg, canData);
+            busNode->handleReceivedBusMessage(sourceNodeID, message, canData);
         }); 
-    }
-
-    void CANBusBase::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* messsge, byte* canData){
-        //empty
+        return ArduinoBoard::begin(io);
     }
 
     void CANBusBase::loop(){

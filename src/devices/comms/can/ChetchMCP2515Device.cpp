@@ -45,8 +45,6 @@ namespace Chetch{
 
     void MCP2515Device::init(bool forceInit){
         if(!initialised || forceInit){
-            maskNum = 0;
-            filterNum = 0;
             mcp2515.reset();
             resetErrors();
             initialised = true;
@@ -61,6 +59,7 @@ namespace Chetch{
         init();
         mcp2515.setBitrate(CAN_125KBPS);
 #if CAN_AS_LOOPBACK 
+        Serial.println("Using loopback");
         mcp2515.setLoopbackMode();
 #else
         mcp2515.setNormalMode();
@@ -272,6 +271,14 @@ namespace Chetch{
                 //Serial.print("Received timestamp: ");
                 //Serial.println(timestamp);
 
+                /*Serial.print("Received CANID: ");
+                for (int i = 32; i >= 0; i--) {
+                    Serial.print(bitRead(canInFrame.can_id, i));
+                    if(i % 8 == 0 && i != 32 && i > 0)Serial.print("-");
+                }
+                Serial.println();*/
+                
+
                 unsigned long edata = (unsigned long)sourceNodeID << 24 | (unsigned long)messageType << 16;
                 if(!vcrc5(tagAndCRC & 0x1F, canInFrame.data, canInFrame.can_dlc)){
                     //data error
@@ -360,7 +367,6 @@ namespace Chetch{
     }
 
     void MCP2515Device::handleReceivedMessage(byte sourceNodeID, ArduinoMessage* message){
-            
         //NOTE: if handled is true then the message listener if exists is not called
         //In the case where a response is sent this must be the case as the response overwrites
         //the received message which will be misleading if passed to the listener!
@@ -558,72 +564,5 @@ namespace Chetch{
                 raiseError(MCP2515ErrorCode::UNKNOWN_SEND_ERROR, edata);
                 return false;
         }
-    }
-
-    uint32_t MCP2515Device::createFilterMask(bool checkMessageType, bool checkNodeID, bool checkSender){
-        uint32_t mask = 0;
-        
-        //CAN ID structure is: Message Type (5 bits) + Node (4 bits) + Sender (4 bits) + Tag (3 bits) + CRC (5 bits) + Timestapm (8 bits) = 29bits
-
-        //Node mask
-        if(checkMessageType){
-            mask = mask | 0x1F000000; //First 5 bits of ID
-        }
-
-        //Type mask (first 4 bits of 2nd byte
-        if(checkNodeID){
-            mask = mask | 0x00F00000;
-        }
-
-        //Sender mask (last 3 bites of 3rd byte)
-        if(checkSender){
-            mask = mask | 0x000F0000;
-        }
-
-        return mask;
-    }
-
-    uint32_t MCP2515Device::createFilter(int nodeID, int messageType, int sender){
-
-        uint32_t filter = 0;
-
-        if(nodeID != NO_FILTER){
-            filter = filter | (uint32_t)(nodeID & 0x00FF) << 16;
-        }
-
-        //Type mask (first 5 bites of 3rd byte)
-        if(messageType != NO_FILTER){
-
-            filter = filter | (uint32_t)(messageType & 0x001F) << 11;
-        }
-
-        //Sender mask (last 3 bites of 3rd byte)
-        if(sender != NO_FILTER){
-            filter = filter | (uint32_t)(sender & 0x0007) << 8;
-        }
-
-        return filter;
-    }
-
-    bool MCP2515Device::addFilter(uint32_t mask, uint32_t filter){
-        init(); //make sure we are initialised otherwise begin will cause a reset erasing the filter and mask values
-
-        if(filterNum >= 5)return false;
-
-        MCP2515::ERROR err;
-        err = mcp2515.setFilterMask((MCP2515::MASK)maskNum, true, mask);
-        if(err != MCP2515::ERROR_OK){
-            return false;
-        }
-
-        err = mcp2515.setFilter((MCP2515::RXF)filterNum, true, filter);
-        if(err != MCP2515::ERROR_OK){
-            return false;
-        }
-
-        filterNum++;
-        if(filterNum == 2)maskNum = 1;
-
-        return true;
     }
 } //end namespace
