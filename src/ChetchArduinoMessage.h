@@ -37,13 +37,14 @@ namespace Chetch{
 	            TYPE_COMMAND_RESPONSE, 
                 TYPE_INITIALISE_RESPONSE, 
 	            TYPE_CONFIGURE_RESPONSE,
-                TYPE_ECHO_RESPONSE,
+                TYPE_RESET_RESPONSE,
                 TYPE_CONNECTION_REQUEST_RESPONSE,
                 TYPE_SUBSCRIBE_RESPONSE,
                 
                 //MISC Bit 5 = 1 and 4 = 1 (mask 11xxx)
                 TYPE_INFO, 
                 TYPE_ECHO,
+                TYPE_ECHO_RESPONSE,
                 TYPE_SHUTDOWN,
                 TYPE_SUBSCRIBE,
                 TYPE_UNSUBSCRIBE,

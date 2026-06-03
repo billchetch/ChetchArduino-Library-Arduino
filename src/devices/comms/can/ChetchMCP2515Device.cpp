@@ -125,7 +125,7 @@ namespace Chetch{
         return NULL;
     }
 
-    bool MCP2515Device::addNodeDependency(byte nodeID, byte tolerance){
+    MCP2515Device::NodeDependency* MCP2515Device::addNodeDependency(byte nodeID, byte tolerance){
         NodeDependency* nd = new NodeDependency(nodeID, tolerance);
 
         if(firstDependency == NULL){
@@ -135,7 +135,7 @@ namespace Chetch{
             while(d != NULL){
                 if(d->getNodeID() == nodeID){
                     delete nd;
-                    return false;
+                    return d;
                 }
 
                 if(d->next == NULL){
@@ -145,7 +145,7 @@ namespace Chetch{
                 d = d->next;
             }
         }
-        return true;
+        return nd;
     }
 
     void MCP2515Device::loop(){
@@ -188,6 +188,11 @@ namespace Chetch{
             setPingInfo(msg);
             sendMessage(msg);
             pinged = false; //reset flag
+        } else if(remoteReset){
+            msg = getMessageForDevice(this, ArduinoMessage::TYPE_RESET_RESPONSE);
+            setStatusInfo(msg);
+            sendMessage(msg);
+            remoteReset = false; //reset flag
         }
     }
 
@@ -409,22 +414,34 @@ namespace Chetch{
                 }
             }
         } else if(message->type == ArduinoMessage::TYPE_INITIALISE){
-            message->populate<byte>(canInFrame.data);
+            message->populate<byte>(canInFrame.data); //node id
             targetNode = message->getLast<byte>();
             if(targetNode == 0 || targetNode == getNodeID()){
                 indicate(true);    
                 remoteInitialised = true;
             }
         } else if(message->type == ArduinoMessage::TYPE_RESET){
-            message->populate<byte>(canInFrame.data);
+            if(canInFrame.can_dlc != 2){
+                raiseError(INVALID_MESSAGE, 12);
+                return;
+            }
+            message->populate<byte, byte>(canInFrame.data); //reset regime + node id
             targetNode = message->getLast<byte>();
             if(targetNode == 0 || targetNode == getNodeID()){
                 indicate(true);
-                resetErrors();
-                if(clearReceive() > 2){
-                    raiseError(READ_FAIL, 3);
+                ResetRegime regime = message->get<ResetRegime>(0);
+                switch(regime){
+                    case RESET_ERRORS:
+                        resetErrors();
+                        break;
+
+                    case RESET_DEVICE:
+                        break;
+
+                    default:
+                        break;
                 }
-                mcp2515.clearInterrupts();
+                remoteReset = true;
             }
         } else if(message->type ==  ArduinoMessage::TYPE_PING){
             message->populate<byte>(canInFrame.data);

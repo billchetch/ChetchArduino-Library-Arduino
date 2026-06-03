@@ -119,8 +119,9 @@ namespace Chetch{
 
             DisplayMode lastDisplayMode = DisplayMode::DISPLAY_MODE_NOT_SET;
 
-            byte waterMonitorNodeID = 0;
+            MCP2515Device::NodeDependency* waterMonitorNode = NULL;
             bool waterMonitorPresent = false;
+            unsigned long waterMonitorLastUpdate = 0;
             
             double ppm = 0.0;
             double temp = 0.0;
@@ -146,6 +147,7 @@ namespace Chetch{
             Watermaker(byte nodeID, byte serialPin, byte waterMonitorNodeID);
 
             bool begin(MessageIO* io = NULL) override;
+            void loop() override;
 
             bool isRunning();
             bool hasError();

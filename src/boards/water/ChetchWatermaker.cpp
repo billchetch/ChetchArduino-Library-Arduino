@@ -15,8 +15,7 @@ namespace Chetch{
     {
         //Board stuff
         setReportInterval(REPORT_INTERVAL*10); //value when not running
-        this->waterMonitorNodeID = waterMonitorNodeID;
-        mcp.addNodeDependency(waterMonitorNodeID);
+        waterMonitorNode = mcp.addNodeDependency(waterMonitorNodeID);
         
         //Devices
         //Legacy stuff, in newer boards this is set to 7 to allow for use of altserialsoft library
@@ -141,6 +140,15 @@ namespace Chetch{
             updateDisplay(DisplayMode::NORMAL);
         }
         return retVal;
+    }
+
+    void Watermaker::loop(){
+        CANBusNode::loop();
+
+        if(millis() - waterMonitorLastUpdate > 1500 && waterMonitorPresent){
+            waterMonitorPresent = false;
+            updateDisplay();
+        }
     }
 
     bool Watermaker::isRunning(){
@@ -389,9 +397,11 @@ namespace Chetch{
     }
 
     void Watermaker::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
-        if(sourceNodeID == waterMonitorNodeID){
+        if(sourceNodeID == waterMonitorNode->getNodeID()){
             //We focus on data here
             if(message->type == ArduinoMessage::TYPE_DATA){
+                waterMonitorLastUpdate = millis();
+
                 if(!waterMonitorPresent){
                     waterMonitorPresent = true;
                     updateDisplay();

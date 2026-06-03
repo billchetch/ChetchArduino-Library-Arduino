@@ -117,15 +117,16 @@ namespace Chetch{
 
             enum ResetRegime : byte{
                 NOT_SET = 0,
-                RESET_UNIT = 1,
-                CLEAR_ERRORS = 2
+                RESET_DEVICE,
+                RESET_ERRORS,
+                RESET_ALL,
             };
 
             enum IndicateMode : byte{
                 NO_INDICATOR = 0,
-                INDICATE_ON_SEND = 1,
-                INDICATE_ON_RECIEVE = 2,
-                INDICATE_FULL = 3
+                INDICATE_ON_SEND,
+                INDICATE_ON_RECIEVE,
+                INDICATE_FULL
             };
             
             //Node Dependency
@@ -148,10 +149,12 @@ namespace Chetch{
 
                     byte getNodeID(){ return nodeID; }
 
+                    unsigned long getLastUpdated(){ return updatedOn; }
+
                     void reset(){
                         nodeTime = 0;
                         updatedOn = 0;
-                        updated = 0;
+                        updated = false;
                     }
 
                     bool inSync(unsigned long ms, unsigned int msElapsed){
@@ -223,6 +226,7 @@ namespace Chetch{
             byte responseID = 0;
             bool remoteInitialised = false;
             bool pinged = false;
+            bool remoteReset = false;
 
             //REMVOE! for debug only this
             unsigned int sqCount = 0;
@@ -267,7 +271,7 @@ namespace Chetch{
             bool allowSending();
 
             //Node dependency
-            bool addNodeDependency(byte nodeID, byte tolerance = 1);
+            NodeDependency* addNodeDependency(byte nodeID, byte tolerance = 1);
             bool hasDependencies(){ return firstDependency != NULL; }
             NodeDependency* getDependency(byte nodeID);
         

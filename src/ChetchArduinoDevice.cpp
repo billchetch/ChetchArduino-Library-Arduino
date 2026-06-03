@@ -39,6 +39,10 @@ namespace Chetch{
                 response->type = ArduinoMessage::TYPE_INITIALISE_RESPONSE;
                 break;
 
+            case ArduinoMessage::TYPE_RESET:
+                response->type = ArduinoMessage::TYPE_RESET_RESPONSE;
+                break;
+
             case ArduinoMessage::TYPE_STATUS_REQUEST:
                 response->type = ArduinoMessage::TYPE_STATUS_RESPONSE;
                 setStatusInfo(response);
