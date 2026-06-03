@@ -15,7 +15,7 @@ namespace Chetch{
     {
         //Board stuff
         setReportInterval(REPORT_INTERVAL*10); //value when not running
-        waterMonitorNode = mcp.addNodeDependency(waterMonitorNodeID);
+        waterMonitorNode = mcp.addNodeDependency(waterMonitorNodeID, 6);
         
         //Devices
         //Legacy stuff, in newer boards this is set to 7 to allow for use of altserialsoft library
@@ -226,12 +226,14 @@ namespace Chetch{
     }
 
     void Watermaker::stop(){
+        //turn off the various relays
         pressurePump.turn(false);
         feederPump.turn(false);
         
         solenoidSalt.turn(false);
         solenoidFresh.turn(false);
         
+        //record data and update display
         currentSession->stoppedOn = millis();
 
         updateDisplay();

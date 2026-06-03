@@ -151,33 +151,28 @@ namespace Chetch{
 
                     unsigned long getLastUpdated(){ return updatedOn; }
 
+                    bool isUpdated(){ return updated; }
+
                     void reset(){
                         nodeTime = 0;
                         updatedOn = 0;
                         updated = false;
                     }
 
-                    bool inSync(unsigned long ms, unsigned int msElapsed){
-                        if(!updated)return true;
-
-                        unsigned long ent = getEstimatedNodeTime();
-
-                        unsigned int tol = msElapsed / 200; //allow for drift of 0.5% according to specs
-                        if(ent > ms){
-                            return ent - ms <= tol;
+                    void setNodeTime(unsigned long remoteMillis, unsigned int remoteElapsed){
+                        if(updated){
+                            unsigned int localElapsed = (unsigned int)(millis() - updatedOn);
+                            if(localElapsed >= remoteElapsed){
+                                nodeTime = remoteMillis + (localElapsed - remoteElapsed);
+                            } else {
+                                nodeTime = remoteMillis - (remoteElapsed - localElapsed);
+                            }
                         } else {
-                            return ms - ent <= tol;
+                            nodeTime = remoteMillis;
+                            updated = true;
                         }
-                    }
-
-                    bool setNodeTime(unsigned long ms, unsigned int msElapsed){
-                        bool sync = inSync(ms, msElapsed);
                         
-                        nodeTime = ms;
                         updatedOn = millis();
-                        updated = true;
-                        
-                        return sync;
                     }
 
                     unsigned long getEstimatedNodeTime(){

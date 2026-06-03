@@ -324,14 +324,14 @@ namespace Chetch{
                         if(imsg.get<unsigned int>(2) == 0){ //reset node dependency (incase remote node restarted NOTE)
                             nd->reset();
                         }
-                        unsigned long ent = nd->getEstimatedNodeTime();
-                        if(!nd->setNodeTime(imsg.get<unsigned long>(0), imsg.get<unsigned int>(1))){
-                            raiseError(SYNC_ERROR, (unsigned long)sourceNodeID << 24 | (0x00FFFFFF & ent));
+                        nd->setNodeTime(imsg.get<unsigned long>(0), imsg.get<unsigned int>(1));
+                    } else { 
+                        //If the node dependency is yet to be updated then we don't go any further
+                        if(!nd->isUpdated()){
                             return;
-                        } else {
-                            //TODO: process other message values
                         }
-                    } else { //check for stame messages
+                        
+                        //check for stame messages
                         if(nd->isStale(timestamp)){
                             raiseError(STALE_MESSAGE, edata | nd->getDiff(timestamp));
                             return;
