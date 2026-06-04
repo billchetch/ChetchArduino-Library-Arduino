@@ -123,10 +123,11 @@ namespace Chetch{
             bool waterMonitorPresent = false;
             unsigned long waterMonitorLastUpdate = 0;
             
-            double ppm = 0.0;
+            int ppm = 0.0;
             double temp = 0.0;
             double flowRate1 = 0.0;
-            
+            double waterProduced = 0.0;
+
         public:
             //Display
             LCDI2C display;
@@ -143,6 +144,9 @@ namespace Chetch{
             SwitchDevice feederPump;
             SwitchDevice pressurePump;
             
+        private:
+            void renderWaterMonitor();
+
         public:
             Watermaker(byte nodeID, byte serialPin, byte waterMonitorNodeID);
 

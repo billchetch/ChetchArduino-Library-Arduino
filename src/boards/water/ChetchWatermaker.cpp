@@ -218,6 +218,7 @@ namespace Chetch{
 
         currentSession->startedOn = millis();
         currentSession->count++;
+        waterProduced = 0.0;
 
         display.backlight(true, -1);
         updateDisplay();
@@ -268,6 +269,24 @@ namespace Chetch{
         display.updateDisplay(displayMode);
     }
 
+    void Watermaker::renderWaterMonitor(){
+        if(!waterMonitorPresent && false){
+            display.setCursor(0, 1);
+            display.print("Monitor offline");
+        } else {
+            char s[20];
+            s[0] = 0;
+            display.setCursor(0, 1);
+            sprintf(s, "TDS: %d (%d.%dC)   ", ppm, (int)temp, (int)((temp - (int)temp) * 10));
+            display.print(s);
+
+            display.setCursor(0, 2);
+            s[0] = 0;
+            sprintf(s, "FR: %d.%d L/M    ", (int)flowRate1, (int)((flowRate1 - (int)flowRate1) * 10));
+            display.print(s);
+        }
+    }
+
     bool Watermaker::renderDisplay(DisplayMode displayMode, bool displayInitialised){
         if(displayInitialised){
             display.clearDisplay();
@@ -281,10 +300,12 @@ namespace Chetch{
             display.print(" <<<<");
         } else if(displayMode == DisplayMode::RUNNING && !displayInitialised) {
             //this is called at regular intervals while running
-            display.setCursor(0, 3);
             if(isRunning()){
+                renderWaterMonitor();
+
+                display.setCursor(0, 3);
                 unsigned int duration = (unsigned int)((millis() - currentSession->startedOn) / 1000);
-                display.print("Running: ");
+                display.print("Run: ");
                 display.print(duration);
                 display.print("s   ");
             }
@@ -294,7 +315,6 @@ namespace Chetch{
             } else {
                 lastDisplayMode = displayMode;
             }
-
 
             display.clearDisplay();
 
@@ -341,22 +361,7 @@ namespace Chetch{
                     break;
 
                 case DisplayMode::NORMAL:
-                    if(!waterMonitorPresent){
-                        display.setCursor(0, 1);
-                        display.print("Monitor offline");
-                    } else {
-                        display.setCursor(0, 1);
-                        display.print("TDS: ");
-                        display.print(ppm);
-                        display.print(" (");
-                        display.print(temp);
-                        display.print("C)");
-                        
-                        display.setCursor(0, 2);
-                        display.print("FR: ");
-                        display.print(flowRate1);
-                        display.print(" L/M");
-                    }
+                    renderWaterMonitor();
                     break;
 
                 default:
@@ -401,7 +406,7 @@ namespace Chetch{
     void Watermaker::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
         if(sourceNodeID == waterMonitorNode->getNodeID()){
             //We focus on data here
-            if(message->type == ArduinoMessage::TYPE_DATA){
+            if(message->type == ArduinoMessage::TYPE_DATA || message->type == ArduinoMessage::TYPE_XDATA){
                 waterMonitorLastUpdate = millis();
 
                 if(!waterMonitorPresent){
@@ -413,17 +418,26 @@ namespace Chetch{
                 switch(message->sender){
                     case 10: //TDS
                         message->populate<double, double>(canData);
-                        ppm = message->get<double>(1);
+                        ppm = (int)message->get<double>(1);
+                        if(ppm <= 20)ppm = 0;
+
+                        //Serial.print("PPM: ");
+                        //Serial.println(ppm);
                         break;
 
                     case 11: //TEMP
                         message->populate<double>(canData);
                         temp = message->get<double>(0);
+                        //Serial.print("Temp: ");
+                        //Serial.println(temp);
                         break;
 
                     case 12: //FLOW RATE
                         message->populate<double>(canData);
                         flowRate1 = message->get<double>(0);
+
+                        //Serial.print("FR: ");
+                        //Serial.println(flowRate1);
                         break;
 
                     default:

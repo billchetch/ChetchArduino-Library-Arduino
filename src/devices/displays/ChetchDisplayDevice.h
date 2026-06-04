@@ -160,13 +160,13 @@ namespace Chetch{
 
             virtual void clearDisplay() = 0;
 
-            virtual void clearLine(unsigned int ln){
+            virtual void clearLine(unsigned int ln, unsigned int startCol = 0){
                 if(isLocked())return;
-                setCursor(0, ln);
-                for(unsigned int i = 0; i < cols; i++){
+                setCursor(startCol, ln);
+                for(unsigned int i = startCol; i < cols; i++){
                     print<char>(' ');
                 }
-                setCursor(0, ln);
+                setCursor(startCol, ln);
             }
             
             void setCursor(unsigned int cx, unsigned int cy){ 

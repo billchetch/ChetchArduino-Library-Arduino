@@ -39,8 +39,7 @@ namespace Chetch{
     void FlowMeter::populateOutboundMessage(ArduinoMessage* message, byte messageID){
         switch(messageID){
             case MESSAGE_ID_FLOW_RATE:
-                message->type = ArduinoMessage::TYPE_DATA;
-                if(message->tag == 0)message->tag = 1; //set to non-zero to distinguish this message
+                message->type = ArduinoMessage::TYPE_XDATA; //we use extended data type to differentite from report data
                 message->add(getFlowRate());
                 break;
 
