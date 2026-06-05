@@ -237,23 +237,23 @@ namespace Chetch{
         return getMessageForHandler(Board->getID(), messageType, tag);
     }
 
-    bool MCP2515Device::sendMessageForDevice(ArduinoDevice* device, byte messageID){
+    MCP2515Device::MCP2515ErrorCode MCP2515Device::sendMessageForDevice(ArduinoDevice* device, byte messageID){
         ArduinoMessage* msg = getMessageForDevice(device);
         if(device != NULL){
             device->populateOutboundMessage(msg, messageID);
             return sendMessage(msg);
         } else {
-            return false;
+            return MCP2515ErrorCode::NO_ERROR;
         }
     }
 
-    bool MCP2515Device::sendMessageForBoard(byte messageID){
+    MCP2515Device::MCP2515ErrorCode MCP2515Device::sendMessageForBoard(byte messageID){
         ArduinoMessage* msg = getMessageForBoard();
         if(Board != NULL){
             Board->populateOutboundMessage(msg, messageID);
             return sendMessage(msg);
         } else {
-            return false;
+            return MCP2515ErrorCode::NO_ERROR;
         }
     }
 
@@ -344,7 +344,7 @@ namespace Chetch{
                     indicate(true); 
                 }
 
-                handleReceivedMessage(sourceNodeID, &imsg);
+                //handleReceivedMessage(sourceNodeID, &imsg);
                 onMessageReceived(sourceNodeID, &imsg);
                 break;
             }
@@ -405,9 +405,9 @@ namespace Chetch{
                     } else {
                         response = getMessageForDevice(device, ArduinoMessage::TYPE_STATUS_RESPONSE);
                         device->setStatusInfo(response);
-                        if(device->getID() == getID())this->sqCount++;
-                        if(sendMessage(response)){
-                            if(device->getID() == getID())this->srCount++;
+                        if(device->getID() == getID())this->statusRequestCount++;
+                        if(sendMessage(response) == MCP2515ErrorCode::NO_ERROR){
+                            if(device->getID() == getID())this->statusResponseCount++;
                         }
                         handled = true;
                     }
@@ -498,38 +498,40 @@ namespace Chetch{
                     handled = true;
                 }
             }
-        }
+        }   
+    }
 
-        if(!handled && messageReceivedListener != NULL){
-            messageReceivedListener(this, sourceNodeID, message, canInFrame.data);
+    void MCP2515Device::onMessageReceived(byte sourceNodeID, ArduinoMessage *message){
+        if(messageReceivedListener != NULL){
+            messageReceivedListener(this, sourceNodeID, message, &canInFrame);
         }
     }
 
-    bool MCP2515Device::sendMessage(ArduinoMessage* message){
+    MCP2515Device::MCP2515ErrorCode MCP2515Device::sendMessage(ArduinoMessage* message, bool raiseSendError){
         if(message == NULL){
             raiseError(MCP2515ErrorCode::NO_MESSAGE);
-            return false; //ERROR!
+            return MCP2515ErrorCode::NO_MESSAGE; //ERROR!
         }
         if(message->type > 31 || message->type < 1){
             raiseError(MCP2515ErrorCode::INVALID_MESSAGE, 4);
-            return false; //ERROR .... not a valid message type
+            return MCP2515ErrorCode::INVALID_MESSAGE; //ERROR .... not a valid message type
         }
         
         if(message->tag > 7){
             raiseError(MCP2515ErrorCode::INVALID_MESSAGE, 5);
-            return false; //ERROR .... tag values can only be 0 - 7
+            return  MCP2515ErrorCode::INVALID_MESSAGE; //ERROR .... tag values can only be 0 - 7
         }
 
         if(message->sender > 15){
             raiseError(MCP2515ErrorCode::INVALID_MESSAGE, 6);
-            return false; //ERROR .... sender only has 4 bits available
+            return  MCP2515ErrorCode::INVALID_MESSAGE; //ERROR .... sender only has 4 bits available
         }
         
         
         canOutFrame.can_dlc = message->getByteCount() - ArduinoMessage::HEADER_SIZE - message->getArgumentCount();
         if(canOutFrame.can_dlc > CAN_MAX_DLC){
             raiseError(MCP2515ErrorCode::INVALID_MESSAGE, 7);
-            return false; //ERROR ... can data of 8 bytes sets this limit
+            return MCP2515ErrorCode::INVALID_MESSAGE; //ERROR ... can data of 8 bytes sets this limit
         }
 
         //CAN DATA: copy message bytes to data array
@@ -542,7 +544,7 @@ namespace Chetch{
         }
         if(canOutFrame.can_dlc != n){
             raiseError(INVALID_MESSAGE, 8);
-            return false;
+            return  MCP2515ErrorCode::INVALID_MESSAGE;
         }
         
         //CAN ID
@@ -555,7 +557,7 @@ namespace Chetch{
         canOutFrame.can_id |= CAN_EFF_FLAG;
         
         if(sendValidator != NULL && !sendValidator(this, &omsg, canOutFrame.can_id, canOutFrame.data)){
-            return false;
+            return MCP2515ErrorCode::CUSTOM_ERROR; //maybe change to send cancelled error code
         }
 
         //Send the message and handle the response
@@ -567,19 +569,19 @@ namespace Chetch{
                     indicate(true);
                 }
                 onMessageSent(message);
-                return true;
+                return MCP2515ErrorCode::NO_ERROR;
 
             case MCP2515::ERROR_FAILTX:
                 raiseError(MCP2515ErrorCode::FAIL_TX, edata);
-                return false;
+                return MCP2515ErrorCode::FAIL_TX;
 
             case MCP2515::ERROR_ALLTXBUSY:
                 raiseError(MCP2515ErrorCode::ALL_TX_BUSY, edata);
-                return false;
+                return MCP2515ErrorCode::ALL_TX_BUSY;
 
             default:
                 raiseError(MCP2515ErrorCode::UNKNOWN_SEND_ERROR, edata);
-                return false;
+                return MCP2515ErrorCode::UNKNOWN_SEND_ERROR;
         }
     }
 } //end namespace

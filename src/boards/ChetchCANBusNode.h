@@ -2,6 +2,7 @@
 #define CHETCH_CAN_BUS_NODE_H
 
 #include "ChetchCANBusBase.h"
+#include "ChetchCANBusIO.h"
 #include "devices/comms/can/ChetchMCP2515Node.h"
 #include "devices/comms/serial/ChetchSerialPinSlave.h"
 
@@ -17,6 +18,7 @@ namespace Chetch{
         public:
             CANBusNode(byte nodeID, byte serialPin);
 
+            bool begin(MessageIO* io = NULL) override; //will return false if fails to begin
     };
 } //end namespace
 #endif

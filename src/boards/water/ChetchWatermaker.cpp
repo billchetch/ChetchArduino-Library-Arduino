@@ -14,8 +14,8 @@ namespace Chetch{
 
     {
         //Board stuff
-        setReportInterval(REPORT_INTERVAL*10); //value when not running
-        waterMonitorNode = mcp.addNodeDependency(waterMonitorNodeID, 6);
+        setReportInterval(REPORT_INTERVAL_IDLE); //value when not running
+        waterMonitorNode = mcp.addNodeDependency(waterMonitorNodeID, 32); //32*32(TIMESTAMP RESOLUTION = 5) = 1024 millis allowed drift before being regarded as stale
         
         //Devices
         //Legacy stuff, in newer boards this is set to 7 to allow for use of altserialsoft library
@@ -56,9 +56,6 @@ namespace Chetch{
             } else {
                 wm->stop();
             }
-
-            //Send message out
-            wm->mcp.sendMessageForDevice(sd, SwitchDevice::MESSAGE_ID_TRIGGERED);
         });
 
         lps.addSwitchListener([](SwitchDevice* sd, bool on){
@@ -77,8 +74,6 @@ namespace Chetch{
                 wm->updateDisplay();
             }
 
-            //Send message out
-            wm->mcp.sendMessageForDevice(sd, SwitchDevice::MESSAGE_ID_TRIGGERED);
         });
 
         hps.addSwitchListener([](SwitchDevice* sd,bool on){
@@ -91,30 +86,8 @@ namespace Chetch{
             if(!wm->hasError()){
                 wm->updateDisplay();
             }
-
-            wm->mcp.sendMessageForDevice(sd, SwitchDevice::MESSAGE_ID_TRIGGERED);
         });
 
-        feederPump.addSwitchListener([](SwitchDevice* sd, bool on){
-            Watermaker* wm = (Watermaker*)sd->Board;
-            wm->mcp.sendMessageForDevice(sd, SwitchDevice::MESSAGE_ID_TRIGGERED);
-        });
-
-        pressurePump.addSwitchListener([](SwitchDevice* sd, bool on){
-            Watermaker* wm = (Watermaker*)sd->Board;
-            wm->mcp.sendMessageForDevice(sd, SwitchDevice::MESSAGE_ID_TRIGGERED);
-        });
-
-        solenoidSalt.addSwitchListener([](SwitchDevice* sd, bool on){
-            Watermaker* wm = (Watermaker*)sd->Board;
-            wm->mcp.sendMessageForDevice(sd, SwitchDevice::MESSAGE_ID_TRIGGERED);
-        });
-
-        solenoidFresh.addSwitchListener([](SwitchDevice* sd, bool on){
-            Watermaker* wm = (Watermaker*)sd->Board;
-            wm->mcp.sendMessageForDevice(sd, SwitchDevice::MESSAGE_ID_TRIGGERED);
-        });
-        
 
         //Add devices to board
         //Display
@@ -223,7 +196,7 @@ namespace Chetch{
         display.backlight(true, -1);
         updateDisplay();
 
-        setReportInterval(REPORT_INTERVAL);
+        setReportInterval(REPORT_INTERVAL_RUNNING);
     }
 
     void Watermaker::stop(){
@@ -240,7 +213,7 @@ namespace Chetch{
         updateDisplay();
         display.backlight(true, 5000);
 
-        setReportInterval(REPORT_INTERVAL*10);
+        setReportInterval(REPORT_INTERVAL_IDLE);
     }
 
     void Watermaker::reset(){
@@ -258,10 +231,10 @@ namespace Chetch{
             display.backlight(true, -1);
             updateDisplay(DisplayMode::ERROR);
 
-            ArduinoMessage* msg = mcp.getMessageForBoard(ArduinoMessage::MessageType::TYPE_ERROR);
+            /*ArduinoMessage* msg = mcp.getMessageForBoard(ArduinoMessage::MessageType::TYPE_ERROR);
             msg->add((byte)50); //TODO: this isa board custom error value
             msg->add((byte)errorCode);
-            mcp.sendMessage(msg);
+            mcp.sendMessage(msg);*/
         }
     }
 
@@ -397,10 +370,6 @@ namespace Chetch{
             duration = (unsigned int)((millis() - currentSession->startedOn) / 1000);
         }
         message->add(duration);
-    }
-
-    void Watermaker::onReportReady(){
-        mcp.sendMessageForBoard(MESSAGE_ID_REPORT);
     }
 
     void Watermaker::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){

@@ -51,11 +51,10 @@ namespace Chetch{
         public:
             WaterMonitor(byte nodeID, byte serialPin);
 
-            int getPPM(); 
             void setTemperature(double temp){ tds.setTemperature(temp); }
             double getTemperature(){ return tempArray.getTemperature(); }
             double getFlowRate1(){ return flowMeter1.getFlowRate(); }          
 
     }; //end class
 } //end namespcae
-#endif
+#endif`

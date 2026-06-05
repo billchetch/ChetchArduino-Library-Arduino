@@ -27,7 +27,7 @@ namespace Chetch{
 
             bool begin() override;
             //void loop() override;
-            //void setReportInfo(ArduinoMessage* message) override;
+            void setReportInfo(ArduinoMessage* message) override;
             
     };
 } //end namespace

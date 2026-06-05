@@ -6,8 +6,6 @@ namespace Chetch{
 
     MCP2515Node::MCP2515Node(byte nodeID, int csPin, unsigned int presenceInterval) : MCP2515Device(nodeID, csPin, presenceInterval)
     { 
-
-        //Add master node as message filter
     }
 
 
@@ -77,4 +75,10 @@ namespace Chetch{
 
         return MCP2515Device::begin();
     }
+
+    void MCP2515Node::setReportInfo(ArduinoMessage* message){
+        message->add(statusRequestCount);
+        message->add(statusResponseCount);
+    }
+            
 }

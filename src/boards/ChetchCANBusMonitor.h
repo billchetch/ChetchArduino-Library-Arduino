@@ -25,6 +25,7 @@ namespace Chetch{
             CANBusMonitor(byte nodeID, byte serialPin);
 
             bool begin(Stream *stream, byte framePadding = 0);
+            void loop() override;
     };
 } //end namespace
 #endif

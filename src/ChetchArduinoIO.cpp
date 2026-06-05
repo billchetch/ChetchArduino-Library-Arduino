@@ -36,7 +36,9 @@ namespace Chetch{
             outboundMessage.sender = outboundMessage.target;
             outboundMessage.tag = qi.messageTag;
             qi.handler->populateOutboundMessage(&outboundMessage, qi.messageID);
-            sendMessage();
+            if(sendMessage()){
+                qi.handler->onMessageSent(&outboundMessage, qi.messageID);
+            }
         }
 
         //3. Check if message has been received, process it and respond which will populate outbound to be sent next loop

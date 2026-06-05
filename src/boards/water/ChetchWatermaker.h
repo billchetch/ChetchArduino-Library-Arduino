@@ -54,8 +54,9 @@ History:
 #define LCD_COLS 20
 #define LCD_ROWS 4
 #define LCD_REFRESH LCDI2C::RefreshRate::REFRESH_5HZ
-#define DISPLAY_UPDATE_INTERVAL 500 //setReportInterval
-#define REPORT_INTERVAL 1000
+#define DISPLAY_UPDATE_INTERVAL 100 //setReportInterval
+#define REPORT_INTERVAL_IDLE 1000  //when idle
+#define REPORT_INTERVAL_RUNNING 1000 //when running
 
 #define SELECTOR_FIRST_PIN 6  //Make water, Expel air, Rinse
 #define SELECTION_SIZE 3 //see the options above

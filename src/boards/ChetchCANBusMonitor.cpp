@@ -17,4 +17,12 @@ namespace Chetch{
         mcp.setOutboundMessage(io.getOutboundMessage());
         return CANBusBase::begin(&io);
     }
+
+    void CANBusMonitor::loop(){
+        CANBusBase::loop();
+
+        if(begun){
+            getMCP()->readMessage();
+        }
+    }
 }

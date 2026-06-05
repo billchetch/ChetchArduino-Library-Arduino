@@ -111,7 +111,7 @@ namespace Chetch{
                 CRC_ERROR, //RX error - probably from SPI issues but who knows.. 
                 STALE_MESSAGE, //RX error - an old message
                 SYNC_ERROR, //RX error - if presence is out of sync
-                CUSTOM_ERROR, //For individual applications
+                CUSTOM_ERROR, //For individual applications or when send it cancelled
                 DEBUG_ASSERT, //For debug purposes
             };
 
@@ -196,7 +196,7 @@ namespace Chetch{
                     }
             };
     
-            typedef void (*MessageListener)(MCP2515Device*, byte, ArduinoMessage*, byte*); //device, node, message, canData
+            typedef void (*MessageListener)(MCP2515Device*, byte, ArduinoMessage*, can_frame*); //device, node, message, canData
             typedef void (*ErrorListener)(MCP2515Device*, MCP2515ErrorCode, unsigned long errorData);
             typedef bool (*SendValidator)(MCP2515Device*, ArduinoMessage*, unsigned long canID, byte* canData);
 
@@ -224,8 +224,9 @@ namespace Chetch{
             bool remoteReset = false;
 
             //REMVOE! for debug only this
-            unsigned int sqCount = 0;
-            unsigned int srCount = 0;
+            unsigned int statusRequestCount = 0;
+            unsigned int statusResponseCount = 0;
+            
             
         protected:
             byte nodeID = 0;
@@ -293,15 +294,16 @@ namespace Chetch{
             ArduinoMessage* getMessageForDevice(ArduinoDevice* device, ArduinoMessage::MessageType messageType = ArduinoMessage::TYPE_DATA, byte tag = 0);
             ArduinoMessage* getMessageForBoard(ArduinoMessage::MessageType messageType = ArduinoMessage::TYPE_DATA, byte tag = 0);
             
-            bool sendMessageForDevice(ArduinoDevice* device, byte messageID);
-            bool sendMessageForBoard(byte messageID);
-            bool sendMessage(ArduinoMessage *message);
+            MCP2515ErrorCode sendMessageForDevice(ArduinoDevice* device, byte messageID);
+            MCP2515ErrorCode sendMessageForBoard(byte messageID);
+            MCP2515ErrorCode sendMessage(ArduinoMessage *message, bool raiseError = true);
             virtual void onMessageSent(ArduinoMessage *message){};
 
             bool checkReceive();
             void readMessage();
             void handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message);
-            virtual void onMessageReceived(byte sourceNodeID, ArduinoMessage *message){};
+
+            virtual void onMessageReceived(byte sourceNodeID, ArduinoMessage *message);
     };
 } //end namespace
 #endif //end prevent multiple inclusions

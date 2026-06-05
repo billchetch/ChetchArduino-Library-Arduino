@@ -12,6 +12,7 @@
 namespace Chetch{
     class CANBusBase : public ArduinoBoard{
         public:
+            //For closure issues easier to get teh board from the device
             static bool sendBusMessage(ArduinoDevice* device, byte messageID);
             
         private:
@@ -22,11 +23,8 @@ namespace Chetch{
             CANBusBase(MCP2515Device* pmcp, SerialPin* pspin);
 
             MCP2515Device* getMCP(){ return pmcp; }
-
-            virtual void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData);
-
-            bool begin(MessageIO* io = NULL) override;
-            void loop() override;
+            
+            virtual void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData);            
     };
 }
 #endif

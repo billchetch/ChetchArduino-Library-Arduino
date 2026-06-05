@@ -9,6 +9,14 @@ namespace Chetch{
     {
         addDevice(&mcp);
         addDevice(&spin);   
+
+        mcp.setReportInterval(1000);
     }
 
+    bool CANBusNode::begin(MessageIO* io){
+        if(io == NULL){
+            io = new CANBusIO(getMCP());
+        }
+        return CANBusBase::begin(io);
+    }
 }
