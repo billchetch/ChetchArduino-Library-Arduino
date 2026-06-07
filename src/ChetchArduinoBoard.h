@@ -73,7 +73,7 @@ namespace Chetch{
 
             void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response) override;
             void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
-            void onMessageSent(ArduinoMessage* message, byte messageID) override {};
+            void onOutboundMessageSent(ArduinoMessage* message, byte messageID) override {};
 
             virtual void setStatusInfo(ArduinoMessage* message);
             virtual void setReportInfo(ArduinoMessage* message);

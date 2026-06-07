@@ -194,6 +194,8 @@ namespace Chetch{
         outboundMessage->add(canFrame->can_id);
         outboundMessage->add(message->type);
         
+        //Note: we add the message sender value rather than rely on can_id as the value stored in can_id
+        //is modified so as to only use 3 bits (see MCP2515Device for how IDs are packaged)
         if(messageID == MESSAGE_ID_FORWARD_SENT){
             if(message->sender == 0){
                 outboundMessage->add(Board->getID());    

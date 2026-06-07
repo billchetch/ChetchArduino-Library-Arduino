@@ -3,41 +3,87 @@
 namespace Chetch{
     CANBusIO::CANBusIO(MCP2515Device* mcp){ 
         this->mcp = mcp; 
-
-        mcp->addMessageReceivedListener([](MCP2515Device* mcpDev, byte sourceNodeID, ArduinoMessage* msg, can_frame* canFrame){
-            CANBusIO* io = (CANBusIO*)mcpDev->Board->getIO();
-            io->handleReceivedBusMessage(sourceNodeID, msg, canFrame);
-        });
     }
 
     void CANBusIO::loop(){
+        ArduinoMessage* message;
+        MCP2515Device::MCP2515ErrorCode err;
+
         if(!isMessageQueueEmpty()){
             ArduinoIO::MessageQueueItem* qi = &messageQueue[queueStart];
             //Serial.println("Sending a message from IO");
 
-            ArduinoMessage* msg = mcp->getMessageForHandler(qi->handler->getID(), ArduinoMessage::TYPE_NONE, qi->messageTag);
-            qi->handler->populateOutboundMessage(msg, qi->messageID);
-            MCP2515Device::MCP2515ErrorCode err = mcp->sendMessage(msg, false);
+            message = mcp->getMessageForHandler(qi->handler->getID(), ArduinoMessage::TYPE_NONE, qi->messageTag);
+            qi->handler->populateOutboundMessage(message, qi->messageID);
+            err = mcp->sendMessage(message, false);
             if(err == MCP2515Device::MCP2515ErrorCode::NO_ERROR){
-                qi->handler->onMessageSent(msg, qi->messageID);
+                qi->handler->onOutboundMessageSent(message, qi->messageID);
 
                 //decremeent queue
                 queueCount--;
                 if(!isMessageQueueEmpty()){
                     queueStart = (queueStart + 1) % CB_QUEUE_SIZE;
                 }
+            } else {
+                Serial.print("Send error: ");
+                Serial.println(err);
             }
         }
 
-        //now we read a message
-        mcp->readMessage();
+        //now we read a message and route it
+        message = mcp->readMessage();
+        if(message != NULL){ //we have received a valid and parsed message
+            if(ArduinoMessage::getGroup(message) == ArduinoMessage::TARGETED_GROUP){
+                byte targetNode = message->getLast<byte>();
+                ArduinoBoard* board = (ArduinoBoard*)owner;
+                ArduinoMessage* response = NULL;
+                byte target = message->sender;
+
+                /*Serial.print("Received ");
+                Serial.print(message->type);
+                Serial.print(" from ");
+                Serial.println(message->sender);*/
+
+                if(targetNode == 0 || targetNode == mcp->getNodeID()){
+                    if(target >= ArduinoBoard::START_DEVICE_IDS_AT){
+                        ArduinoDevice* device = board->getDeviceByID(target);
+                        if(device != NULL){
+                            response = mcp->getMessageForDevice(device, ArduinoMessage::TYPE_NONE, message->tag);
+                            device->handleInboundMessage(message, response);
+                        } else {
+                            //error
+                        }
+                    } else {
+                        response = mcp->getMessageForBoard(ArduinoMessage::TYPE_NONE, message->tag);
+                        board->handleInboundMessage(message, response);
+                    }
+                }
+
+                //Now if the response is
+                if(response != NULL && !response->isEmpty()){
+                    /*Serial.print("Responding with ");
+                    Serial.print(response->type);
+                    Serial.print(" to ");
+                    Serial.print(response->target);
+                    Serial.print(" from ");
+                    Serial.print(response->sender);
+                    Serial.print(" args#: ");
+                    Serial.println(response->getArgumentCount());*/
+                    err = mcp->sendMessage(response, false);
+                    if(err == MCP2515Device::MCP2515ErrorCode::NO_ERROR){
+                        
+                    } else {
+                        //Serial.print("Error sending: ");
+                        //Serial.println(err);
+                    }
+                }
+            } else {
+                //broadcast or misc messages
+            }
+        }
     }
 
-    void CANBusIO::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, can_frame* canFrame){
-        Serial.print("Received bus message from");
-        Serial.print(sourceNodeID);
-        Serial.println(message->type);
-
+        //bool isTargetedMessage = message->type 
         /*ArduinoBoard* Board = (ArduinoBoard*)owner;
         ArduinoMessage* response = NULL:
         int targetNode = -1;
@@ -180,7 +226,6 @@ namespace Chetch{
                 }
             }
         } */
-    }
 
     bool CANBusIO::isMessageQueueFull(){
         return queueCount >= CB_QUEUE_SIZE;

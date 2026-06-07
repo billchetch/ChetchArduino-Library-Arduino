@@ -37,7 +37,7 @@ namespace Chetch{
             outboundMessage.tag = qi.messageTag;
             qi.handler->populateOutboundMessage(&outboundMessage, qi.messageID);
             if(sendMessage()){
-                qi.handler->onMessageSent(&outboundMessage, qi.messageID);
+                qi.handler->onOutboundMessageSent(&outboundMessage, qi.messageID);
             }
         }
 

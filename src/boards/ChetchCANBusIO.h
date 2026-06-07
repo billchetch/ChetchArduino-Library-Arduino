@@ -29,7 +29,6 @@ namespace Chetch{
             bool sendMessage() override {}; //not used
             void loop() override;
 
-            void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, can_frame* canFrame);
     }; //end class
 } //end namespace
 #endif

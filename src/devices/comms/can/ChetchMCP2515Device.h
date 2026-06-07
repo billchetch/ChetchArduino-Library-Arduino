@@ -99,6 +99,9 @@ namespace Chetch{
             static const byte TIMESTAMP_RESOLUTION = 4; //Shift right by this many bits... lower number makes finer resolution
             static const unsigned int INDICATOR_INTERVAL = 50;
 
+            static const byte MESSAGE_ID_PRESENCE = 8;
+            static const byte MESSAGE_ID_ERROR = 16;
+
             enum MCP2515ErrorCode : byte{
                 NO_ERROR = 0,
                 UNKNOWN_RECEIVE_ERROR, //RX error
@@ -159,8 +162,8 @@ namespace Chetch{
                         updated = false;
                     }
 
-                    void setNodeTime(unsigned long remoteMillis, unsigned int remoteElapsed){
-                        if(updated){
+                    void setNodeTime(unsigned long remoteMillis){ //}, unsigned int remoteElapsed){
+                        /*if(updated){
                             unsigned int localElapsed = (unsigned int)(millis() - updatedOn);
                             if(localElapsed >= remoteElapsed){
                                 nodeTime = remoteMillis + (localElapsed - remoteElapsed);
@@ -170,8 +173,9 @@ namespace Chetch{
                         } else {
                             nodeTime = remoteMillis;
                             updated = true;
-                        }
-                        
+                        }*/
+                        nodeTime = remoteMillis;
+                        updated = true;
                         updatedOn = millis();
                     }
 
@@ -218,9 +222,6 @@ namespace Chetch{
             unsigned long lastPresenceOn = 0;
             unsigned int presenceSentCount = 0; //to indicate first presence (successfully) sent note this will be zero on rollover
 
-            byte responseID = 0;
-            bool remoteInitialised = false;
-            bool pinged = false;
             bool remoteReset = false;
 
             //REMVOE! for debug only this
@@ -237,7 +238,6 @@ namespace Chetch{
             SendValidator sendValidator = NULL;
             ErrorListener errorListener = NULL;
 
-            bool broadcastError = false;
             MCP2515ErrorCode lastError = MCP2515ErrorCode::NO_ERROR;
             unsigned long lastErrorData = 0;
             
@@ -264,8 +264,7 @@ namespace Chetch{
             
             void resetErrors();
             int clearReceive();
-            bool allowSending();
-
+            
             //Node dependency
             NodeDependency* addNodeDependency(byte nodeID, byte tolerance = 1);
             bool hasDependencies(){ return firstDependency != NULL; }
@@ -285,6 +284,9 @@ namespace Chetch{
             bool begin() override;
             void loop() override;
             void setStatusInfo(ArduinoMessage* response) override;
+            void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
+            void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response) override;
+            void onOutboundMessageSent(ArduinoMessage* message, byte messageID) override;
             
             void addMessageReceivedListener(MessageListener listener){ messageReceivedListener = listener; }
             void addSendValidator(SendValidator validator){ sendValidator = validator; }
@@ -297,12 +299,13 @@ namespace Chetch{
             MCP2515ErrorCode sendMessageForDevice(ArduinoDevice* device, byte messageID);
             MCP2515ErrorCode sendMessageForBoard(byte messageID);
             MCP2515ErrorCode sendMessage(ArduinoMessage *message, bool raiseError = true);
-            virtual void onMessageSent(ArduinoMessage *message){};
+            virtual void onMessageSent(ArduinoMessage *message);
 
             bool checkReceive();
-            void readMessage();
-            void handleReceivedMessage(byte sourceNodeID, ArduinoMessage *message);
+            ArduinoMessage* readMessage();
 
+            //these should be protected
+            virtual bool parseReceivedMessage(byte sourceNodeID, ArduinoMessage *message);
             virtual void onMessageReceived(byte sourceNodeID, ArduinoMessage *message);
     };
 } //end namespace

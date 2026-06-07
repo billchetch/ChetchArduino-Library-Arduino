@@ -70,6 +70,7 @@ namespace Chetch{
         }
 
         presenceSentCount = 0;
+        enqueueMessageToSend(MESSAGE_ID_PRESENCE);
 
         return ArduinoDevice::begin();;
 	}
@@ -89,7 +90,7 @@ namespace Chetch{
 
     void MCP2515Device::raiseError(MCP2515ErrorCode errorCode, unsigned long errorData){
         bool repeatError = lastError == errorCode;
-
+        bool broadcastError = false;
         if(lastError == MCP2515ErrorCode::NO_ERROR){
             broadcastError = true;
         } else if(repeatError){
@@ -111,6 +112,10 @@ namespace Chetch{
 
         if(errorListener != NULL){
             errorListener(this, errorCode, errorData);
+        }
+
+        if(broadcastError){
+            enqueueMessageToSend(MESSAGE_ID_ERROR);
         }
     }
 
@@ -156,44 +161,102 @@ namespace Chetch{
         ArduinoMessage* msg;
         
         //We ensure that the first message sent is a presence message and this should be as soon as the device has begun
-        if(presenceInterval > 0 && (presenceSentCount == 0 || (ms - lastPresenceOn) > presenceInterval)){
-            msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_PRESENCE, 1);
-            msg->add(ms);
-            msg->add((unsigned int)(ms - lastPresenceOn));
-            msg->add(presenceSentCount++); //if 0 then resets presence in remote node (i.e. first presence message)
-            if(presenceSentCount == 0)presenceSentCount = 1; //to avoid firing like first joined
-            sendMessage(msg);
+        if(presenceInterval > 0 && (ms - lastPresenceOn) > presenceInterval){
+            enqueueMessageToSend(MESSAGE_ID_PRESENCE);
             lastPresenceOn = millis();
-        } else if(broadcastError){
-            //send error message
-            msg = getMessageForDevice(this, ArduinoMessage::MessageType::TYPE_ERROR, 1);
-            msg->add((byte)lastError);
-            msg->add(lastErrorData);
-            msg->add(errorCodeFlags);
-            msg->add(mcp2515.getErrorFlags());
-            
-            sendMessage(msg);
-        
-            //reset broadcast flag
-            broadcastError = false;
-        } else if(remoteInitialised){
-            msg = getMessageForDevice(this, ArduinoMessage::TYPE_INITIALISE_RESPONSE);
-            msg->add(ms);
-            msg->add((byte)TIMESTAMP_RESOLUTION);
-            msg->add(presenceInterval);
-            sendMessage(msg);
-            remoteInitialised = false; //reset flag
-        } else if(pinged){
-            msg = getMessageForDevice(this, ArduinoMessage::TYPE_PING_RESPONSE);
-            setPingInfo(msg);
-            sendMessage(msg);
-            pinged = false; //reset flag
-        } else if(remoteReset){
-            msg = getMessageForDevice(this, ArduinoMessage::TYPE_RESET_RESPONSE);
-            setStatusInfo(msg);
-            sendMessage(msg);
-            remoteReset = false; //reset flag
         }
+    }
+
+    void MCP2515Device::handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response){
+        switch(message->type){
+            case ArduinoMessage::TYPE_INITIALISE:
+                response->type = ArduinoMessage::TYPE_INITIALISE_RESPONSE;
+                response->add(millis());
+                response->add((byte)TIMESTAMP_RESOLUTION);
+                response->add(presenceInterval);
+                break;
+
+            case ArduinoMessage::TYPE_RESET:
+                {
+                    ResetRegime regime = message->get<ResetRegime>(0);
+                    switch(regime){
+                        case RESET_ERRORS:
+                            resetErrors();
+                            break;
+
+                        case RESET_DEVICE:
+                            break;
+
+                        default:
+                            break;
+                    }
+                    response->type = ArduinoMessage::TYPE_RESET_RESPONSE;
+                    setStatusInfo(response);
+                }
+                break;
+
+            case ArduinoMessage::TYPE_ERROR_TEST:
+                {
+                    MCP2515ErrorCode ecode = message->get<MCP2515ErrorCode>(0);
+                    unsigned long edata = message->hasArgument(1) ? message->get<unsigned long>(1) : 0;
+                    raiseError(ecode, edata);
+                }
+                break;
+
+            default:
+                if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST){
+                    statusRequestCount++;
+                }
+                ArduinoDevice::handleInboundMessage(message, response);
+                break;
+        }
+    }
+
+    void MCP2515Device::populateOutboundMessage(ArduinoMessage* message, byte messageID){
+        switch(messageID){
+            case MESSAGE_ID_PRESENCE:
+                message->type = ArduinoMessage::TYPE_PRESENCE;
+                message->add(millis());
+                message->add(presenceSentCount); //if 0 then resets presence in remote node (i.e. first presence message)
+                break;
+
+            case MESSAGE_ID_ERROR:
+                message->type = ArduinoMessage::TYPE_ERROR;
+                message->add((byte)lastError);
+                message->add(lastErrorData);
+                message->add(errorCodeFlags);
+                message->add(mcp2515.getErrorFlags());
+                break;
+
+            default:
+                ArduinoDevice::populateOutboundMessage(message, messageID);
+                break;
+        }
+    }
+
+    void MCP2515Device::onOutboundMessageSent(ArduinoMessage* message, byte messageID){
+        switch(messageID){
+            case MESSAGE_ID_PRESENCE:
+                presenceSentCount++;
+                if(presenceSentCount == 0)presenceSentCount = 1; //to avoid firing like first joined
+                break;
+
+            case MESSAGE_ID_ERROR:
+                //Serial.print("Sent error");
+                break;
+
+            default:
+                ArduinoDevice::onOutboundMessageSent(message, messageID);
+                break;
+        }
+    }
+
+    void MCP2515Device::setStatusInfo(ArduinoMessage* message){
+        message->add(mcp2515.getStatus());
+        message->add(mcp2515.getErrorFlags());
+        message->add(mcp2515.errorCountTX());
+        message->add(mcp2515.errorCountRX());
+        message->add(errorCodeFlags);
     }
 
     byte MCP2515Device::crc5(byte* data, byte len){
@@ -261,7 +324,7 @@ namespace Chetch{
         return mcp2515.checkReceive();
     }
 
-    void MCP2515Device::readMessage(){
+    ArduinoMessage* MCP2515Device::readMessage(){
         MCP2515::ERROR err = mcp2515.readMessage(&canInFrame);
         switch(err){
             case MCP2515::ERROR_OK:
@@ -288,53 +351,54 @@ namespace Chetch{
                 if(!vcrc5(tagAndCRC & 0x1F, canInFrame.data, canInFrame.can_dlc)){
                     //data error
                     raiseError(CRC_ERROR, edata | (tagAndCRC & 0x1F));
-                    return;
+                    return NULL;
                 }
 
+                imsg.data = sourceNodeID; //possibly useful as this is data in CAN ID that is not included in Arduino message
                 imsg.type = messageType;
                 imsg.tag = (tagAndCRC >> 5) & 0x07;
                 imsg.sender = (nodeIDAndSender & 0x0F);
-                if(imsg.sender == 0){
-                    imsg.sender = Board->getID();
-                } else {
+                if(imsg.sender > 0){
                     imsg.sender = (imsg.sender - 1)+ ArduinoBoard::START_DEVICE_IDS_AT; //last 4 bits make the sender
-                } 
+                } else {
+                    imsg.sender = Board->getID();
+                }
                 
                 //Do some basic validationg
                 if(sourceNodeID < MIN_NODE_ID || sourceNodeID > MAX_NODE_ID){
                     raiseError(INVALID_MESSAGE, edata | 1);
-                    return; //ERROR....
+                    return NULL; //ERROR....
                 }
 
                 if(imsg.type < 1 || imsg.type > 31){
                     raiseError(INVALID_MESSAGE, edata | 2);
-                    return; //ERROR....
+                    return NULL; //ERROR....
                 }
 
                 if(imsg.tag > 7){
                     raiseError(INVALID_MESSAGE, edata | 3);
-                    return; //ERROR....
+                    return NULL; //ERROR....
                 }
 
                 //handle node dependency
                 NodeDependency* nd = getDependency(sourceNodeID);
                 if(nd != NULL){
                     if(imsg.type == ArduinoMessage::MessageType::TYPE_PRESENCE){
-                        imsg.populate<unsigned long, unsigned int, unsigned int>(canInFrame.data);
-                        if(imsg.get<unsigned int>(2) == 0){ //reset node dependency (incase remote node restarted NOTE)
+                        imsg.populate<unsigned long, unsigned int>(canInFrame.data);
+                        if(imsg.get<unsigned int>(1) == 0){ //reset node dependency (incase remote node restarted NOTE)
                             nd->reset();
                         }
-                        nd->setNodeTime(imsg.get<unsigned long>(0), imsg.get<unsigned int>(1));
+                        nd->setNodeTime(imsg.get<unsigned long>(0)); //, imsg.get<unsigned int>(1));
                     } else { 
                         //If the node dependency is yet to be updated then we don't go any further
                         if(!nd->isUpdated()){
-                            return;
+                            return NULL;
                         }
                         
                         //check for stame messages
                         if(nd->isStale(timestamp)){
                             raiseError(STALE_MESSAGE, edata | nd->getDiff(timestamp));
-                            return;
+                            return NULL;
                         }
                     }
                 }
@@ -344,164 +408,94 @@ namespace Chetch{
                     indicate(true); 
                 }
 
-                //handleReceivedMessage(sourceNodeID, &imsg);
+                bool parsed = parseReceivedMessage(sourceNodeID, &imsg);
                 onMessageReceived(sourceNodeID, &imsg);
-                break;
+                return parsed ? &imsg : NULL;
             }
 
             case MCP2515::ERROR_FAIL:
                 raiseError(READ_FAIL);
-                break;
+                return NULL;
 
             case MCP2515::ERROR_NOMSG: //ignore
-                break;
+                return NULL;
 
             default:
                 //Serial.println("Received something weird");
                 raiseError(UNKNOWN_RECEIVE_ERROR);
-                break;
+                return NULL;
         }
     }
 
-    void MCP2515Device::setStatusInfo(ArduinoMessage* message){
-        message->add(mcp2515.getStatus());
-        message->add(mcp2515.getErrorFlags());
-        message->add(mcp2515.errorCountTX());
-        message->add(mcp2515.errorCountRX());
-        message->add(errorCodeFlags);
-    }
 
-    void MCP2515Device::handleReceivedMessage(byte sourceNodeID, ArduinoMessage* message){
-        //NOTE: if handled is true then the message listener if exists is not called
-        //In the case where a response is sent this must be the case as the response overwrites
-        //the received message which will be misleading if passed to the listener!
-        bool handled = false;
-        
-        //check the message type in case we need to handle messages directed to this device specifically
-        ArduinoDevice::DeviceCommand command;
-        ArduinoMessage* response;
-        byte targetNode = 0;
-        ArduinoDevice* device = NULL;
-        
-        if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST){
-            message->populate<byte>(canInFrame.data);
-            targetNode = message->getLast<byte>();
-            
-            if(targetNode == 0 || targetNode == getNodeID()){
-                if(message->sender == Board->getID()){
-                    //NOTE: we respond to the board based request here as using the defulat board
-                    //setStatusInfo message populator may not work as its desigened to reply to direct messaging
-                    response = getMessageForBoard(ArduinoMessage::TYPE_STATUS_RESPONSE);
-                    response->add(Board->getID());
-                    response->add(millis());
-                    response->add(Board->getDeviceCount());
-                    response->add(Board->getFreeMemory());
-                    sendMessage(response);
-                    handled = true;
+    bool MCP2515Device::parseReceivedMessage(byte sourceNodeID, ArduinoMessage* message){
+        bool parsed = false;
+
+        switch(message->type){
+            case ArduinoMessage::TYPE_STATUS_REQUEST:
+            case ArduinoMessage::TYPE_PING:
+            case ArduinoMessage::TYPE_INITIALISE:
+                if(canInFrame.can_dlc == 0){ //error code + node
+                    raiseError(INVALID_MESSAGE, 10);
+                    parsed = false;
                 } else {
-                    device = Board->getDeviceByID(message->sender);
-                    if(device == NULL){
-                        raiseError(UNKNOWN_RECEIVE_ERROR, 1);
-                    } else {
-                        response = getMessageForDevice(device, ArduinoMessage::TYPE_STATUS_RESPONSE);
-                        device->setStatusInfo(response);
-                        if(device->getID() == getID())this->statusRequestCount++;
-                        if(sendMessage(response) == MCP2515ErrorCode::NO_ERROR){
-                            if(device->getID() == getID())this->statusResponseCount++;
-                        }
-                        handled = true;
-                    }
+                    message->populate<byte>(canInFrame.data);
+                    parsed = true;
                 }
-            }
-        } else if(message->type == ArduinoMessage::TYPE_INITIALISE){
-            message->populate<byte>(canInFrame.data); //node id
-            targetNode = message->getLast<byte>();
-            if(targetNode == 0 || targetNode == getNodeID()){
-                indicate(true);    
-                remoteInitialised = true;
-            }
-        } else if(message->type == ArduinoMessage::TYPE_RESET){
-            if(canInFrame.can_dlc != 2){
-                raiseError(INVALID_MESSAGE, 12);
-                return;
-            }
-            message->populate<byte, byte>(canInFrame.data); //reset regime + node id
-            targetNode = message->getLast<byte>();
-            if(targetNode == 0 || targetNode == getNodeID()){
-                indicate(true);
-                ResetRegime regime = message->get<ResetRegime>(0);
-                switch(regime){
-                    case RESET_ERRORS:
-                        resetErrors();
-                        break;
+                break;
 
-                    case RESET_DEVICE:
-                        break;
-
-                    default:
-                        break;
-                }
-                remoteReset = true;
-            }
-        } else if(message->type ==  ArduinoMessage::TYPE_PING){
-            message->populate<byte>(canInFrame.data);
-            targetNode = message->getLast<byte>();
-            if(targetNode == 0 || targetNode == getNodeID()){
-                indicate(true);    
-                pinged = true;
-                handled = true;
-            } 
-        } else if(message->type == ArduinoMessage::TYPE_ERROR_TEST && canInFrame.can_dlc > 1){
-            unsigned long edata = 0;
-            if(canInFrame.can_dlc == 2){ //error code + node
-                message->populate<byte, byte>(canInFrame.data);
-            } else if(canInFrame.can_dlc == 6){ //erro code + error data + node
-                message->populate<byte, unsigned long, byte>(canInFrame.data);
-                edata = message->get<unsigned long>(1);
-            } else {
-                raiseError(INVALID_MESSAGE, 2);
-                return;
-            }
-            targetNode = message->getLast<byte>();
-            if(targetNode == 0 || targetNode == getNodeID()){
-                indicate(true);
-                MCP2515ErrorCode ecode = message->get<MCP2515ErrorCode>(0);
-                raiseError(ecode, edata);
-            }
-        } else if(imsg.type == ArduinoMessage::MessageType::TYPE_PRESENCE){
-            if(imsg.getArgumentCount() == 0){
-                imsg.populate<unsigned long, unsigned int, unsigned int>(canInFrame.data);
-            }
-        } else if(message->type ==  ArduinoMessage::TYPE_COMMAND && canInFrame.can_dlc > 1){
-            if(canInFrame.can_dlc == 2){ //command + node
-                message->populate<byte, byte>(canInFrame.data);
-            } else if(canInFrame.can_dlc == 3){ //command + byte arg + node
-                message->populate<byte, byte, byte>(canInFrame.data);
-            } else if(canInFrame.can_dlc == 4){ //command + int arg + node
-                message->populate<byte, int, byte>(canInFrame.data);
-            } else {
-                raiseError(INVALID_MESSAGE, 3);
-                return;
-            }
-            targetNode = message->getLast<byte>();
-            command = message->get<ArduinoDevice::DeviceCommand>(0);
-            if(targetNode == getNodeID()){
-                device = Board->getDeviceByID(message->sender);
-                if(device == NULL){
-                    raiseError(UNKNOWN_RECEIVE_ERROR, 3);
+            case ArduinoMessage::TYPE_ERROR_TEST:
+                if(canInFrame.can_dlc == 2){ //error code + node
+                    message->populate<byte, byte>(canInFrame.data);
+                    parsed = true;
+                } else if(canInFrame.can_dlc == 6){ //erro code + error data + node
+                    message->populate<byte, unsigned long, byte>(canInFrame.data);
+                    parsed = true;
                 } else {
-                    response = getMessageForHandler(message->sender, ArduinoMessage::TYPE_COMMAND_RESPONSE);
-                    response->add(command);
-                    if(device->executeCommand(command, message, response)){
-                        sendMessage(response);
-                    }
-                    handled = true;
+                    raiseError(INVALID_MESSAGE, 11);
+                    parsed = false;
                 }
-            }
-        }   
+                break;
+
+            case ArduinoMessage::TYPE_RESET:
+                if(canInFrame.can_dlc != 2){
+                    raiseError(INVALID_MESSAGE, 12);
+                    parsed = false;
+                } else {
+                    message->populate<byte, byte>(canInFrame.data); //reset regime + node id
+                    parsed = true;
+                }
+                break;
+
+            case ArduinoMessage::TYPE_COMMAND:
+                if(canInFrame.can_dlc == 2){ //command + node
+                    message->populate<byte, byte>(canInFrame.data);
+                    parsed = true;
+                } else if(canInFrame.can_dlc == 3){ //command + byte arg + node
+                    message->populate<byte, byte, byte>(canInFrame.data);
+                    parsed = true;
+                } else if(canInFrame.can_dlc == 4){ //command + int arg + node
+                    message->populate<byte, int, byte>(canInFrame.data);
+                    parsed = true;
+                } else {
+                    raiseError(INVALID_MESSAGE, 13);
+                    parsed = false;
+                }
+                break;
+
+            default: 
+                parsed = false;
+                break;
+        }
+
+        return parsed;
     }
+    
 
     void MCP2515Device::onMessageReceived(byte sourceNodeID, ArduinoMessage *message){
+        if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST){
+            statusRequestCount++;
+        }
         if(messageReceivedListener != NULL){
             messageReceivedListener(this, sourceNodeID, message, &canInFrame);
         }
@@ -582,6 +576,12 @@ namespace Chetch{
             default:
                 raiseError(MCP2515ErrorCode::UNKNOWN_SEND_ERROR, edata);
                 return MCP2515ErrorCode::UNKNOWN_SEND_ERROR;
+        }
+    }
+
+    void MCP2515Device::onMessageSent(ArduinoMessage *message){
+        if(message->type == ArduinoMessage::TYPE_STATUS_RESPONSE){
+            statusResponseCount++;
         }
     }
 } //end namespace

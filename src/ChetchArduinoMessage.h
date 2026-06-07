@@ -52,8 +52,16 @@ namespace Chetch{
                 TYPE_REGISTER_LISTENER,
                 CONNECTION_REQUEST
             };
+
+            enum TypeGroup : byte{
+                NO_GROUP,
+                BROADCAST_GROUP,
+                TARGETED_GROUP,
+                RESPONSE_GROUP,
+                MISC_GROUP
+            };
 	  
-            enum ErrorCode : byte {
+            enum ErrorCode : byte{
                 NO_ERROR = 0,
                 ERROR_UNRECOGNISED_MESSAGE_TYPE = 2,
                 ERROR_INSUFFICIENT_BYTES = 3,
@@ -61,8 +69,8 @@ namespace Chetch{
                 ERROR_ADM_NOT_INITIALISED = 10,
                 ERROR_UNKNOWN = 20,
             };
-     
 
+            
             static const byte HEADER_SIZE = 4; //type, tag, target, sender
             
         private:
@@ -76,7 +84,11 @@ namespace Chetch{
         public:  
             static ErrorCode error;
             static bool hasError();
-            
+            static TypeGroup getGroup(ArduinoMessage* message);
+     
+            //For internal use, not part of message schema
+            byte data = 0;
+
             //unsigned long id = 0;  //removed cos not ever used
             byte type = 0; //should take messsage type value
             byte tag = 0; //tagging data sent from computer ... can be re-used to send back to make comms linked

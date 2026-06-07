@@ -19,4 +19,11 @@ namespace Chetch{
         }
         return CANBusBase::begin(io);
     }
+
+    void CANBusNode::setStatusInfo(ArduinoMessage* message){
+        message->add(getID());
+        message->add(millis());
+        message->add(getDeviceCount());
+        message->add(getFreeMemory());
+    }
 }

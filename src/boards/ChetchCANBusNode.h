@@ -19,6 +19,9 @@ namespace Chetch{
             CANBusNode(byte nodeID, byte serialPin);
 
             bool begin(MessageIO* io = NULL) override; //will return false if fails to begin
+
+            void setStatusInfo(ArduinoMessage* message) override;
+            //void setReportInfo(ArduinoMessage* message) override;
     };
 } //end namespace
 #endif

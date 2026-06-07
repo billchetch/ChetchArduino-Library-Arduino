@@ -13,7 +13,7 @@ namespace Chetch{
         public:
             virtual void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response) = 0;
             virtual void populateOutboundMessage(ArduinoMessage* message, byte messageID) = 0;
-            virtual void onMessageSent(ArduinoMessage* message, byte messageID) = 0;
+            virtual void onOutboundMessageSent(ArduinoMessage* message, byte messageID) = 0;
         
             byte getID(){ return id; }
             void setID(byte id){ this->id = id; }

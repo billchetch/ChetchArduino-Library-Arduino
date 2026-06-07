@@ -166,7 +166,7 @@ namespace Chetch{
             bool renderDisplay(DisplayMode displayMode, bool displayInitialised = false);
 
             void setReportInfo(ArduinoMessage* message) override;
-            void onReportReady() override;
+            //void onReportReady() override;
 
             void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData) override;
     };

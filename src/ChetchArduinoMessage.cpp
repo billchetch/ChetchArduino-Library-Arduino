@@ -7,7 +7,20 @@ namespace Chetch{
         return ArduinoMessage::error != ArduinoMessage::NO_ERROR;
     }
 
-    
+    ArduinoMessage::TypeGroup ArduinoMessage::getGroup(ArduinoMessage* m){
+        if(m->type == 0){
+            return NO_GROUP;
+        } else if(m->type > 0 && m->type <= 7){
+            return BROADCAST_GROUP;
+        } else if(m->type > 7 && m->type <= 15){
+            return TARGETED_GROUP;
+        } else if(m->type > 15 && m->type <= 31){
+            return RESPONSE_GROUP;
+        } else{
+            return MISC_GROUP;
+        }
+    }
+
     /*
     * Constructor
     */
