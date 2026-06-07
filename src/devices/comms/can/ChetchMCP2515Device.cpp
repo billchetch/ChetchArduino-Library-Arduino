@@ -204,9 +204,6 @@ namespace Chetch{
                 break;
 
             default:
-                if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST){
-                    statusRequestCount++;
-                }
                 ArduinoDevice::handleInboundMessage(message, response);
                 break;
         }
