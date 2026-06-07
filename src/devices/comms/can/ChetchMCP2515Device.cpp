@@ -480,6 +480,11 @@ namespace Chetch{
                 }
                 break;
 
+            case ArduinoMessage::TYPE_PRESENCE:
+                message->populate<unsigned long, unsigned int>(canInFrame.data);
+                parsed = true;
+                break;
+
             default: 
                 parsed = false;
                 break;

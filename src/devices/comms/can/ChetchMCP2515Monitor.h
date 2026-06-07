@@ -83,7 +83,7 @@ namespace Chetch{
                                 break;
 
                             case ArduinoMessage::TYPE_PRESENCE:
-                                n = message->get<unsigned int>(2);
+                                n = message->get<unsigned int>(1);
                                 if(presenceCount != 0){
                                     if(n == 0){ //node has re-joined bus
                                         clear();
