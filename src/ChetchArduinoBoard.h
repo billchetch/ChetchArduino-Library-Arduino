@@ -75,8 +75,10 @@ namespace Chetch{
             void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
             void onOutboundMessageSent(ArduinoMessage* message, byte messageID) override {};
 
+            virtual bool executeCommand(ArduinoDevice::DeviceCommand command, ArduinoMessage* message, ArduinoMessage* response);
+
             virtual void setStatusInfo(ArduinoMessage* message);
-            virtual void setReportInfo(ArduinoMessage* message);
+            virtual void setReportInfo(ArduinoMessage* message){};
             
             void setTime(unsigned long unixts, int tzoffset){ unixTimestamp = unixts; timezoneOffset = tzoffset; }
             unsigned long getUnixTime() { return unixTimestamp + (millis() / 1000); }

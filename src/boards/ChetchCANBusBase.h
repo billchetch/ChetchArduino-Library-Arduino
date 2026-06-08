@@ -23,6 +23,8 @@ namespace Chetch{
             CANBusBase(MCP2515Device* pmcp, SerialPin* pspin);
 
             MCP2515Device* getMCP(){ return pmcp; }
+
+            byte getNodeID(){ return pmcp->getNodeID(); }
             
             virtual void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData);            
     };

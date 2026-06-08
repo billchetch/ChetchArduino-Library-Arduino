@@ -200,9 +200,9 @@ namespace Chetch{
                     }
             };
     
-            typedef void (*MessageListener)(MCP2515Device*, byte, ArduinoMessage*, can_frame*); //device, node, message, canData
+            typedef void (*MessageListener)(MCP2515Device*, byte, ArduinoMessage*, unsigned long, byte*, byte); //device, node, message, canID, canData, can data length
             typedef void (*ErrorListener)(MCP2515Device*, MCP2515ErrorCode, unsigned long errorData);
-            typedef bool (*SendValidator)(MCP2515Device*, ArduinoMessage*, unsigned long canID, byte* canData);
+            typedef bool (*SendValidator)(MCP2515Device*, ArduinoMessage*, unsigned long, byte*, byte);
 
             MCP2515 mcp2515; //should be moved to private
             ArduinoMessage imsg; //shuuld be moved to private

@@ -498,8 +498,9 @@ namespace Chetch{
         if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST){
             statusRequestCount++;
         }
+
         if(messageReceivedListener != NULL){
-            messageReceivedListener(this, sourceNodeID, message, &canInFrame);
+            messageReceivedListener(this, sourceNodeID, message, canInFrame.can_id, canInFrame.data, canInFrame.can_dlc);
         }
     }
 
@@ -552,7 +553,7 @@ namespace Chetch{
         canOutFrame.can_id = (unsigned long)messageType << 24 | (unsigned long)nodeIDAndSender << 16 | (unsigned long)tagAndCRC << 8 | (unsigned long)timestamp;
         canOutFrame.can_id |= CAN_EFF_FLAG;
         
-        if(sendValidator != NULL && !sendValidator(this, &omsg, canOutFrame.can_id, canOutFrame.data)){
+        if(sendValidator != NULL && !sendValidator(this, &omsg, canOutFrame.can_id, canOutFrame.data, canOutFrame.can_dlc)){
             return MCP2515ErrorCode::CUSTOM_ERROR; //maybe change to send cancelled error code
         }
 

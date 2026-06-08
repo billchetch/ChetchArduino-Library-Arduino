@@ -60,15 +60,35 @@ namespace Chetch{
     }
 
     void ArduinoBoard::handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response){
-        if(message->type == ArduinoMessage::TYPE_ECHO){
-            response->copy(message);
-            response->type = ArduinoMessage::TYPE_ECHO_RESPONSE;
-        } else if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST){
-            response->type = ArduinoMessage::TYPE_STATUS_RESPONSE;
-            setStatusInfo(response);
-        } else if(message->type == ArduinoMessage::TYPE_PING){
-            response->type = ArduinoMessage::TYPE_PING_RESPONSE;
-            response->add(millis());
+        switch(message->type){
+            case ArduinoMessage::TYPE_ECHO:
+                response->type = ArduinoMessage::TYPE_ECHO_RESPONSE;
+                response->copy(message);
+                break;
+
+            case ArduinoMessage::TYPE_PING:
+                response->type = ArduinoMessage::TYPE_PING_RESPONSE;
+                response->add(millis());
+                break;
+
+            case ArduinoMessage::TYPE_STATUS_REQUEST:
+                response->type = ArduinoMessage::TYPE_STATUS_RESPONSE;
+                setStatusInfo(response);
+                break;
+
+            case ArduinoMessage::TYPE_COMMAND:
+                {
+                    response->type = ArduinoMessage::TYPE_COMMAND_RESPONSE;
+                    ArduinoDevice::DeviceCommand command = message->get<ArduinoDevice::DeviceCommand>(0);
+                    response->add((byte)command);
+                    bool success = executeCommand(command, message, response);
+                    response->add(success); //success of not
+                }
+                break;
+
+            default:
+                //TODO: add error to response
+                break;
         }
     }
 
@@ -81,12 +101,10 @@ namespace Chetch{
         }
     }
 
-    void ArduinoBoard::setReportInfo(ArduinoMessage* message){
-        if(message != NULL){
-            message->add(millis());
-            message->add(getFreeMemory());
-        }
+    bool ArduinoBoard::executeCommand(ArduinoDevice::DeviceCommand command, ArduinoMessage* message, ArduinoMessage* response){
+        return false;   
     }
+
 
     void ArduinoBoard::onReportReady(){
         if(io != NULL){

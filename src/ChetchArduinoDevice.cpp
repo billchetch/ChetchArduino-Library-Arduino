@@ -54,11 +54,13 @@ namespace Chetch{
                 break;
 
             case ArduinoMessage::TYPE_COMMAND:
-                DeviceCommand command = message->get<DeviceCommand>(0);
-                response->type = ArduinoMessage::TYPE_COMMAND_RESPONSE;
-                response->add((byte)command);
-                bool success = executeCommand(command, message, response);
-                response->add(success); //success of not
+                {
+                    DeviceCommand command = message->get<DeviceCommand>(0);
+                    response->type = ArduinoMessage::TYPE_COMMAND_RESPONSE;
+                    response->add((byte)command);
+                    bool success = executeCommand(command, message, response);
+                    response->add(success); //success of not
+                }
                 break;
         }
     }
