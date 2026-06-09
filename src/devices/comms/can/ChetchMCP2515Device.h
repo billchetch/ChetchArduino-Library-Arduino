@@ -118,6 +118,12 @@ namespace Chetch{
                 DEBUG_ASSERT, //For debug purposes
             };
 
+            enum FilterPolicy : byte{
+                NO_FILTER_POLICY = 0,
+                RESTRICT_TO_TARGETED,
+                DO_NOT_USE_FILTERS,
+            };
+
             enum ResetRegime : byte{
                 NOT_SET = 0,
                 RESET_DEVICE,
@@ -246,6 +252,8 @@ namespace Chetch{
 #endif
             unsigned int errorCodeFlags = 0;
             unsigned long lastErrorOn = 0;
+
+            FilterPolicy filterPolicy = FilterPolicy::NO_FILTER_POLICY;
             
         public: //temp:  should be protected this
             struct can_frame canInFrame;
@@ -262,6 +270,7 @@ namespace Chetch{
 
             byte getNodeID(){ return nodeID; }
             
+            void setFilterPolicy(FilterPolicy fp){ filterPolicy = fp; }
             void resetErrors();
             int clearReceive();
             

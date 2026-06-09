@@ -92,12 +92,21 @@ namespace Chetch{
         }
     }
 
+    void ArduinoBoard::setStatusBit(byte bitPosition, bool val){
+        byte mask = 1 << bitPosition - 1;
+        if(val){
+            statusFlags = statusFlags | mask;
+        } else {
+            statusFlags = statusFlags & ~mask;
+        }
+    }
+
     void ArduinoBoard::setStatusInfo(ArduinoMessage* message){
         if(message != NULL){
-            message->add(BOARD_NAME);
             message->add(millis());
             message->add(getDeviceCount());
             message->add(getFreeMemory());
+            message->add(statusFlags);
         }
     }
 

@@ -41,6 +41,7 @@ namespace Chetch{
             ArduinoDevice* devices[MAX_DEVICES];
             byte deviceCount = 0;
             byte currentdevice = 0;
+            byte statusFlags = 0;
 
             MessageIO* io = NULL;
 
@@ -52,6 +53,7 @@ namespace Chetch{
             bool begun = false;
             unsigned int reportInterval = 0;
             unsigned long lastMillis = 0;
+            
 
         public:
             //Constructor/Destructor
@@ -80,6 +82,9 @@ namespace Chetch{
             virtual void setStatusInfo(ArduinoMessage* message);
             virtual void setReportInfo(ArduinoMessage* message){};
             
+            void setStatusBit(byte bitPosition, bool val);
+            void setStatusFlags(byte flags){ statusFlags = flags; }
+            byte getStatusFlags(){ return statusFlags; }
             void setTime(unsigned long unixts, int tzoffset){ unixTimestamp = unixts; timezoneOffset = tzoffset; }
             unsigned long getUnixTime() { return unixTimestamp + (millis() / 1000); }
             int getTimezoneOffset() { return timezoneOffset; }

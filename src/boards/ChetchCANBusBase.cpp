@@ -12,10 +12,4 @@ namespace Chetch{
         this->pmcp = pmcp;
         this->pspin = pspin;        
     }
-
-    void CANBusBase::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
-        //empty
-    }
-
-    
 }

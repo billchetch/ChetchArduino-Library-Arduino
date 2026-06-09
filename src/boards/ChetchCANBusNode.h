@@ -3,23 +3,26 @@
 
 #include "ChetchCANBusBase.h"
 #include "ChetchCANBusIO.h"
-#include "devices/comms/can/ChetchMCP2515Node.h"
+#include "devices/comms/can/ChetchMCP2515Device.h"
 #include "devices/comms/serial/ChetchSerialPinSlave.h"
 
 namespace Chetch{
 
     class CANBusNode : public CANBusBase{
         public:
-            
+            static const int DEFAULT_CS_PIN = 10;
+
         protected:
-            MCP2515Node mcp;
+            MCP2515Device mcp;
             SerialPinSlave spin;
+            CANBusIO io;
 
         public:
             CANBusNode(byte nodeID, byte serialPin);
 
             bool begin(MessageIO* io = NULL) override; //will return false if fails to begin
 
+            virtual void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData);
             void setStatusInfo(ArduinoMessage* message) override;
             //void setReportInfo(ArduinoMessage* message) override;
     };

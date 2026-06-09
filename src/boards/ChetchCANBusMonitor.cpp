@@ -23,7 +23,6 @@ namespace Chetch{
                 CANBusMonitor::NodeData* nd = bm->getNodeData(targetNodeID, true);
                 if(nd != NULL)nd->sent(msg);
             }
-
             bm->forwardCANBusMessage(msg, MESSAGE_ID_FORWARD_SENT, canID, canData, canDLC);
             return true;
         });
@@ -35,6 +34,7 @@ namespace Chetch{
             if(nd != NULL){
                 nd->received(msg);
             }
+            
             bm->forwardCANBusMessage(msg, MESSAGE_ID_FORWARD_RECEIVED, canID, canData, canDLC);
         });
 
@@ -121,6 +121,13 @@ namespace Chetch{
         } else {
             outboundMessage->add(message->sender);
         }
+
+        /*if(messageID == MESSAGE_ID_FORWARD_RECEIVED){
+            Serial.print("Forwarding received: ");
+            Serial.print(message->type);
+            Serial.print(" from ");
+            Serial.println(outboundMessage->sender);
+        }*/
 
         if(!io.sendMessage()){
             //Serial.println("ERRO enqueing message!");
