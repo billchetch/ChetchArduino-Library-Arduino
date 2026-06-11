@@ -48,11 +48,13 @@ namespace Chetch{
             if(millis() - lastStatusRequest > FORWARD_TIMEOUT){
                 if(canForward){
                     canForward = false;
+                    mcp.setIndicateMode(MCP2515Device::NO_INDICATOR);
                     //raiseEvent(EVENT_FORWARDING_SET, canForward);
                 }
             } else {
                 if(!canForward){
                     canForward = true;
+                    mcp.setIndicateMode(MCP2515Device::INDICATE_ON_RECEIVE);
                     //raiseEvent(EVENT_FORWARDING_SET, canForward);
                 }
             }

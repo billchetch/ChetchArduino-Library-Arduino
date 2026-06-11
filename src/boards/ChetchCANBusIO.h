@@ -10,7 +10,8 @@
 namespace Chetch{
     class CANBusIO : public MessageIO{
         private:
-            static const int CB_QUEUE_SIZE = 4;
+            static const byte MAX_SEND_ATTEMPTS = 3;
+            static const int CB_QUEUE_SIZE = 5;
 
         private:
             MCP2515Device* mcp = NULL;
@@ -28,7 +29,7 @@ namespace Chetch{
 
             void setErrorBit(byte bitPosition, bool val);
             byte getErrorFlags(){ return errorFlags; }
-            bool enqueueMessageToSend(void* sender, byte messageID, byte messageTag = 0) override;
+            bool enqueueMessageToSend(void* sender, byte messageID, byte messageTag = 0, bool requireUniqueID = false) override;
             bool sendMessage() override {}; //not used
             void loop() override;
 

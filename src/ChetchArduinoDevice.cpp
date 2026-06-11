@@ -73,11 +73,11 @@ namespace Chetch{
         }        
     }
 
-    bool ArduinoDevice::enqueueMessageToSend(byte messageID, byte messageTag){
+    bool ArduinoDevice::enqueueMessageToSend(byte messageID, byte messageTag, bool requireUniqueID){
         if(Board != NULL){
             MessageIO* io = Board->getIO();
             if(io != NULL){
-                io->enqueueMessageToSend(this, messageID, messageTag);
+                io->enqueueMessageToSend(this, messageID, messageTag, requireUniqueID);
             }
         }
     }

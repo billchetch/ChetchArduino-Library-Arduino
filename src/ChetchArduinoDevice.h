@@ -71,7 +71,7 @@ namespace Chetch{
         
             void setReportInterval(int interval) { reportInterval = interval; }
             
-            bool enqueueMessageToSend(byte messageID, byte messageTag = 0);
+            bool enqueueMessageToSend(byte messageID, byte messageTag = 0, bool requireUniqueID = false);
             
             void handleInboundMessage(ArduinoMessage* message, ArduinoMessage* response) override;
             void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;

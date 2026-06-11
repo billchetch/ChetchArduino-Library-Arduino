@@ -17,14 +17,22 @@ namespace Chetch{
             SerialPinSlave spin;
             CANBusIO io;
 
+        private:
+            //REMVOE! for debug only this
+            unsigned int statusRequestCount = 0;
+            unsigned int statusResponseCount = 0;
+            
+
         public:
             CANBusNode(byte nodeID, byte serialPin);
 
             bool begin(MessageIO* io = NULL) override; //will return false if fails to begin
 
             virtual void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData);
+            virtual bool sendBusMessageValidator(ArduinoMessage* message, byte* canData);
+            
             void setStatusInfo(ArduinoMessage* message) override;
-            //void setReportInfo(ArduinoMessage* message) override;
+            void setReportInfo(ArduinoMessage* message) override;
     };
 } //end namespace
 #endif

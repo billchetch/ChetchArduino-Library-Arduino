@@ -74,12 +74,15 @@ namespace Chetch{
                     Serial.print(response->sender);
                     Serial.print(" args#: ");
                     Serial.println(response->getArgumentCount());*/
-                    err = mcp->sendMessage(response, false);
-                    if(err == MCP2515Device::MCP2515ErrorCode::NO_ERROR){
-                        
-                    } else {
-                        //Serial.print("Error sending: ");
-                        //Serial.println(err);
+                    byte sendAttempts = 0;
+                    do{
+                        err = mcp->sendMessage(response, false);
+                        if(err != MCP2515Device::MCP2515ErrorCode::NO_ERROR){
+                            delay(1);
+                        }
+                    } while (err != MCP2515Device::MCP2515ErrorCode::NO_ERROR && sendAttempts++ < MAX_SEND_ATTEMPTS);
+
+                    if(err != MCP2515Device::MCP2515ErrorCode::NO_ERROR){
                         setErrorBit(3, true); //response fail
                     }
                 }
@@ -97,12 +100,22 @@ namespace Chetch{
         return queueCount == 0;
     }
 
-    bool CANBusIO::enqueueMessageToSend(void* handler, byte messageID, byte messageTag){
+    bool CANBusIO::enqueueMessageToSend(void* handler, byte messageID, byte messageTag, bool requireUniqueID){
         if(isMessageQueueFull()){
             setErrorBit(1, true); //overflow
             return false;
         } else {
-            int idx = (queueStart + queueCount) % CB_QUEUE_SIZE;
+            int idx;
+            if(requireUniqueID){
+                for(int i = 0; i < queueCount; i++){
+                    idx = idx = (queueStart + i) % CB_QUEUE_SIZE;
+                    if(messageQueue[idx].handler == handler && messageQueue[idx].messageID == messageID){
+                        return false;
+                    }
+                }
+            }
+
+            idx = (queueStart + queueCount) % CB_QUEUE_SIZE;
             messageQueue[idx].handler = (ArduinoMessageHandler*)handler;
             messageQueue[idx].messageID = messageID;
             messageQueue[idx].messageTag = messageTag;

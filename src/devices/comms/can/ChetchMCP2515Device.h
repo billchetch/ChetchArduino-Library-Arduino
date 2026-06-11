@@ -134,7 +134,7 @@ namespace Chetch{
             enum IndicateMode : byte{
                 NO_INDICATOR = 0,
                 INDICATE_ON_SEND,
-                INDICATE_ON_RECIEVE,
+                INDICATE_ON_RECEIVE,
                 INDICATE_FULL
             };
             
@@ -208,7 +208,7 @@ namespace Chetch{
     
             typedef void (*MessageListener)(MCP2515Device*, byte, ArduinoMessage*, unsigned long, byte*, byte); //device, node, message, canID, canData, can data length
             typedef void (*ErrorListener)(MCP2515Device*, MCP2515ErrorCode, unsigned long errorData);
-            typedef bool (*SendValidator)(MCP2515Device*, ArduinoMessage*, unsigned long, byte*, byte);
+            typedef bool (*SendValidator)(MCP2515Device*, ArduinoMessage*, unsigned long, byte*, byte); //device, message, can id, can data, data length
 
             MCP2515 mcp2515; //should be moved to private
             ArduinoMessage imsg; //shuuld be moved to private
@@ -229,11 +229,6 @@ namespace Chetch{
             unsigned int presenceSentCount = 0; //to indicate first presence (successfully) sent note this will be zero on rollover
 
             bool remoteReset = false;
-
-            //REMVOE! for debug only this
-            unsigned int statusRequestCount = 0;
-            unsigned int statusResponseCount = 0;
-            
             
         protected:
             byte nodeID = 0;
@@ -280,7 +275,7 @@ namespace Chetch{
             NodeDependency* getDependency(byte nodeID);
         
             
-            void raiseError(MCP2515ErrorCode errorCode, unsigned long errorData = 0);
+            void raiseError(MCP2515ErrorCode errorCode, unsigned long errorData = 0, bool canBroadcast = true);
 #if defined(COUNT_ERROR_CODES)
             byte* getErrorCounts(){ return errorCounts; }
 #endif
@@ -307,7 +302,7 @@ namespace Chetch{
             
             MCP2515ErrorCode sendMessageForDevice(ArduinoDevice* device, byte messageID);
             MCP2515ErrorCode sendMessageForBoard(byte messageID);
-            MCP2515ErrorCode sendMessage(ArduinoMessage *message, bool raiseError = true);
+            MCP2515ErrorCode sendMessage(ArduinoMessage *message, bool broadcastSendFailedError = true);
             virtual void onMessageSent(ArduinoMessage *message);
 
             bool checkReceive();

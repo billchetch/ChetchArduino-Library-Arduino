@@ -148,15 +148,17 @@ namespace Chetch{
         }
     }
 
-    void MCP2515Device::raiseError(MCP2515ErrorCode errorCode, unsigned long errorData){
+    void MCP2515Device::raiseError(MCP2515ErrorCode errorCode, unsigned long errorData, bool canBroadcast){
         bool repeatError = lastError == errorCode;
         bool broadcastError = false;
-        if(lastError == MCP2515ErrorCode::NO_ERROR){
-            broadcastError = true;
-        } else if(repeatError){
-            broadcastError = millis() - lastErrorOn > 1000;
-        } else {
-            broadcastError = millis() - lastErrorOn > 250;
+        if(canBroadcast){
+            if(lastError == MCP2515ErrorCode::NO_ERROR){
+                broadcastError = true;
+            } else if(repeatError){
+                broadcastError = millis() - lastErrorOn > 1000;
+            } else {
+                broadcastError = millis() - lastErrorOn > 250;
+            }
         }
 
         lastError = errorCode;
@@ -461,7 +463,7 @@ namespace Chetch{
                 }
                 
                 //By here we have received and successfully parsed an ArduinoMessage
-                if(canIndicate(INDICATE_ON_RECIEVE)){
+                if(canIndicate(INDICATE_ON_RECEIVE)){
                     indicate(true); 
                 }
 
@@ -555,16 +557,12 @@ namespace Chetch{
     
 
     void MCP2515Device::onMessageReceived(byte sourceNodeID, ArduinoMessage *message){
-        if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST){
-            statusRequestCount++;
-        }
-
         if(messageReceivedListener != NULL){
             messageReceivedListener(this, sourceNodeID, message, canInFrame.can_id, canInFrame.data, canInFrame.can_dlc);
         }
     }
 
-    MCP2515Device::MCP2515ErrorCode MCP2515Device::sendMessage(ArduinoMessage* message, bool raiseSendError){
+    MCP2515Device::MCP2515ErrorCode MCP2515Device::sendMessage(ArduinoMessage* message, bool broadcastSendFailedError){
         if(message == NULL){
             raiseError(MCP2515ErrorCode::NO_MESSAGE);
             return MCP2515ErrorCode::NO_MESSAGE; //ERROR!
@@ -629,11 +627,11 @@ namespace Chetch{
                 return MCP2515ErrorCode::NO_ERROR;
 
             case MCP2515::ERROR_FAILTX:
-                raiseError(MCP2515ErrorCode::FAIL_TX, edata);
+                raiseError(MCP2515ErrorCode::FAIL_TX, edata, broadcastSendFailedError);
                 return MCP2515ErrorCode::FAIL_TX;
 
             case MCP2515::ERROR_ALLTXBUSY:
-                raiseError(MCP2515ErrorCode::ALL_TX_BUSY, edata);
+                raiseError(MCP2515ErrorCode::ALL_TX_BUSY, edata, broadcastSendFailedError);
                 return MCP2515ErrorCode::ALL_TX_BUSY;
 
             default:
@@ -643,8 +641,6 @@ namespace Chetch{
     }
 
     void MCP2515Device::onMessageSent(ArduinoMessage *message){
-        if(message->type == ArduinoMessage::TYPE_STATUS_RESPONSE){
-            statusResponseCount++;
-        }
+        
     }
 } //end namespace

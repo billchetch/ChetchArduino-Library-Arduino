@@ -71,7 +71,7 @@ namespace Chetch{
             ArduinoIO(Stream* stream = NULL);
 
             void begin(Stream* stream = NULL, byte framePadding = 0);
-            bool enqueueMessageToSend(void* device, byte messageID, byte messageTag = 0) override;
+            bool enqueueMessageToSend(void* device, byte messageID, byte messageTag = 0, bool requireUniqueID = false) override;
             void loop() override;
 
             //messaging stuff

@@ -3,7 +3,7 @@
 namespace Chetch{
     
     CANBusMaster::CANBusMaster(byte serialPin) : CANBusBase(&mcp, &spin),
-                                            mcp(MASTER_NODE_ID),
+                                            mcp(MASTER_NODE_ID, DEFAULT_CS_PIN, 0),
                                             spin(serialPin, SERIAL_PIN_INTERVAL, SERIAL_PIN_BUFFER_SIZE) 
     {
 

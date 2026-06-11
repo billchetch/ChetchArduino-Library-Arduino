@@ -160,7 +160,7 @@ namespace Chetch{
         return queueCount == 0;
     }
 
-    bool ArduinoIO::enqueueMessageToSend(void* handler, byte messageID, byte messageTag){
+    bool ArduinoIO::enqueueMessageToSend(void* handler, byte messageID, byte messageTag, bool requireUniqueID){
         if(isMessageQueueFull()){
             return false;
         } else {

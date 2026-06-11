@@ -11,7 +11,6 @@ namespace Chetch{
         addDevice(&mcp);
         addDevice(&spin);   
 
-        //mcp.setReportInterval(1000);
         mcp.setFilterPolicy(MCP2515Device::FilterPolicy::RESTRICT_TO_TARGETED);
 
         mcp.addMessageReceivedListener([](MCP2515Device* dev, byte sourceNodeID, ArduinoMessage* msg, unsigned long canID, byte* canData, byte canDLC){
@@ -19,6 +18,15 @@ namespace Chetch{
         
             bn->handleReceivedBusMessage(sourceNodeID, msg, canData);
         });
+
+        mcp.addSendValidator([](MCP2515Device* dev, ArduinoMessage* msg, unsigned long canID, byte* canData, byte canDLC){
+            CANBusNode* bn = (CANBusNode*)dev->Board;
+        
+            return bn->sendBusMessageValidator(msg, canData);
+        });
+
+        setReportInterval(1000);
+        
     }
 
     bool CANBusNode::begin(MessageIO* io){
@@ -36,12 +44,32 @@ namespace Chetch{
         CANBusBase::setStatusInfo(message);
     }
 
+    void CANBusNode::setReportInfo(ArduinoMessage* message){
+        CANBusBase::setReportInfo(message);
+
+        message->add(statusRequestCount);
+        message->add(statusResponseCount);
+    }
+
     void CANBusNode::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
+       if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST && message->getArgumentCount() > 0){
+            byte targetNode = message->getLast<byte>();
+            if(targetNode == 0 || targetNode == getNodeID()){
+                statusRequestCount++;
+            }
+        }
         /*Serial.print("Received from ");
         Serial.print(sourceNodeID);
         Serial.print(" type ");
         Serial.print(message->type);
         Serial.print(" from ");
         Serial.println(message->sender);*/
+    }
+
+    bool CANBusNode::sendBusMessageValidator(ArduinoMessage* message, byte* canData){
+        if(message->type == ArduinoMessage::TYPE_STATUS_RESPONSE){
+            statusResponseCount++;
+        }
+        return true;
     }
 }

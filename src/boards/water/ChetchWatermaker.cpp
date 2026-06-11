@@ -362,17 +362,23 @@ namespace Chetch{
     }
 
     void Watermaker::setReportInfo(ArduinoMessage* message){
+        //Maybe not call base depending on byte limit
+        CANBusNode::setReportInfo(message);
+
+        //Note the byte limit here
         message->add((byte)errorCode);
         message->add((byte)currentMode);
         message->add(isRunning());
-        unsigned int duration = 0;
+        /*unsigned int duration = 0;
         if(isRunning()){
             duration = (unsigned int)((millis() - currentSession->startedOn) / 1000);
         }
-        message->add(duration);
+        message->add(duration);*/
     }
 
     void Watermaker::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
+        CANBusNode::handleReceivedBusMessage(sourceNodeID, message, canData);
+
         if(sourceNodeID == waterMonitorNode->getNodeID()){
             //We focus on data here
             if(message->type == ArduinoMessage::TYPE_DATA || message->type == ArduinoMessage::TYPE_XDATA){

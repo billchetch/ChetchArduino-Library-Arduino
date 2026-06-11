@@ -11,10 +11,6 @@
 
 namespace Chetch{
     class CANBusBase : public ArduinoBoard{
-        public:
-            //For closure issues easier to get teh board from the device
-            static bool sendBusMessage(ArduinoDevice* device, byte messageID);
-            
         private:
             MCP2515Device* pmcp;
             SerialPin* pspin;
