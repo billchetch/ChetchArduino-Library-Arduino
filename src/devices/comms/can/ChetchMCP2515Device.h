@@ -236,6 +236,7 @@ namespace Chetch{
             NodeDependency* firstDependency = NULL; 
 
             MessageListener messageReceivedListener = NULL;
+            MessageListener messageSentListener = NULL;
             SendValidator sendValidator = NULL;
             ErrorListener errorListener = NULL;
 
@@ -293,6 +294,7 @@ namespace Chetch{
             void onOutboundMessageSent(ArduinoMessage* message, byte messageID) override;
             
             void addMessageReceivedListener(MessageListener listener){ messageReceivedListener = listener; }
+            void addMessageSentListener(MessageListener listener){ messageSentListener = listener; }
             void addSendValidator(SendValidator validator){ sendValidator = validator; }
             void addErrorListener(ErrorListener listener){ errorListener = listener; }
 

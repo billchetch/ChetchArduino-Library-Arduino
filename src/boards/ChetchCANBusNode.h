@@ -29,7 +29,7 @@ namespace Chetch{
             bool begin(MessageIO* io = NULL) override; //will return false if fails to begin
 
             virtual void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData);
-            virtual bool sendBusMessageValidator(ArduinoMessage* message, byte* canData);
+            virtual bool handleSentBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData);
             
             void setStatusInfo(ArduinoMessage* message) override;
             void setReportInfo(ArduinoMessage* message) override;

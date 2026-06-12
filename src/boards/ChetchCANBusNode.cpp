@@ -19,10 +19,10 @@ namespace Chetch{
             bn->handleReceivedBusMessage(sourceNodeID, msg, canData);
         });
 
-        mcp.addSendValidator([](MCP2515Device* dev, ArduinoMessage* msg, unsigned long canID, byte* canData, byte canDLC){
+       mcp.addMessageSentListener([](MCP2515Device* dev, byte sourceNodeID, ArduinoMessage* msg, unsigned long canID, byte* canData, byte canDLC){
             CANBusNode* bn = (CANBusNode*)dev->Board;
         
-            return bn->sendBusMessageValidator(msg, canData);
+            bn->handleSentBusMessage(sourceNodeID, msg, canData);
         });
 
         setReportInterval(1000);
@@ -66,10 +66,10 @@ namespace Chetch{
         Serial.println(message->sender);*/
     }
 
-    bool CANBusNode::sendBusMessageValidator(ArduinoMessage* message, byte* canData){
+    bool CANBusNode::handleSentBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
         if(message->type == ArduinoMessage::TYPE_STATUS_RESPONSE){
             statusResponseCount++;
         }
-        return true;
+        
     }
 }

@@ -641,6 +641,8 @@ namespace Chetch{
     }
 
     void MCP2515Device::onMessageSent(ArduinoMessage *message){
-        
+        if(messageSentListener != NULL){
+            messageSentListener(this, getNodeID(), message, canOutFrame.can_id, canOutFrame.data, canOutFrame.can_dlc);
+        }
     }
 } //end namespace
