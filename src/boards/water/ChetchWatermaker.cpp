@@ -230,11 +230,6 @@ namespace Chetch{
         if(hasError() && changed){
             display.backlight(true, -1);
             updateDisplay(DisplayMode::ERROR);
-
-            /*ArduinoMessage* msg = mcp.getMessageForBoard(ArduinoMessage::MessageType::TYPE_ERROR);
-            msg->add((byte)50); //TODO: this isa board custom error value
-            msg->add((byte)errorCode);
-            mcp.sendMessage(msg);*/
         }
     }
 

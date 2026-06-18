@@ -1,5 +1,5 @@
-#ifndef CHETCH_ARDUINO_SELECTOR_SWITCH_H
-#define CHETCH_ARDUINO_SELECTOR_SWITCH_H
+#ifndef CHETCH_ARDUINO_SWITCH_ARRAY_H
+#define CHETCH_ARDUINO_SWITCH_ARRAY_H
 
 
 #include <Arduino.h>
@@ -9,28 +9,28 @@
 #include "devices/ChetchSwitchDevice.h"
 
 namespace Chetch{
-    class SelectorSwitch : public SwitchDevice {
+    class SwitchArray : public SwitchDevice {
         public:
-            typedef void (*SelectListener)(SelectorSwitch*, byte); //this, the pin number of the selected pin
-
+        
         private:
+            byte onFlags = 0; //1 indicates ON (not necesarrily the pinstate)
             byte firstPin = 0;
             byte lastPin = 0;
-            byte selectedPin = 0;
+            byte pin2check;
             
             unsigned long lastChecked = 0;
-
-            SelectListener selectListener = NULL;
-
-        protected:
+        
+        
+        protected: //TODO: revert to protected
             byte getFirstPin(){ return firstPin; }
-            virtual void onSelected(byte selectedPin);
+            void setOnFlag(byte flagPosition, bool on);
+
             
         public:
-            SelectorSwitch(SwitchDevice::SwitchMode mode, byte firstPin, byte selectionSize, int tolerance = 100, bool onState = LOW);
+            SwitchArray(SwitchDevice::SwitchMode mode, byte firstPin, byte arraySize, int tolerance = 50, bool onState = LOW);
             
-            void addSelectListener(SelectListener listener){ selectListener = listener; }
-
+            bool isSwitchOn(byte pinNumber);
+            byte getOnFlags(){ return onFlags; }
             bool begin() override;
             void loop() override;
 
@@ -39,7 +39,7 @@ namespace Chetch{
             
             void trigger() override;
 
-            byte getSelectedPin(){ return selectedPin; }
+            
     }; //end class
 } //end namespae
 #endif

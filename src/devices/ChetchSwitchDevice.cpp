@@ -21,10 +21,12 @@ namespace Chetch{
         return begun;
     }
 
-    void SwitchDevice::setPin(byte pin){
+    void SwitchDevice::setPin(byte pin, bool reset){
         this->pin = pin;
-        recording = 0;
-        pinState = !onState;  
+        if(reset){
+            recording = 0;
+            pinState = !onState;  
+        }
     }
 
     void SwitchDevice::initPin(byte pin){
@@ -90,7 +92,6 @@ namespace Chetch{
                 recording = 0;
             }
         }
-
     }
 
     bool SwitchDevice::executeCommand(DeviceCommand command, ArduinoMessage *message, ArduinoMessage *response){

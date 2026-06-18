@@ -58,8 +58,14 @@ namespace Chetch{
         SwitchDevice::trigger();
 
         selectedPin = isOn() ? getPin() : 0;
-        if(selectedPin > 0 && selectListener != NULL){
-            selectListener(this, selectedPin);
+        if(selectedPin > 0){
+            onSelected(selectedPin);
         }
+    }
+
+    void SelectorSwitch::onSelected(byte selectedPin){
+         if(selectListener != NULL){
+            selectListener(this, selectedPin);
+         }
     }
 }

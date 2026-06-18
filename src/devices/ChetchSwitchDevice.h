@@ -32,10 +32,12 @@ namespace Chetch{
 
         protected:
             void initPin(byte pin);
-            void setPin(byte pin); //allow pin change (good for derived functionality)
+            void setPin(byte pin, bool reset = true); //allow pin change (good for derived functionality)
+            void setPinState(bool newState){ pinState = newState; }
             byte getPin(){ return pin; };
             int getTolerance(){ return tolerance; }
             SwitchMode getMode(){ return mode; }
+            bool getOnState(){ return onState; }
 
         public: 
             
