@@ -9,7 +9,7 @@ namespace Chetch{
         this->lastPin = firstPin + (arraySize - 1);
         pin2check = this->firstPin;
     }
-   
+
 
     bool SwitchArray::begin(){
         //TODO: remove this and add functinoality for an active switch array
@@ -40,8 +40,8 @@ namespace Chetch{
 
             //check if this current pin is in a different state from the last time we set it
             if(on != isSwitchOn(pin2check)){
-                Serial.print("State chang so pin is: ");
-                Serial.println(pin2check);
+                //Serial.print("State chang so pin is: ");
+                //Serial.println(pin2check);
                 //set the current pin to the pin we are focusing on and set pin state to opposite
                 //so that the SwitchDevice::loop method picks up a difference and starts recording
                 setPin(pin2check);

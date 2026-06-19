@@ -24,6 +24,7 @@ namespace Chetch{
         protected: //TODO: revert to protected
             byte getFirstPin(){ return firstPin; }
             void setOnFlag(byte flagPosition, bool on);
+            void setOnFlags(byte flags){ onFlags = flags; }
 
             
         public:
