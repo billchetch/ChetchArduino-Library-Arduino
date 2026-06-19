@@ -22,7 +22,6 @@ namespace Chetch{
         SwitchArray::trigger();
 
         if(isOverflow() && requireReset){
-            Serial.println("ON NO RESET REQUIRED");
             waitForReset = true;
         }
     }
