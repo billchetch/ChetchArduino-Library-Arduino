@@ -36,8 +36,6 @@ namespace Chetch{
             }
         });
 
-        //FloatSwitches* fs = (FloatSwitches*)ta->Board;
-            
         //Add devices
         addDevice(&resetSwitch); //ID = 10
 
