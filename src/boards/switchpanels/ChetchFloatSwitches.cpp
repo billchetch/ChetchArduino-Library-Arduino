@@ -5,6 +5,7 @@ namespace Chetch{
                         resetError(SwitchDevice::SwitchMode::ACTIVE, RESET_ERROR_PIN, 100, HIGH),
                         resetSwitch(SwitchDevice::SwitchMode::PASSIVE, RESET_SWITCH_PIN, 100, LOW),
                         normalError(SwitchDevice::SwitchMode::ACTIVE, NORMAL_ERROR_PIN, 100, HIGH),
+                        activityLight(SwitchDevice::SwitchMode::ACTIVE, ACTIVITY_LIGHT_PIN, 100, HIGH),
                         dieselLevel(DIESEL_LEVEL_FIRST_PIN, true, true, 100),
                         bilgeLevel(BILGE_LEVEL_FIRST_PIN, false, false),
                         dieselPump(SwitchDevice::SwitchMode::ACTIVE, DIESEL_PUMP_PIN, 100, LOW),
@@ -27,11 +28,10 @@ namespace Chetch{
             Serial.println(fs->getOnFlags());
 
             if(fs->isLow()){
-                pump->turn(true);
+                fsb->pump(&fsb->dieselPump, true);
             } else if(fs->isHigh()){
-                pump->turn(false);
+                fsb->pump(&fsb->dieselPump, false);
             } else if(fs->isOverflow() || fs->isError()){
-                pump->turn(false);
                 fsb->halt();
             }
         });
@@ -39,14 +39,15 @@ namespace Chetch{
         bilgeLevel.addSwitchListener([](SwitchDevice* device, bool on){
             FloatSwitch* fs = (FloatSwitch*)device;
             FloatSwitches* fsb = (FloatSwitches*)device->Board;
-            SwitchDevice* pump = &fsb->bilgePump;
-
-            Serial.print("Bilge level:");
-            Serial.println(fs->getOnFlags());
+            
+            //Serial.print("Bilge level:");
+            //Serial.println(fs->getOnFlags());
             if(fs->isHigh()){
-                pump->turn(true);
+                fsb->pump(&fsb->bilgePump, true);
+                //pump->turn(true);
             } else if(fs->isLow()){
-                pump->turn(false);
+                //pump->turn(false);
+                fsb->pump(&fsb->bilgePump, false);
             } 
         });
 
@@ -71,8 +72,7 @@ namespace Chetch{
     }
 
     void FloatSwitches::halt(){
-        Serial.print("Halt!");
-        dieselPump.turn(false);
+        pump(&dieselPump, false);
         
         resetError.turn(true);
     }
@@ -82,6 +82,12 @@ namespace Chetch{
             dieselLevel.reset();
         }
         resetError.turn(false);
+    }
+
+    void FloatSwitches::pump(SwitchDevice* pump, bool on){
+        pump->turn(on);
+
+        //Activity led on/off
     }
 
 } //end namespace

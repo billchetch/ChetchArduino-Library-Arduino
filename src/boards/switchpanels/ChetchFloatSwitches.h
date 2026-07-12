@@ -17,6 +17,7 @@
 #define RESET_SWITCH_PIN A4
 #define RESET_ERROR_PIN A5 
 #define NORMAL_ERROR_PIN A3 
+#define ACTIVITY_LIGHT_PIN A2
 
 #define DIESEL_LEVEL_FIRST_PIN 2 //2,3,4
 #define BILGE_LEVEL_FIRST_PIN 5 //5, 6
@@ -43,6 +44,7 @@ namespace Chetch{
             SwitchDevice resetError;
             SwitchDevice resetSwitch;
             SwitchDevice normalError;
+            SwitchDevice activityLight;
 
             FloatSwitch dieselLevel;
             FloatSwitch bilgeLevel;
@@ -53,10 +55,12 @@ namespace Chetch{
         public:
             FloatSwitches(byte nodeID, byte serialPin);
 
+            bool begin(MessageIO* io = NULL) override; //will return false if fails to begin
+
             void halt();            
             void reset();
+            void pump(SwitchDevice* pump, bool on);
             
-            bool begin(MessageIO* io = NULL) override; //will return false if fails to begin
     }; //end class
 } //end namespcae
 #endif
