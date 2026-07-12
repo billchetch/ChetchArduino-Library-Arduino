@@ -30,6 +30,8 @@ namespace Chetch{
             bool isMid(){ return getOnFlags() == FloatLevel::FL_MID; }
             bool isHigh(){ return getOnFlags() == FloatLevel::FL_HIGH; }
             bool isOverflow(){ return getOnFlags() == FloatLevel::FL_OVERFLOW; }
+            bool isError(){ return !(isLow() || isMid() || isHigh() || isOverflow()); }
+            bool requiresReset(){ return (isOverflow() || isError()) && requireReset; }
 
             void reset();
 

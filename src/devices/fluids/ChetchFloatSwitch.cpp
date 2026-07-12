@@ -23,7 +23,7 @@ namespace Chetch{
     void FloatSwitch::trigger(){
         SwitchArray::trigger();
 
-        if(isOverflow() && requireReset){
+        if(requiresReset()){
             waitForReset = true;
         }
     }

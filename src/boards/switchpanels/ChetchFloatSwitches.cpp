@@ -2,8 +2,10 @@
 
 namespace Chetch{
     FloatSwitches::FloatSwitches(byte nodeID, byte serialPin) : CANBusNode(nodeID, serialPin),
+                        resetError(SwitchDevice::SwitchMode::ACTIVE, RESET_ERROR_PIN, 100, HIGH),
                         resetSwitch(SwitchDevice::SwitchMode::PASSIVE, RESET_SWITCH_PIN, 100, LOW),
-                        dieselLevel(DIESEL_LEVEL_FIRST_PIN, true, true),
+                        normalError(SwitchDevice::SwitchMode::ACTIVE, NORMAL_ERROR_PIN, 100, HIGH),
+                        dieselLevel(DIESEL_LEVEL_FIRST_PIN, true, true, 100),
                         bilgeLevel(BILGE_LEVEL_FIRST_PIN, false, false),
                         dieselPump(SwitchDevice::SwitchMode::ACTIVE, DIESEL_PUMP_PIN, 100, LOW),
                         bilgePump(SwitchDevice::SwitchMode::ACTIVE, BILGE_PUMP_PIN, 100, LOW)
@@ -11,17 +13,26 @@ namespace Chetch{
 
         resetSwitch.addSwitchListener([](SwitchDevice* device, bool on){
             FloatSwitches* fsb = (FloatSwitches*)device->Board;
-            fsb->reset();
+            if(!on){
+                Serial.println("Reset!");
+                fsb->reset();
+            }
         });
         
         dieselLevel.addSwitchListener([](SwitchDevice* device, bool on){
             FloatSwitch* fs = (FloatSwitch*)device;
             FloatSwitches* fsb = (FloatSwitches*)device->Board;
             SwitchDevice* pump = &fsb->dieselPump;
+            Serial.print("Diesel level: ");
+            Serial.println(fs->getOnFlags());
+
             if(fs->isLow()){
                 pump->turn(true);
-            } else if(fs->isHigh() || fs->isOverflow()){
+            } else if(fs->isHigh()){
                 pump->turn(false);
+            } else if(fs->isOverflow() || fs->isError()){
+                pump->turn(false);
+                fsb->halt();
             }
         });
 
@@ -29,28 +40,48 @@ namespace Chetch{
             FloatSwitch* fs = (FloatSwitch*)device;
             FloatSwitches* fsb = (FloatSwitches*)device->Board;
             SwitchDevice* pump = &fsb->bilgePump;
+
+            Serial.print("Bilge level:");
+            Serial.println(fs->getOnFlags());
             if(fs->isHigh()){
                 pump->turn(true);
             } else if(fs->isLow()){
                 pump->turn(false);
-            }
+            } 
         });
 
         //Add devices
-        addDevice(&resetSwitch); //ID = 10
+        addDevice(&resetError); //ID = 10
+        addDevice(&resetSwitch); //ID = 11
+        addDevice(&normalError); //ID = 12
 
-        addDevice(&dieselLevel); //ID = 11
-        addDevice(&bilgeLevel); //ID = 12
+        addDevice(&dieselLevel); //ID = 13
+        addDevice(&bilgeLevel); //ID = 14
 
-        addDevice(&dieselPump); //ID = 13
-        addDevice(&bilgePump); //ID = 14
+        addDevice(&dieselPump); //ID = 15
+        addDevice(&bilgePump); //ID = 16
         
     }
 
+    bool FloatSwitches::begin(MessageIO* io){
+        if(!CANBusNode::begin(io))return false;
+
+        dieselLevel.setOnFlags(FloatSwitch::FloatLevel::FL_MID);
+        return true;
+    }
+
+    void FloatSwitches::halt(){
+        Serial.print("Halt!");
+        dieselPump.turn(false);
+        
+        resetError.turn(true);
+    }
+
     void FloatSwitches::reset(){
-        if(dieselLevel.isOverflow()){
+        if(dieselLevel.requiresReset()){
             dieselLevel.reset();
         }
+        resetError.turn(false);
     }
 
 } //end namespace

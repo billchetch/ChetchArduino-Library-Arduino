@@ -24,13 +24,13 @@ namespace Chetch{
         protected: //TODO: revert to protected
             byte getFirstPin(){ return firstPin; }
             void setOnFlag(byte flagPosition, bool on);
-            void setOnFlags(byte flags){ onFlags = flags; }
-
+            
             
         public:
             SwitchArray(SwitchDevice::SwitchMode mode, byte firstPin, byte arraySize, int tolerance = 50, bool onState = LOW);
             
             bool isSwitchOn(byte pinNumber);
+            void setOnFlags(byte flags){ onFlags = flags; }
             byte getOnFlags(){ return onFlags; }
             bool begin() override;
             void loop() override;

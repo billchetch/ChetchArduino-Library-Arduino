@@ -6,7 +6,7 @@
 
 //#include "devices/displays/ChetchLCDI2C.h"
 #include "devices/ChetchSwitchDevice.h"
-#include "devices/water/ChetchFloatSwitch.h"
+#include "devices/fluids/ChetchFloatSwitch.h"
 
 
 #define LCD_COLS 20
@@ -14,13 +14,15 @@
 #define LCD_REFRESH LCDI2C::RefreshRate::REFRESH_5HZ
 #define DISPLAY_UPDATE_INTERVAL 500 //setReportInterval
 
-#define RESET_SWITCH_PIN 3
+#define RESET_SWITCH_PIN A4
+#define RESET_ERROR_PIN A5 
+#define NORMAL_ERROR_PIN A3 
 
-#define DIESEL_LEVEL_FIRST_PIN 4 //4,5
-#define BILGE_LEVEL_FIRST_PIN 6 //6, 7, 8
+#define DIESEL_LEVEL_FIRST_PIN 2 //2,3,4
+#define BILGE_LEVEL_FIRST_PIN 5 //5, 6
 
-#define DIESEL_PUMP_PIN A1
-#define BILGE_PUMP_PIN A2
+#define DIESEL_PUMP_PIN A0
+#define BILGE_PUMP_PIN A1
 
 namespace Chetch{
 
@@ -38,7 +40,9 @@ namespace Chetch{
             //Devices
             ///LCDI2C display;
 
+            SwitchDevice resetError;
             SwitchDevice resetSwitch;
+            SwitchDevice normalError;
 
             FloatSwitch dieselLevel;
             FloatSwitch bilgeLevel;
@@ -49,7 +53,10 @@ namespace Chetch{
         public:
             FloatSwitches(byte nodeID, byte serialPin);
 
-            void reset();            
+            void halt();            
+            void reset();
+            
+            bool begin(MessageIO* io = NULL) override; //will return false if fails to begin
     }; //end class
 } //end namespcae
 #endif

@@ -5,8 +5,8 @@
 #include "boards/ChetchCANBusNode.h"
 
 //#include "devices/displays/ChetchLCDI2C.h"
-#include "devices/water/ChetchTDSMeter.h"
-#include "devices/water/ChetchFlowMeter.h"
+#include "devices/fluids/ChetchTDSMeter.h"
+#include "devices/fluids/ChetchFlowMeter.h"
 #include "devices/temperature/ChetchDS18B20Array.h"
 
 
