@@ -92,7 +92,11 @@ namespace Chetch{
         
         byte bitPosition = getPin() - getFirstPin();
         setOnFlag(bitPosition, isOn());
-
+        
         SwitchDevice::trigger();        
+
+        if(arrayListener != NULL){
+            arrayListener(this, getPin(), isOn());
+        }
     }
 }

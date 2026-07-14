@@ -11,6 +11,7 @@
 namespace Chetch{
     class SwitchArray : public SwitchDevice {
         public:
+            typedef void (*ArrayListener)(SwitchArray*, byte, bool); //this, the pin number of the pin triggering event, pin is on or off
         
         private:
             byte onFlags = 0; //1 indicates ON (not necesarrily the pinstate)
@@ -20,7 +21,8 @@ namespace Chetch{
             
             unsigned long lastChecked = 0;
         
-        
+            ArrayListener arrayListener = NULL;
+
         protected: //TODO: revert to protected
             byte getFirstPin(){ return firstPin; }
             void setOnFlag(byte flagPosition, bool on);
@@ -29,6 +31,8 @@ namespace Chetch{
         public:
             SwitchArray(SwitchDevice::SwitchMode mode, byte firstPin, byte arraySize, int tolerance = 50, bool onState = LOW);
             
+            void addArrayListener(ArrayListener listener){ arrayListener = listener; }
+
             bool isSwitchOn(byte pinNumber);
             void setOnFlags(byte flags){ onFlags = flags; }
             byte getOnFlags(){ return onFlags; }

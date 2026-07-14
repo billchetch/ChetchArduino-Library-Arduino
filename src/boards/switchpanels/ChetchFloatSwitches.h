@@ -25,6 +25,9 @@
 #define DIESEL_PUMP_PIN A0
 #define BILGE_PUMP_PIN A1
 
+#define DIESEL_PUMP_OVERRIDE_PIN 8
+#define BILGE_PUMP_OVERRIDE_PIN 9
+
 namespace Chetch{
 
     class FloatSwitches : public CANBusNode{
@@ -44,13 +47,18 @@ namespace Chetch{
             SwitchDevice resetError;
             SwitchDevice resetSwitch;
             SwitchDevice normalError;
-            SwitchDevice activityLight;
-
+            
             FloatSwitch dieselLevel;
             FloatSwitch bilgeLevel;
             
             SwitchDevice dieselPump;
             SwitchDevice bilgePump;
+
+            SwitchDevice dieselPumpOverride;
+            SwitchDevice bilgePumpOverride;
+
+            bool dieselPumpOverriden = false;
+            bool bilgePumpOverriden = false;
 
         public:
             FloatSwitches(byte nodeID, byte serialPin);
@@ -60,7 +68,8 @@ namespace Chetch{
             void halt();            
             void reset();
             void pump(SwitchDevice* pump, bool on);
-            
+            bool override(SwitchDevice* overrideSwitch, bool on);
+
     }; //end class
 } //end namespcae
 #endif

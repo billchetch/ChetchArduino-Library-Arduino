@@ -18,8 +18,6 @@ namespace Chetch{
         SwitchArray::loop();
     }
 
-    
-
     void FloatSwitch::trigger(){
         SwitchArray::trigger();
 

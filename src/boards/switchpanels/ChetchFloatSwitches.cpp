@@ -5,11 +5,12 @@ namespace Chetch{
                         resetError(SwitchDevice::SwitchMode::ACTIVE, RESET_ERROR_PIN, 100, HIGH),
                         resetSwitch(SwitchDevice::SwitchMode::PASSIVE, RESET_SWITCH_PIN, 100, LOW),
                         normalError(SwitchDevice::SwitchMode::ACTIVE, NORMAL_ERROR_PIN, 100, HIGH),
-                        activityLight(SwitchDevice::SwitchMode::ACTIVE, ACTIVITY_LIGHT_PIN, 100, HIGH),
                         dieselLevel(DIESEL_LEVEL_FIRST_PIN, true, true, 100),
                         bilgeLevel(BILGE_LEVEL_FIRST_PIN, false, false),
-                        dieselPump(SwitchDevice::SwitchMode::ACTIVE, DIESEL_PUMP_PIN, 100, LOW),
-                        bilgePump(SwitchDevice::SwitchMode::ACTIVE, BILGE_PUMP_PIN, 100, LOW)
+                        dieselPump(SwitchDevice::SwitchMode::ACTIVE, DIESEL_PUMP_PIN, 100, HIGH),
+                        bilgePump(SwitchDevice::SwitchMode::ACTIVE, BILGE_PUMP_PIN, 100, HIGH),
+                        dieselPumpOverride(SwitchDevice::SwitchMode::PASSIVE, DIESEL_PUMP_OVERRIDE_PIN, 100, LOW),
+                        bilgePumpOverride(SwitchDevice::SwitchMode::PASSIVE, BILGE_PUMP_OVERRIDE_PIN, 100, LOW)
      {
 
         resetSwitch.addSwitchListener([](SwitchDevice* device, bool on){
@@ -20,35 +21,70 @@ namespace Chetch{
             }
         });
         
-        dieselLevel.addSwitchListener([](SwitchDevice* device, bool on){
+        dieselLevel.addArrayListener([](SwitchArray* device, byte pin, bool on){
             FloatSwitch* fs = (FloatSwitch*)device;
             FloatSwitches* fsb = (FloatSwitches*)device->Board;
             SwitchDevice* pump = &fsb->dieselPump;
             Serial.print("Diesel level: ");
             Serial.println(fs->getOnFlags());
 
-            if(fs->isLow()){
-                fsb->pump(&fsb->dieselPump, true);
-            } else if(fs->isHigh()){
-                fsb->pump(&fsb->dieselPump, false);
-            } else if(fs->isOverflow() || fs->isError()){
+            if(fs->requiresReset()){
                 fsb->halt();
+            } else if(!fsb->dieselPumpOverriden){
+                if(fs->isLow()){
+                    pump->turn(true);
+                } else if(fs->isHigh()){
+                    pump->turn(false);
+                }
             }
         });
 
-        bilgeLevel.addSwitchListener([](SwitchDevice* device, bool on){
+        dieselPumpOverride.addSwitchListener([](SwitchDevice* device, bool on){
+            FloatSwitches* fsb = (FloatSwitches*)device->Board;
+            SwitchDevice* pump = &fsb->dieselPump;
+
+            Serial.print("Diesel pump override: ");
+            Serial.println(on);
+
+            if(on && !fsb->dieselLevel.requiresReset()){
+                fsb->dieselPumpOverriden = true;
+                pump->turn(true);
+            } else if(fsb->dieselPumpOverriden){
+                fsb->dieselPumpOverriden = false;
+                pump->turn(false);
+                fsb->dieselLevel.trigger();
+            }
+            
+        });
+
+        bilgeLevel.addArrayListener([](SwitchArray* device, byte pin, bool on){
             FloatSwitch* fs = (FloatSwitch*)device;
             FloatSwitches* fsb = (FloatSwitches*)device->Board;
-            
-            //Serial.print("Bilge level:");
-            //Serial.println(fs->getOnFlags());
+            SwitchDevice* pump = &fsb->bilgePump;
+
+            Serial.print("Bilge level:");
+            Serial.println(fs->getOnFlags());
+
             if(fs->isHigh()){
-                fsb->pump(&fsb->bilgePump, true);
-                //pump->turn(true);
-            } else if(fs->isLow()){
-                //pump->turn(false);
-                fsb->pump(&fsb->bilgePump, false);
+                pump->turn(true);
+            } else if(fs->isLow() && !fsb->bilgePumpOverriden){
+                pump->turn(false);
             } 
+        });
+
+        bilgePumpOverride.addSwitchListener([](SwitchDevice* device, bool on){
+            FloatSwitches* fsb = (FloatSwitches*)device->Board;
+            SwitchDevice* pump = &fsb->bilgePump;
+
+            Serial.print("Bilge pump override: ");
+            if(on){
+                fsb->bilgePumpOverriden = true;
+                pump->turn(true);
+            } else if(fsb->bilgePumpOverriden) {
+                fsb->bilgePumpOverriden = false;
+                pump->turn(false);
+                fsb->bilgeLevel.trigger();
+            }
         });
 
         //Add devices
@@ -61,6 +97,9 @@ namespace Chetch{
 
         addDevice(&dieselPump); //ID = 15
         addDevice(&bilgePump); //ID = 16
+
+        addDevice(&dieselPumpOverride); //ID = 17
+        addDevice(&bilgePumpOverride); //ID = 18
         
     }
 
@@ -72,8 +111,9 @@ namespace Chetch{
     }
 
     void FloatSwitches::halt(){
-        pump(&dieselPump, false);
-        
+        dieselPump.turn(false);
+        dieselPumpOverriden = false;
+
         resetError.turn(true);
     }
 
@@ -84,10 +124,8 @@ namespace Chetch{
         resetError.turn(false);
     }
 
-    void FloatSwitches::pump(SwitchDevice* pump, bool on){
-        pump->turn(on);
+    bool FloatSwitches::override(SwitchDevice* overrideSwitch, bool on){
 
-        //Activity led on/off
     }
 
 } //end namespace
