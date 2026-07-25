@@ -2,7 +2,7 @@
 
 namespace Chetch{
     
-    PageCycler::PageCycler(byte pin, byte maxPages) : SelectorSwitch(SwitchDevice::SwitchMode::PASSIVE, pin, 2){
+    PageCycler::PageCycler(byte pin, byte maxPages) : SwitchArray(SwitchDevice::SwitchMode::PASSIVE, pin, 2){
         this->maxPages = maxPages;
         if(maxPages > 0){
             pages = new Page*[maxPages];
@@ -20,7 +20,7 @@ namespace Chetch{
    
 
     bool PageCycler::begin(){
-        SwitchDevice::begin();
+        SwitchArray::begin();
         
         currentPageNumber = 1;
         return begun;
@@ -51,29 +51,36 @@ namespace Chetch{
 
 
     void PageCycler::trigger(){
-        SelectorSwitch::trigger();
+        SwitchArray::trigger();
 
-        //Forwards or backwards?
+        //Check first if this is a button release
+        bool release = !isOn();
         byte prevPage = currentPageNumber;
-        byte sp = getSelectedPin();
-        if(sp == getFirstPin()){ //backwards
-            if(currentPageNumber > 1){
-                currentPageNumber--;
+            
+        //Forwards or backwards or double press?
+        if(release){
+            byte pin = getPin();
+            if(pin == getFirstPin()){
+                //prev pressed
+                if(currentPageNumber > 1){
+                    currentPageNumber--;
+                } else {
+                    currentPageNumber = maxPages;
+                }      
             } else {
-                currentPageNumber = maxPages;
-            }       
-        } else if(sp == getFirstPin() + 1) { ///forwards
-            if(currentPageNumber < maxPages){
-                currentPageNumber++;
-            } else {
-                currentPageNumber = 1;
-            }   
+                //next pressed
+                if(currentPageNumber < maxPages){
+                    currentPageNumber++;
+                } else {
+                    currentPageNumber = 1;
+                }   
+            }
         }
 
-        raiseEvent(EVENT_NEXT_PAGE, currentPageNumber);
+        //raiseEvent(EVENT_NEXT_PAGE, currentPageNumber);
 
-        if(pageListener != NULL && prevPage != currentPageNumber){
-            pageListener(currentPageNumber, maxPages, getPage(currentPageNumber));
+        if(pageListener != NULL){
+            pageListener(this, currentPageNumber, prevPage != currentPageNumber, maxPages, getPage(currentPageNumber));
         }
     }
 }

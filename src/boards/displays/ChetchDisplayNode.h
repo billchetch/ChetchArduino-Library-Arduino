@@ -1,0 +1,37 @@
+#ifndef CHETCH_DISPLAYNODE_H
+#define CHETCH_DISPLAYNODE_H
+
+#include "ChetchArduinoBoard.h"
+#include "boards/ChetchCANBusNode.h"
+
+#include "devices/displays/ChetchLCDI2C.h"
+#include "devices/displays/ChetchPageCycler.h"
+
+
+namespace Chetch{
+
+    class DisplayNode : public CANBusNode{
+        public:
+            
+        private:
+            unsigned long lastActivityOn = 0;
+            bool active = false;
+            unsigned int sleepTimeout = 5000;
+
+        public:
+            //Devices
+            LCDI2C display;
+            PageCycler pageCycler;
+
+        public:
+            DisplayNode(byte nodeID, byte serialPin, byte cols, byte rows, LCDI2C::RefreshRate refreshRate, byte pageCyclerPin);
+
+            bool begin(MessageIO* io = NULL) override; //will return false if fails to begin
+            void loop() override;
+
+            void setSleepAfter(unsigned int sleepTimeout){ this->sleepTimeout = sleepTimeout; }
+            void activate();
+
+    }; //end class
+} //end namespcae
+#endif

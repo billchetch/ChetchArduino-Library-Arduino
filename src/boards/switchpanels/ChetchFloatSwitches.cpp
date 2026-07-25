@@ -25,8 +25,8 @@ namespace Chetch{
             FloatSwitch* fs = (FloatSwitch*)device;
             FloatSwitches* fsb = (FloatSwitches*)device->Board;
             SwitchDevice* pump = &fsb->dieselPump;
-            Serial.print("Diesel level: ");
-            Serial.println(fs->getOnFlags());
+            //Serial.print("Diesel level: ");
+            //Serial.println(fs->getOnFlags());
 
             if(fs->requiresReset()){
                 fsb->halt();
@@ -43,8 +43,8 @@ namespace Chetch{
             FloatSwitches* fsb = (FloatSwitches*)device->Board;
             SwitchDevice* pump = &fsb->dieselPump;
 
-            Serial.print("Diesel pump override: ");
-            Serial.println(on);
+            //Serial.print("Diesel pump override: ");
+            //Serial.println(on);
 
             if(on && !fsb->dieselLevel.requiresReset()){
                 fsb->dieselPumpOverriden = true;
@@ -62,8 +62,8 @@ namespace Chetch{
             FloatSwitches* fsb = (FloatSwitches*)device->Board;
             SwitchDevice* pump = &fsb->bilgePump;
 
-            Serial.print("Bilge level:");
-            Serial.println(fs->getOnFlags());
+            //Serial.print("Bilge level:");
+            //Serial.println(fs->getOnFlags());
 
             if(fs->isHigh()){
                 pump->turn(true);
@@ -76,7 +76,7 @@ namespace Chetch{
             FloatSwitches* fsb = (FloatSwitches*)device->Board;
             SwitchDevice* pump = &fsb->bilgePump;
 
-            Serial.print("Bilge pump override: ");
+            //Serial.print("Bilge pump override: ");
             if(on){
                 fsb->bilgePumpOverriden = true;
                 pump->turn(true);
@@ -123,9 +123,4 @@ namespace Chetch{
         }
         resetError.turn(false);
     }
-
-    bool FloatSwitches::override(SwitchDevice* overrideSwitch, bool on){
-
-    }
-
 } //end namespace

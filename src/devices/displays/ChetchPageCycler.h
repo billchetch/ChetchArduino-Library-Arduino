@@ -6,21 +6,23 @@
 #include <ChetchArduinoDevice.h>
 #include <ChetchArduinoMessage.h>
 
-#include "devices/ChetchSelectorSwitch.h"
+#include "devices/ChetchSwitchArray.h"
 
 namespace Chetch{
-    class PageCycler : public SelectorSwitch {
+    class PageCycler : public SwitchArray {
         public:
-            const byte EVENT_NEXT_PAGE = 100;
+            const byte EVENT_NEXT_PAGE = 101;
             const byte EVENT_PREV_PAGE = 100;
+            const byte EVENT_DOUBLE_PRESS = 102;
 
             struct Page{
+                byte ream = 0;
                 byte number = 0;
 
                 virtual ~Page(){};
             };
 
-            typedef void (*PageListener)(byte pageNumber, byte maxPages, PageCycler::Page* page);
+            typedef void (*PageListener)(PageCycler* pageCycler, byte pageNumber, bool pageChanged, byte maxPages, PageCycler::Page* page);
 
 
         private:

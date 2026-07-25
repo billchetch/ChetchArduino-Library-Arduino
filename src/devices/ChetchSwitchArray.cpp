@@ -16,8 +16,9 @@ namespace Chetch{
         if(getMode() == SwitchDevice::SwitchMode::ACTIVE){
             return false;
         }
-       
+        
         if(SwitchDevice::begin()){
+
             //Initialise the physical pins (other than the first one which is handled above by switch begin)
             for(byte i = firstPin + 1; i <= lastPin; i++){
                 initPin(i);
@@ -34,7 +35,7 @@ namespace Chetch{
         if(millis() - lastChecked > getTolerance() + 10UL){
             pin2check++;
             if(pin2check > lastPin)pin2check = firstPin;
-
+            
             bool pState = digitalRead(pin2check);
             bool on = pState == getOnState();
 

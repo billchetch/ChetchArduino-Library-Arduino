@@ -68,7 +68,6 @@ namespace Chetch{
             void halt();            
             void reset();
             void pump(SwitchDevice* pump, bool on);
-            bool override(SwitchDevice* overrideSwitch, bool on);
 
     }; //end class
 } //end namespcae
