@@ -6,11 +6,19 @@ namespace Chetch{
                         pageCycler(pageCyclerPin, 10)
      {
         //Add event handlers
-        pageCycler.addPageListener([](PageCycler* pageCycler, byte pageNumber, bool pageChanged, byte maxPages, PageCycler::Page* page){
+        pageCycler.addPageListener([](PageCycler* pageCycler, byte currentPageNumber, byte newPageNumber){
             DisplayNode* dn = (DisplayNode*)pageCycler->Board;
-            dn->activate();
-            Serial.print("Page: ");
-            Serial.println(pageNumber);
+            
+            if(!dn->isActive()){
+                dn->activate();
+                return false;
+            } else {
+                dn->activate(); //to keep this alive
+                dn->display.setCursor(0, 1);
+                dn->display.print("Page: ");
+                dn->display.print(newPageNumber);
+                return true;
+            }
         });
 
         //Add devices

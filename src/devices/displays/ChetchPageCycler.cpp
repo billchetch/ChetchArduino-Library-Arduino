@@ -2,7 +2,7 @@
 
 namespace Chetch{
     
-    PageCycler::PageCycler(byte pin, byte maxPages) : SwitchArray(SwitchDevice::SwitchMode::PASSIVE, pin, 2){
+    PageCycler::PageCycler(byte pin, byte maxPages) : SwitchArray(SwitchDevice::SwitchMode::PASSIVE, pin, 2, 20){
         this->maxPages = maxPages;
         if(maxPages > 0){
             pages = new Page*[maxPages];
@@ -55,32 +55,36 @@ namespace Chetch{
 
         //Check first if this is a button release
         bool release = !isOn();
-        byte prevPage = currentPageNumber;
-            
+        if(!release)return;
+
+        byte newPageNumber = currentPageNumber;
+
         //Forwards or backwards or double press?
-        if(release){
-            byte pin = getPin();
-            if(pin == getFirstPin()){
-                //prev pressed
-                if(currentPageNumber > 1){
-                    currentPageNumber--;
-                } else {
-                    currentPageNumber = maxPages;
-                }      
+        byte pin = getPin();
+        if(pin == getFirstPin()){
+            //prev pressed
+            if(currentPageNumber > 1){
+                newPageNumber = currentPageNumber - 1;
             } else {
-                //next pressed
-                if(currentPageNumber < maxPages){
-                    currentPageNumber++;
-                } else {
-                    currentPageNumber = 1;
-                }   
-            }
+                newPageNumber = maxPages;
+            }      
+        } else {
+            //next pressed
+            if(currentPageNumber < maxPages){
+                newPageNumber = currentPageNumber + 1;
+            } else {
+                newPageNumber = 1;
+            }   
         }
 
         //raiseEvent(EVENT_NEXT_PAGE, currentPageNumber);
 
         if(pageListener != NULL){
-            pageListener(this, currentPageNumber, prevPage != currentPageNumber, maxPages, getPage(currentPageNumber));
+            if(pageListener(this, currentPageNumber, newPageNumber)){
+                currentPageNumber = newPageNumber;
+            }
+        } else {
+            currentPageNumber = newPageNumber;
         }
     }
 }

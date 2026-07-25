@@ -22,7 +22,7 @@ namespace Chetch{
                 virtual ~Page(){};
             };
 
-            typedef void (*PageListener)(PageCycler* pageCycler, byte pageNumber, bool pageChanged, byte maxPages, PageCycler::Page* page);
+            typedef bool (*PageListener)(PageCycler* pageCycler, byte oldPageNumber, byte newPageNumber);
 
 
         private:

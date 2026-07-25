@@ -30,6 +30,7 @@ namespace Chetch{
             void loop() override;
 
             void setSleepAfter(unsigned int sleepTimeout){ this->sleepTimeout = sleepTimeout; }
+            bool isActive(){ return active; }
             void activate();
 
     }; //end class
