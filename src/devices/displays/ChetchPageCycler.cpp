@@ -2,19 +2,17 @@
 
 namespace Chetch{
     
-    PageCycler::PageCycler(byte pin, byte maxPages) : SwitchArray(SwitchDevice::SwitchMode::PASSIVE, pin, 2, 20){
-        this->maxPages = maxPages;
-        if(maxPages > 0){
-            pages = new Page*[maxPages];
-            for(byte i = 0; i < maxPages; i++){
-                pages[i] = NULL;
-            }
-        }
+    PageCycler::PageCycler(byte pin) : SwitchArray(SwitchDevice::SwitchMode::PASSIVE, pin, 2, 20){
+        
     }
 
     PageCycler::~PageCycler(){
-        if(maxPages > 0){
-            delete[] pages;
+        if(pageCount > 0){
+            Page* page = currentPage;
+            while(page != NULL){
+                Page* nextPage = page->next;
+                delete page;
+            }
         }
     }
    
@@ -22,33 +20,44 @@ namespace Chetch{
     bool PageCycler::begin(){
         SwitchArray::begin();
         
-        currentPageNumber = 1;
+        currentPage = firstPage;
         return begun;
     }
 
-     void PageCycler::addPage(Page* page){
-        if(page == NULL)return;
+     void PageCycler::addPage(Page* page2add){
+        if(page2add == NULL)return;
 
-        if(page->number == 0){
-            for(byte i = 0; i < maxPages; i++){
-                if(pages[i] == NULL)page->number = i + 1;
+        if(firstPage == NULL){
+            pageCount++;
+            firstPage = page2add;
+            firstPage->pageNumber = pageCount;
+            lastPage = page2add;
+        } else {
+            Page* page = firstPage;
+            while(page != NULL){
+                if(page->next == NULL){
+                    pageCount++;
+                    page->next = page2add;
+                    page2add->prev = page;
+                    page2add->pageNumber = pageCount;
+                    lastPage = page2add;
+                    page = NULL;
+                } else {
+                    page = page->next;
+                }
             }
-        }
-
-        if(page->number > 0 && page->number <= maxPages){
-            pages[page->number - 1] = page;
         }
      }
 
     PageCycler::Page* PageCycler::getPage(byte pageNumber){
-        if(pageNumber > 0 && pageNumber <= maxPages){
-            return pages[pageNumber - 1];
-        } else {
-            return NULL;
+        if(firstPage != NULL){
+            Page* page = firstPage;
+            while(page != NULL){
+                if(page->pageNumber == pageNumber)return page;
+            }
         }
+        return NULL;
     }
-
-
 
     void PageCycler::trigger(){
         SwitchArray::trigger();
@@ -57,34 +66,34 @@ namespace Chetch{
         bool release = !isOn();
         if(!release)return;
 
-        byte newPageNumber = currentPageNumber;
+        Page* newPage = currentPage;
 
         //Forwards or backwards or double press?
         byte pin = getPin();
         if(pin == getFirstPin()){
             //prev pressed
-            if(currentPageNumber > 1){
-                newPageNumber = currentPageNumber - 1;
+            if(currentPage->prev == NULL){
+                newPage = lastPage;
             } else {
-                newPageNumber = maxPages;
+                newPage = currentPage->prev;
             }      
         } else {
             //next pressed
-            if(currentPageNumber < maxPages){
-                newPageNumber = currentPageNumber + 1;
+            if(currentPage->next == NULL){
+                newPage = firstPage;
             } else {
-                newPageNumber = 1;
+                newPage = currentPage->next;
             }   
         }
 
         //raiseEvent(EVENT_NEXT_PAGE, currentPageNumber);
 
         if(pageListener != NULL){
-            if(pageListener(this, currentPageNumber, newPageNumber)){
-                currentPageNumber = newPageNumber;
+            if(pageListener(this, currentPage, newPage)){
+                currentPage = newPage;
             }
         } else {
-            currentPageNumber = newPageNumber;
+            currentPage = newPage;
         }
     }
 }

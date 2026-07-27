@@ -15,34 +15,38 @@ namespace Chetch{
             const byte EVENT_PREV_PAGE = 100;
             const byte EVENT_DOUBLE_PRESS = 102;
 
-            struct Page{
-                byte ream = 0;
-                byte number = 0;
+            class Page{
+                public: 
+                    Page* next = NULL;
+                    Page* prev = NULL;
 
-                virtual ~Page(){};
+                    byte pageNumber = 0;
+
+                public:
+                    virtual ~Page(){};
             };
 
-            typedef bool (*PageListener)(PageCycler* pageCycler, byte oldPageNumber, byte newPageNumber);
+            typedef bool (*PageListener)(PageCycler* pageCycler, PageCycler::Page* currentPage, PageCycler::Page* newPage);
 
 
         private:
-            byte maxPages = 0;
-            byte currentPageNumber = 0;
-
+            byte pageCount = 0;
+            
             PageListener pageListener = NULL;
 
-            Page** pages = NULL;
+            Page* currentPage = NULL;
+            Page* firstPage = NULL;
+            Page* lastPage = NULL;
 
         public:
-            PageCycler(byte pin, byte maxPages);
+            PageCycler(byte pin);
             ~PageCycler();
             
-            byte getMaxPages(){ return maxPages; }
-            byte getCurrentPageNumber(){ return currentPageNumber; }
+            byte getPageCount(){ return pageCount; }
+            PageCycler::Page* getCurrentPage(){ return currentPage; }
             void addPageListener(PageListener listener){ pageListener = listener; }
             void addPage(PageCycler::Page* page);
             PageCycler::Page* getPage(byte pageNumber);
-            PageCycler::Page* getCurrentPage(){ return getPage(currentPageNumber); }
             
             bool begin() override;
             void trigger() override;

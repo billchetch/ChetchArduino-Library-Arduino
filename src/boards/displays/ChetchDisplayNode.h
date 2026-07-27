@@ -12,7 +12,15 @@ namespace Chetch{
 
     class DisplayNode : public CANBusNode{
         public:
-            
+            class Page : public PageCycler::Page{
+                protected:
+                    LCDI2C* display;
+
+                public:
+                    void setDisplay(LCDI2C* display){ this->display = display; }
+                    virtual void render() = 0;
+            };
+
         private:
             unsigned long lastActivityOn = 0;
             bool active = false;
@@ -32,6 +40,10 @@ namespace Chetch{
             void setSleepAfter(unsigned int sleepTimeout){ this->sleepTimeout = sleepTimeout; }
             bool isActive(){ return active; }
             void activate();
+
+            void addPage(DisplayNode::Page* page);
+
+            virtual void renderPage(DisplayNode::Page* page);
 
     }; //end class
 } //end namespcae
