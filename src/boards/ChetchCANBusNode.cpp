@@ -47,18 +47,18 @@ namespace Chetch{
     void CANBusNode::setReportInfo(ArduinoMessage* message){
         CANBusBase::setReportInfo(message);
 
-        message->add(statusRequestCount);
-        message->add(statusResponseCount);
+        //message->add(statusRequestCount);
+        //message->add(statusResponseCount);
     }
 
     void CANBusNode::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
-       if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST && message->getArgumentCount() > 0){
+        /*if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST && message->getArgumentCount() > 0){
             byte targetNode = message->getLast<byte>();
             if(targetNode == 0 || targetNode == getNodeID()){
                 statusRequestCount++;
             }
         }
-        /*Serial.print("Received from ");
+        Serial.print("Received from ");
         Serial.print(sourceNodeID);
         Serial.print(" type ");
         Serial.print(message->type);
@@ -67,9 +67,8 @@ namespace Chetch{
     }
 
     bool CANBusNode::handleSentBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
-        if(message->type == ArduinoMessage::TYPE_STATUS_RESPONSE){
+        /*if(message->type == ArduinoMessage::TYPE_STATUS_RESPONSE){
             statusResponseCount++;
-        }
-        
+        }*/ 
     }
 }

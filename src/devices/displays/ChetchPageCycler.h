@@ -43,6 +43,7 @@ namespace Chetch{
             ~PageCycler();
             
             byte getPageCount(){ return pageCount; }
+            PageCycler::Page* getFirstPage(){ return firstPage; }
             PageCycler::Page* getCurrentPage(){ return currentPage; }
             void addPageListener(PageListener listener){ pageListener = listener; }
             void addPage(PageCycler::Page* page);

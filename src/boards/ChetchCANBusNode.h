@@ -19,12 +19,14 @@ namespace Chetch{
 
         private:
             //REMVOE! for debug only this
-            unsigned int statusRequestCount = 0;
-            unsigned int statusResponseCount = 0;
+            //unsigned int statusRequestCount = 0;
+            //unsigned int statusResponseCount = 0;
             
 
         public:
             CANBusNode(byte nodeID, byte serialPin);
+
+            void addNodeDependency(byte nodeID, byte tolerance){ mcp.addNodeDependency(nodeID, tolerance); }
 
             bool begin(MessageIO* io = NULL) override; //will return false if fails to begin
 

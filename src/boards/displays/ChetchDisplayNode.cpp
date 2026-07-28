@@ -27,10 +27,15 @@ namespace Chetch{
 
     void DisplayNode::addPage(DisplayNode::Page* page){
         pageCycler.addPage(page);
-        page->setDisplay(&display);
     }
 
     bool DisplayNode::begin(MessageIO* io){
+        Page* page = (Page*)pageCycler.getFirstPage();
+        while(page != NULL){
+            page->initialise(this);
+            page = (Page*)page->next;
+        }
+
         bool retVal = CANBusNode::begin(io);
         if(retVal){
             activate();
@@ -61,6 +66,17 @@ namespace Chetch{
         if(page == NULL)return;
 
         page->render();
+    }
+
+    void DisplayNode::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
+        CANBusNode::handleReceivedBusMessage(sourceNodeID, message, canData);
+
+        
+        Page* page = (Page*)pageCycler.getFirstPage();
+        while(page != NULL){
+            page->update(sourceNodeID, message, canData);
+            page = (Page*)page->next;
+        }
     }
 
 } //end of namespace

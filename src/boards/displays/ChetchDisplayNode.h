@@ -17,10 +17,14 @@ namespace Chetch{
                     LCDI2C* display;
 
                 public:
-                    void setDisplay(LCDI2C* display){ this->display = display; }
+                    virtual void initialise(DisplayNode* displayNode){
+                        display = &displayNode->display;
+                    }
+                    virtual void update(byte sourceNodeID, ArduinoMessage* message, byte* canData){}
                     virtual void render() = 0;
             };
 
+            
         private:
             unsigned long lastActivityOn = 0;
             bool active = false;
@@ -42,8 +46,10 @@ namespace Chetch{
             void activate();
 
             void addPage(DisplayNode::Page* page);
-
+            
             virtual void renderPage(DisplayNode::Page* page);
+
+            void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData) override;
 
     }; //end class
 } //end namespcae
