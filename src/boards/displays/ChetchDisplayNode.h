@@ -20,7 +20,7 @@ namespace Chetch{
                     virtual void initialise(DisplayNode* displayNode){
                         display = &displayNode->display;
                     }
-                    virtual void update(byte sourceNodeID, ArduinoMessage* message, byte* canData){}
+                    virtual void update(DisplayNode* displayNode, byte sourceNodeID, ArduinoMessage* message, byte* canData){}
                     virtual void render() = 0;
             };
 
@@ -44,10 +44,11 @@ namespace Chetch{
             void setSleepAfter(unsigned int sleepTimeout){ this->sleepTimeout = sleepTimeout; }
             bool isActive(){ return active; }
             void activate();
+            void updateDisplay(bool clear, byte updateTag = 0);
 
             void addPage(DisplayNode::Page* page);
             
-            virtual void renderPage(DisplayNode::Page* page);
+            virtual void renderPage(byte updateTag, bool displayInitialised);
 
             void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData) override;
 

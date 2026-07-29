@@ -11,13 +11,19 @@ namespace Chetch{
             
             if(!dn->isActive()){
                 dn->activate();
-                dn->renderPage((DisplayNode::Page*)currentPage);
+                dn->updateDisplay(false);
                 return false; //cancels assigning current page the new page
             } else {
-                dn->activate(); //to keep this alive
-                dn->renderPage((DisplayNode::Page*)newPage);
+                dn->activate(); 
+                dn->updateDisplay(true);
                 return true; //proceed making current page the new page
             }
+        });
+
+        display.addDisplayHandler([](ArduinoDevice* dd, byte updateTag, bool displayInitialised){
+            DisplayNode* dn = (DisplayNode*)dd->Board;
+            dn->renderPage(updateTag, displayInitialised);
+            return true;
         });
 
         //Add devices
@@ -39,7 +45,8 @@ namespace Chetch{
         bool retVal = CANBusNode::begin(io);
         if(retVal){
             activate();
-            renderPage((DisplayNode::Page*)pageCycler.getCurrentPage());
+            updateDisplay(false);
+            //renderPage((DisplayNode::Page*)pageCycler.getCurrentPage());
         }
         return retVal;
     }
@@ -62,7 +69,15 @@ namespace Chetch{
 
     }
 
-    void DisplayNode::renderPage(DisplayNode::Page* page){
+    void DisplayNode::updateDisplay(bool clear, byte updateTag){
+        if(clear){
+            display.clearDisplay();
+        }
+        display.updateDisplay(updateTag);
+    }
+
+    void DisplayNode::renderPage(byte updateTag, bool displayInitialised){
+        DisplayNode::Page* page = (Page*)pageCycler.getCurrentPage();
         if(page == NULL)return;
 
         page->render();
@@ -74,7 +89,11 @@ namespace Chetch{
         
         Page* page = (Page*)pageCycler.getFirstPage();
         while(page != NULL){
-            page->update(sourceNodeID, message, canData);
+            page->update(this, sourceNodeID, message, canData);
+            if(page == (Page*)pageCycler.getCurrentPage() && isActive()){
+                updateDisplay(false);
+            }
+
             page = (Page*)page->next;
         }
     }

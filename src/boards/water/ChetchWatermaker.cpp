@@ -91,7 +91,7 @@ namespace Chetch{
 
         //Add devices to board
         //Display
-        addDevice(&display);
+        addDevice(&display); 
 
         //Inputs
         addDevice(&selector);
