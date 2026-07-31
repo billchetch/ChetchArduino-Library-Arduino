@@ -27,7 +27,7 @@ namespace Chetch{
             virtual void onSelected(byte selectedPin);
             
         public:
-            SelectorSwitch(SwitchDevice::SwitchMode mode, byte firstPin, byte selectionSize, int tolerance = 100, bool onState = LOW);
+            SelectorSwitch(SwitchDevice::SwitchMode mode, byte firstPin, byte selectionSize, int tolerance = 50, bool onState = LOW);
             
             void addSelectListener(SelectListener listener){ selectListener = listener; }
 

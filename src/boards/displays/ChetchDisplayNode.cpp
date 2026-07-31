@@ -54,7 +54,7 @@ namespace Chetch{
     void DisplayNode::loop(){
         CANBusNode::loop();
 
-        if(active && millis() - lastActivityOn > sleepTimeout){
+        if(sleepTimeout > 0 && active && millis() - lastActivityOn > sleepTimeout){
             display.backlight(false);
             active = false;
         }
@@ -80,13 +80,12 @@ namespace Chetch{
         DisplayNode::Page* page = (Page*)pageCycler.getCurrentPage();
         if(page == NULL)return;
 
-        page->render();
+        if(page->canRender())page->render();
     }
 
     void DisplayNode::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
         CANBusNode::handleReceivedBusMessage(sourceNodeID, message, canData);
 
-        
         Page* page = (Page*)pageCycler.getFirstPage();
         while(page != NULL){
             page->update(this, sourceNodeID, message, canData);

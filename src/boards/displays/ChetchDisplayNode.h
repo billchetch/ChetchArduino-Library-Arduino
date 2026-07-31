@@ -14,12 +14,14 @@ namespace Chetch{
         public:
             class Page : public PageCycler::Page{
                 protected:
-                    LCDI2C* display;
+                    LCDI2C* display = NULL;
+
 
                 public:
                     virtual void initialise(DisplayNode* displayNode){
                         display = &displayNode->display;
                     }
+                    bool canRender(){ return display != NULL; }
                     virtual void update(DisplayNode* displayNode, byte sourceNodeID, ArduinoMessage* message, byte* canData){}
                     virtual void render() = 0;
             };

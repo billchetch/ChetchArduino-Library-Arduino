@@ -55,10 +55,9 @@ namespace Chetch{
     }
     
     void SelectorSwitch::trigger(){
-        SwitchDevice::trigger();
-
         selectedPin = isOn() ? getPin() : 0;
         if(selectedPin > 0){
+            SwitchDevice::trigger();
             onSelected(selectedPin);
         }
     }

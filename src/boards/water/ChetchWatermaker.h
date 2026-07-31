@@ -51,10 +51,6 @@ History:
 #include "devices/ChetchSwitchDevice.h"
 #include "devices/ChetchSelectorSwitch.h"
 
-#define LCD_COLS 20
-#define LCD_ROWS 4
-#define LCD_REFRESH LCDI2C::RefreshRate::REFRESH_5HZ
-#define DISPLAY_UPDATE_INTERVAL 100 //setReportInterval
 #define REPORT_INTERVAL_IDLE 1000  //when idle
 #define REPORT_INTERVAL_RUNNING 1000 //when running
 
@@ -130,9 +126,6 @@ namespace Chetch{
             double waterProduced = 0.0;
 
         public:
-            //Display
-            LCDI2C display;
-
             //Inputs
             SelectorSwitch selector;
             SwitchDevice startButton;
@@ -145,13 +138,9 @@ namespace Chetch{
             SwitchDevice feederPump;
             SwitchDevice pressurePump;
             
-        private:
-            void renderWaterMonitor();
-
         public:
             Watermaker(byte nodeID, byte serialPin, byte waterMonitorNodeID);
 
-            bool begin(MessageIO* io = NULL) override;
             void loop() override;
 
             bool isRunning();
@@ -162,9 +151,7 @@ namespace Chetch{
             void stop();
             void reset();
             void error(WMErrorCode ec);
-            void updateDisplay(DisplayMode displayMode = DisplayMode::DISPLAY_MODE_NOT_SET);
-            bool renderDisplay(DisplayMode displayMode, bool displayInitialised = false);
-
+            
             void setReportInfo(ArduinoMessage* message) override;
             //void onReportReady() override;
 

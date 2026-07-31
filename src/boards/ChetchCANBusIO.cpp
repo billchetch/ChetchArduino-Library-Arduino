@@ -23,9 +23,9 @@ namespace Chetch{
             //Serial.println("Sending a message from IO");
 
             message = mcp->getMessageForHandler(qi->handler->getID(), ArduinoMessage::TYPE_NONE, qi->messageTag);
+
+            
             qi->handler->populateOutboundMessage(message, qi->messageID);
-            //Serial.print("Deuqueing: ");
-            //Serial.println(qi->messageID);
             err = mcp->sendMessage(message, false);
             if(err == MCP2515Device::MCP2515ErrorCode::NO_ERROR){
                 qi->handler->onOutboundMessageSent(message, qi->messageID);

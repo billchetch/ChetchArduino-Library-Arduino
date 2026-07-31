@@ -2,7 +2,6 @@
 
 namespace Chetch{
     Watermaker::Watermaker(byte nodeID, byte serialPin, byte waterMonitorNodeID) : CANBusNode(nodeID, serialPin),
-                        display(LCD_COLS, LCD_ROWS, LCD_REFRESH),
                         selector(SwitchDevice::SwitchMode::PASSIVE, SELECTOR_FIRST_PIN, SELECTION_SIZE, SWITCH_TOLERANCE, LOW),
                         startButton(SwitchDevice::SwitchMode::PASSIVE, START_BUTTON_PIN, SWITCH_TOLERANCE, OUTPUT_ONSTATE),
                         lps(SwitchDevice::SwitchMode::PASSIVE, LPS_PIN, SWITCH_TOLERANCE, LOW),
@@ -21,22 +20,6 @@ namespace Chetch{
         //Legacy stuff, in newer boards this is set to 7 to allow for use of altserialsoft library
         mcp.setIndicatorPin(9);
         
-        //Add event handlers to devices
-        display.setReportInterval(DISPLAY_UPDATE_INTERVAL); //Setting report interval allows for an interval (rather than direct call) based update
-        display.addEventListener([](ArduinoDevice* device, byte eventID, byte eventTag){
-            Watermaker* wm = (Watermaker*)device->Board;
-            if(eventID == ArduinoDevice::EVENT_REPORT_READY){
-                if(wm->isRunning()){
-                    wm->updateDisplay(DisplayMode::RUNNING);
-                }
-            }
-            return false;
-        });
-        display.addDisplayHandler([](ArduinoDevice* dd, byte updateTag, bool displayInitialised){
-            Watermaker* wm = (Watermaker*)dd->Board;
-            return wm->renderDisplay((DisplayMode)updateTag, displayInitialised);
-        });
-
         
         selector.addSelectListener([](SelectorSwitch* ss, byte selectedPin){
             //Capture this
@@ -44,9 +27,6 @@ namespace Chetch{
             
             //Do the thing
             wm->selectMode((OperationalMode)selectedPin);
-
-            //Send message out for this device
-            wm->mcp.sendMessageForDevice(ss, SwitchDevice::MESSAGE_ID_TRIGGERED);
         });
 
         startButton.addSwitchListener([](SwitchDevice* sd, bool on){
@@ -69,11 +49,6 @@ namespace Chetch{
                     wm->error(WMErrorCode::LOW_PRESSURE);
                 }
             }
-
-            if(!wm->hasError()){
-                wm->updateDisplay();
-            }
-
         });
 
         hps.addSwitchListener([](SwitchDevice* sd,bool on){
@@ -82,17 +57,11 @@ namespace Chetch{
             if(wm->isRunning() && on){
                 wm->error(WMErrorCode::HIGH_PRESSURE);
             }
-
-            if(!wm->hasError()){
-                wm->updateDisplay();
-            }
         });
 
 
         //Add devices to board
-        //Display
-        addDevice(&display); 
-
+        
         //Inputs
         addDevice(&selector);
         addDevice(&startButton);
@@ -106,21 +75,11 @@ namespace Chetch{
         addDevice(&pressurePump);
     }
 
-    bool Watermaker::begin(MessageIO* io){
-        bool retVal = CANBusNode::begin(io);
-        if(retVal){
-            display.backlight(true, 5000);
-            updateDisplay(DisplayMode::NORMAL);
-        }
-        return retVal;
-    }
-
     void Watermaker::loop(){
         CANBusNode::loop();
 
         if(millis() - waterMonitorLastUpdate > 1500 && waterMonitorPresent){
             waterMonitorPresent = false;
-            updateDisplay();
         }
     }
 
@@ -143,10 +102,6 @@ namespace Chetch{
         
         currentMode = operationalMode;
         currentSession = &sessions[currentMode - OperationalMode::MAKE_WATER];
-
-        updateDisplay(DisplayMode::NORMAL);
-
-        display.backlight(true, 5000);
     }
 
     void Watermaker::start(){
@@ -193,9 +148,6 @@ namespace Chetch{
         currentSession->count++;
         waterProduced = 0.0;
 
-        display.backlight(true, -1);
-        updateDisplay();
-
         setReportInterval(REPORT_INTERVAL_RUNNING);
     }
 
@@ -210,9 +162,6 @@ namespace Chetch{
         //record data and update display
         currentSession->stoppedOn = millis();
 
-        updateDisplay();
-        display.backlight(true, 5000);
-
         setReportInterval(REPORT_INTERVAL_IDLE);
     }
 
@@ -225,135 +174,7 @@ namespace Chetch{
             stop();
         }
 
-        bool changed = ec != errorCode;
         errorCode = ec;
-        if(hasError() && changed){
-            display.backlight(true, -1);
-            updateDisplay(DisplayMode::ERROR);
-        }
-    }
-
-    void Watermaker::updateDisplay(DisplayMode displayMode){
-        display.updateDisplay(displayMode);
-    }
-
-    void Watermaker::renderWaterMonitor(){
-        if(!waterMonitorPresent && false){
-            display.setCursor(0, 1);
-            display.print("Monitor offline");
-        } else {
-            char s[20];
-            s[0] = 0;
-            display.setCursor(0, 1);
-            sprintf(s, "TDS: %d (%d.%dC)   ", ppm, (int)temp, (int)((temp - (int)temp) * 10));
-            display.print(s);
-
-            display.setCursor(0, 2);
-            s[0] = 0;
-            sprintf(s, "FR: %d.%d L/M    ", (int)flowRate1, (int)((flowRate1 - (int)flowRate1) * 10));
-            display.print(s);
-        }
-    }
-
-    bool Watermaker::renderDisplay(DisplayMode displayMode, bool displayInitialised){
-        if(displayInitialised){
-            display.clearDisplay();
-        }
-
-        if(hasError() || displayMode == DisplayMode::ERROR){
-            display.clearDisplay();
-            display.setCursor(0, 0);
-            display.print(">>>> ERROR: ");
-            display.print(errorCode);
-            display.print(" <<<<");
-        } else if(displayMode == DisplayMode::RUNNING && !displayInitialised) {
-            //this is called at regular intervals while running
-            if(isRunning()){
-                renderWaterMonitor();
-
-                display.setCursor(0, 3);
-                unsigned int duration = (unsigned int)((millis() - currentSession->startedOn) / 1000);
-                display.print("Run: ");
-                display.print(duration);
-                display.print("s   ");
-            }
-        } else {
-            if(displayMode == DisplayMode::DISPLAY_MODE_NOT_SET){
-                displayMode = lastDisplayMode;
-            } else {
-                lastDisplayMode = displayMode;
-            }
-
-            display.clearDisplay();
-
-            //Line 0: Display selection
-            display.setCursor(0, 0);
-            display.print("Mode: ");
-            switch(currentMode){
-                case MAKE_WATER:
-                    display.print("Buat");
-                    break;
-
-                case RINSE:
-                    display.print("Bilas");
-                    break;
-
-                case EXPEL_AIR:
-                    display.print("Buang");
-                    break;
-
-                default:
-                    break;
-            }
-            
-            //Lines 1 and 2
-            switch(displayMode){
-                case DisplayMode::DIAGNOSTIC:
-                    display.backlight(true, -1);
-
-                    display.setCursor(0, 1);
-                    display.print("FP/PP/SL/ST: ");
-                    display.print(feederPump.isOn());
-                    display.print(" ");
-                    display.print(pressurePump.isOn());
-                    display.print(" ");
-                    display.print(solenoidSalt.isOn());
-                    display.print(" ");
-                    display.print(solenoidFresh.isOn());
-
-                    display.setCursor(0, 2);
-                    display.print("LPS/HPS: ");
-                    display.print(lps.isOn());
-                    display.print(" ");
-                    display.print(hps.isOn());
-                    break;
-
-                case DisplayMode::NORMAL:
-                    renderWaterMonitor();
-                    break;
-
-                default:
-                    //Do nothing
-                    break;
-            }
-
-            //Line 3 running history
-            if(!isRunning()){
-                display.setCursor(0, 3);
-                if(currentSession->count != 0){
-                    unsigned int duration = (unsigned int)((currentSession->stoppedOn - currentSession->startedOn) / 1000);
-                    display.print("Run#:");
-                    display.print(currentSession->count);
-                    display.print(" for ");
-                    display.print(duration);
-                    display.print("s   ");
-                } else {
-                    display.print("Not yet run!");
-                }
-            }
-        }
-
-        return true;
     }
 
     void Watermaker::setReportInfo(ArduinoMessage* message){
@@ -378,11 +199,6 @@ namespace Chetch{
             //We focus on data here
             if(message->type == ArduinoMessage::TYPE_DATA || message->type == ArduinoMessage::TYPE_XDATA){
                 waterMonitorLastUpdate = millis();
-
-                if(!waterMonitorPresent){
-                    waterMonitorPresent = true;
-                    updateDisplay();
-                }
 
                 //Serial.print("WMON "); Serial.println(message->sender);
                 switch(message->sender){

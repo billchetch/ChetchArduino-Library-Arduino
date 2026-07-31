@@ -24,9 +24,6 @@ namespace Chetch{
         
             bn->handleSentBusMessage(sourceNodeID, msg, canData);
         });
-
-        setReportInterval(1000);
-        
     }
 
     bool CANBusNode::begin(MessageIO* io){
