@@ -12,25 +12,75 @@ namespace Chetch{
 
     class DisplayNode : public CANBusNode{
         public:
-            class Page : public PageCycler::Page{
-                protected:
-                    LCDI2C* display = NULL;
 
+            class Page : public PageCycler::Page{
+                protected: 
+                    struct DataSource{
+                        byte nodeID = 0;
+                        byte senderID = 0;
+                        DataSource* next = NULL;
+                    };
+
+                    DataSource* firstDataSource = NULL;
+                    
+                    LCDI2C* display = NULL;
+                    DisplayNode* board = NULL;
+
+                protected:
+                    bool addDataSource(byte sourceNodeID, byte senderID, byte tolerance = 32){
+                        if(board == NULL)return false;
+
+                        DataSource* ds = NULL; 
+                        if(firstDataSource == NULL){
+                            ds = new DataSource;
+                            ds->nodeID = sourceNodeID;
+                            ds->senderID = senderID;
+                            firstDataSource = ds;
+                            board->addNodeDependency(sourceNodeID, tolerance);
+                            return true;
+                        } else {
+                            DataSource* dsource = firstDataSource;
+                            do{
+                                if(dsource->nodeID == sourceNodeID && dsource->senderID == senderID){
+                                   return false;
+                                }
+                                if(dsource->next != NULL)dsource = dsource->next;
+                            } while(dsource->next != NULL);
+                            ds = new DataSource;
+                            ds->nodeID = sourceNodeID;
+                            ds->senderID = senderID;
+                            dsource->next = ds;
+                            board->addNodeDependency(sourceNodeID, tolerance);
+                            return true;
+                        }
+                    }
 
                 public:
                     virtual void initialise(DisplayNode* displayNode){
-                        display = &displayNode->display;
+                        board = displayNode;
+                        display = &board->display;
                     }
                     bool canRender(){ return display != NULL; }
+                    bool isDataSource(byte sourceNodeID, byte senderID){
+                        DataSource* ds = firstDataSource;
+                        while(ds != NULL){
+                            if(ds->nodeID == sourceNodeID && ds->senderID == senderID){
+                                return true;
+                            }
+                            ds = ds->next;
+                        }
+                        return false;
+                    }
                     virtual void update(DisplayNode* displayNode, byte sourceNodeID, ArduinoMessage* message, byte* canData){}
                     virtual void render() = 0;
             };
-
             
         private:
             unsigned long lastActivityOn = 0;
             bool active = false;
             unsigned int sleepTimeout = 5000;
+            unsigned long lastStatusRequest = 0;
+            unsigned int requestStatusInterval = 5000;
 
         public:
             //Devices
@@ -42,6 +92,7 @@ namespace Chetch{
 
             bool begin(MessageIO* io = NULL) override; //will return false if fails to begin
             void loop() override;
+            void populateOutboundMessage(ArduinoMessage* message, byte messageID) override;
 
             void setSleepAfter(unsigned int sleepTimeout){ this->sleepTimeout = sleepTimeout; }
             bool isActive(){ return active; }

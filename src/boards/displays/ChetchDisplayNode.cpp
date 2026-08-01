@@ -58,6 +58,15 @@ namespace Chetch{
             display.backlight(false);
             active = false;
         }
+
+        if(requestStatusInterval > 0 && millis() - lastStatusRequest > requestStatusInterval){
+            lastStatusRequest = millis();
+            //getIO()->enqueueMessageToSend(this, 89);
+        }
+    }
+
+    void DisplayNode::populateOutboundMessage(ArduinoMessage* message, byte messageID){
+        CANBusNode::populateOutboundMessage(message, messageID);
     }
 
     void DisplayNode::activate(){
@@ -88,11 +97,12 @@ namespace Chetch{
 
         Page* page = (Page*)pageCycler.getFirstPage();
         while(page != NULL){
-            page->update(this, sourceNodeID, message, canData);
-            if(page == (Page*)pageCycler.getCurrentPage() && isActive()){
-                updateDisplay(false);
+            if(page->isDataSource(sourceNodeID, message->sender)){
+                page->update(this, sourceNodeID, message, canData);
+                if(page == (Page*)pageCycler.getCurrentPage() && isActive()){
+                    updateDisplay(false);
+                }
             }
-
             page = (Page*)page->next;
         }
     }
