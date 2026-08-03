@@ -1,8 +1,9 @@
 #include "boards/ChetchCANBusIO.h"
 
 namespace Chetch{
-    CANBusIO::CANBusIO(MCP2515Device* mcp){ 
+    CANBusIO::CANBusIO(MCP2515Device* mcp, unsigned int throttle){ 
         this->mcp = mcp; 
+        this->throttle = throttle;
     }
 
     void CANBusIO::setErrorBit(byte bitPosition, bool val){
@@ -18,15 +19,15 @@ namespace Chetch{
         ArduinoMessage* message;
         MCP2515Device::MCP2515ErrorCode err;
 
-        if(!isMessageQueueEmpty()){
+        if(!isMessageQueueEmpty() && (millis() - lastMessageSendAttempt > throttle)){
             ArduinoIO::MessageQueueItem* qi = &messageQueue[queueStart];
             //Serial.println("Sending a message from IO");
 
             message = mcp->getMessageForHandler(qi->handler->getID(), ArduinoMessage::TYPE_NONE, qi->messageTag);
-
             
             qi->handler->populateOutboundMessage(message, qi->messageID);
             err = mcp->sendMessage(message, false);
+            lastMessageSendAttempt = millis();
             if(err == MCP2515Device::MCP2515ErrorCode::NO_ERROR){
                 qi->handler->onOutboundMessageSent(message, qi->messageID);
 

@@ -119,9 +119,9 @@ namespace Chetch{
             };
 
             enum FilterPolicy : byte{
-                NO_FILTER_POLICY = 0,
-                RESTRICT_TO_TARGETED,
-                DO_NOT_USE_FILTERS,
+                NO_FILTER_POLICY = 0, //RXB0 allows all messages, RXB1 can still have node dependency filters
+                RESTRICT_TO_TARGETED, //RXB0 allows only targeted messages, RXB1 can still have node dependency filters
+                DO_NOT_USE_FILTERS, //RXB0 and RXB1 allow all messages
             };
 
             enum ResetRegime : byte{

@@ -12,7 +12,7 @@ namespace Chetch{
             enum MessageType : byte{
                 TYPE_NONE = 0, 
 
-                //BROADCAST Bit 4 = 0 (mask 0xxx)
+                //BROADCAST Bit 5 = 0 and 4 = 0 (mask 0xxx)
                 TYPE_WARNING,
 	            TYPE_ERROR,
                 TYPE_NOTIFICATION,
@@ -21,7 +21,7 @@ namespace Chetch{
                 TYPE_DATA, //normal data
                 TYPE_XDATA, //extended data
                 
-                //TARGETED Bit 4 = 1 (mask 1xxx)
+                //TARGETED Bit 5 = 0 and 4 = 1 (mask 1xxx)
 	            TYPE_PING, 
 	            TYPE_STATUS_REQUEST,
                 TYPE_COMMAND, 

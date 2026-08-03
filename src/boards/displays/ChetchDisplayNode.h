@@ -12,22 +12,25 @@ namespace Chetch{
 
     class DisplayNode : public CANBusNode{
         public:
+            static const byte MESSAGE_ID_REQUEST_STATUS = 200;
 
             class Page : public PageCycler::Page{
-                protected: 
+                public: 
                     struct DataSource{
                         byte nodeID = 0;
                         byte senderID = 0;
+                        bool requestStatus = false;
                         DataSource* next = NULL;
                     };
 
-                    DataSource* firstDataSource = NULL;
-                    
-                    LCDI2C* display = NULL;
-                    DisplayNode* board = NULL;
-
                 protected:
-                    bool addDataSource(byte sourceNodeID, byte senderID, byte tolerance = 32){
+                    DataSource* firstDataSource = NULL;
+                    DisplayNode* board = NULL;
+                    LCDI2C* display = NULL;
+                        
+                
+                protected:
+                    bool addDataSource(byte sourceNodeID, byte senderID, bool requestStatus = false, byte tolerance = 32){
                         if(board == NULL)return false;
 
                         DataSource* ds = NULL; 
@@ -35,6 +38,7 @@ namespace Chetch{
                             ds = new DataSource;
                             ds->nodeID = sourceNodeID;
                             ds->senderID = senderID;
+                            ds->requestStatus = requestStatus;
                             firstDataSource = ds;
                             board->addNodeDependency(sourceNodeID, tolerance);
                             return true;
@@ -49,6 +53,7 @@ namespace Chetch{
                             ds = new DataSource;
                             ds->nodeID = sourceNodeID;
                             ds->senderID = senderID;
+                            ds->requestStatus = requestStatus;
                             dsource->next = ds;
                             board->addNodeDependency(sourceNodeID, tolerance);
                             return true;
@@ -61,6 +66,7 @@ namespace Chetch{
                         display = &board->display;
                     }
                     bool canRender(){ return display != NULL; }
+                    DataSource* getFirstDataSource(){ return firstDataSource; }
                     bool isDataSource(byte sourceNodeID, byte senderID){
                         DataSource* ds = firstDataSource;
                         while(ds != NULL){
@@ -79,6 +85,7 @@ namespace Chetch{
             unsigned long lastActivityOn = 0;
             bool active = false;
             unsigned int sleepTimeout = 5000;
+
             unsigned long lastStatusRequest = 0;
             unsigned int requestStatusInterval = 5000;
 

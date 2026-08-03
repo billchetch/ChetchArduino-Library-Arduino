@@ -87,7 +87,8 @@ namespace Chetch{
 
         //apply node dependency filters
         if(firstDependency != NULL && filterPolicy != FilterPolicy::DO_NOT_USE_FILTERS){
-            mask = 0x18F00000; //we allow braodcast message types AND node ID (bits 8-5 of second byte) filter combinations
+            mask = 0x08F00000; //we allow broadcast and response messages (we examine only the 4th bit and ensure it is 0) AND node ID (bits 8-5 of second byte)
+            //mask = 0x18F00000; //we allow braodcast message (we examine the 4th and 5th bit and filter set to 0) types AND node ID (bits 8-5 of second byte) filter combinations
             err = mcp2515.setFilterMask(MCP2515::MASK::MASK1, true, mask);
             if(err != MCP2515::ERROR_OK){
                 return false;

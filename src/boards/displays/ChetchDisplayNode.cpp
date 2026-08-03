@@ -5,6 +5,7 @@ namespace Chetch{
                         display(cols, rows, refreshRate),
                         pageCycler(pageCyclerPin)
      {
+
         //Add event handlers
         pageCycler.addPageListener([](PageCycler* pageCycler, PageCycler::Page* currentPage, PageCycler::Page* newPage){
             DisplayNode* dn = (DisplayNode*)pageCycler->Board;
@@ -61,12 +62,37 @@ namespace Chetch{
 
         if(requestStatusInterval > 0 && millis() - lastStatusRequest > requestStatusInterval){
             lastStatusRequest = millis();
-            //getIO()->enqueueMessageToSend(this, 89);
+            Page* page = (Page*)pageCycler.getCurrentPage();
+            Page::DataSource* ds = page->getFirstDataSource();
+            while(ds != NULL){
+                if(ds->requestStatus){
+                    Serial.print("RS for ");
+                    Serial.print(ds->nodeID);
+                    Serial.print(" ");
+                    Serial.println(ds->senderID);
+                    getIO()->enqueueMessageToSend(this, MESSAGE_ID_REQUEST_STATUS + ds->nodeID, ds->senderID);
+                }
+                ds = ds->next;
+            }
         }
     }
 
     void DisplayNode::populateOutboundMessage(ArduinoMessage* message, byte messageID){
         CANBusNode::populateOutboundMessage(message, messageID);
+
+        if(messageID >= MESSAGE_ID_REQUEST_STATUS){
+            byte nodeID = messageID - MESSAGE_ID_REQUEST_STATUS;
+            byte senderID = message->tag;
+
+            message->type = ArduinoMessage::MessageType::TYPE_STATUS_REQUEST;
+            message->tag = 0;
+            if(senderID < ArduinoBoard::START_DEVICE_IDS_AT){
+                message->sender = 0;
+            } else {
+                message->sender = 1 + (senderID - ArduinoBoard::START_DEVICE_IDS_AT);
+            }
+            message->add(nodeID);
+        }
     }
 
     void DisplayNode::activate(){

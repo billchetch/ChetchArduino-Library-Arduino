@@ -185,6 +185,7 @@ namespace Chetch{
         message->add((byte)errorCode);
         message->add((byte)currentMode);
         message->add(isRunning());
+
         /*unsigned int duration = 0;
         if(isRunning()){
             duration = (unsigned int)((millis() - currentSession->startedOn) / 1000);

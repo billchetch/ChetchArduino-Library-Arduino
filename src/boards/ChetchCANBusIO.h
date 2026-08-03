@@ -17,6 +17,8 @@ namespace Chetch{
             MCP2515Device* mcp = NULL;
             int queueStart = 0;
             int queueCount = 0;
+            unsigned int throttle = 0;
+            unsigned long lastMessageSendAttempt = 0; //for throttling
             ArduinoIO::MessageQueueItem messageQueue[CB_QUEUE_SIZE];
             byte errorFlags = 0;
 
@@ -25,7 +27,7 @@ namespace Chetch{
             bool isMessageQueueEmpty();
 
         public:
-            CANBusIO(MCP2515Device* mcp);
+            CANBusIO(MCP2515Device* mcp, unsigned int throttle = 20);
 
             void setErrorBit(byte bitPosition, bool val);
             byte getErrorFlags(){ return errorFlags; }
