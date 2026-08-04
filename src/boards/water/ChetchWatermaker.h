@@ -51,7 +51,7 @@ History:
 #include "devices/ChetchSwitchDevice.h"
 #include "devices/ChetchSelectorSwitch.h"
 
-#define REPORT_INTERVAL_IDLE 1000  //when idle
+#define REPORT_INTERVAL_IDLE 5000  //when idle
 #define REPORT_INTERVAL_RUNNING 1000 //when running
 
 #define SELECTOR_FIRST_PIN 6  //Make water, Expel air, Rinse

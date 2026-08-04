@@ -9,16 +9,7 @@ namespace Chetch{
         //Add event handlers
         pageCycler.addPageListener([](PageCycler* pageCycler, PageCycler::Page* currentPage, PageCycler::Page* newPage){
             DisplayNode* dn = (DisplayNode*)pageCycler->Board;
-            
-            if(!dn->isActive()){
-                dn->activate();
-                dn->updateDisplay(false);
-                return false; //cancels assigning current page the new page
-            } else {
-                dn->activate(); 
-                dn->updateDisplay(true);
-                return true; //proceed making current page the new page
-            }
+            return dn->onPageChange((DisplayNode::Page*)currentPage, (DisplayNode::Page*)newPage);
         });
 
         display.addDisplayHandler([](ArduinoDevice* dd, byte updateTag, bool displayInitialised){
@@ -30,6 +21,7 @@ namespace Chetch{
         //Add devices
         addDevice(&display); //ID = 10
         addDevice(&pageCycler); //ID = 11
+
     }
 
     void DisplayNode::addPage(DisplayNode::Page* page){
@@ -37,6 +29,9 @@ namespace Chetch{
     }
 
     bool DisplayNode::begin(MessageIO* io){
+        //Note here you could set filter policy (or in derived class)
+        //mcp.setFilterPolicy(MCP2515Device::FilterPolicy::DO_NOT_USE_FILTERS);
+
         Page* page = (Page*)pageCycler.getFirstPage();
         while(page != NULL){
             page->initialise(this);
@@ -45,9 +40,11 @@ namespace Chetch{
 
         bool retVal = CANBusNode::begin(io);
         if(retVal){
+            //throttle IO
+            ((CANBusIO*)getIO())->setThrottle(100);
+            
             activate();
-            updateDisplay(false);
-            //renderPage((DisplayNode::Page*)pageCycler.getCurrentPage());
+            display.updateDisplay();
         }
         return retVal;
     }
@@ -66,10 +63,6 @@ namespace Chetch{
             Page::DataSource* ds = page->getFirstDataSource();
             while(ds != NULL){
                 if(ds->requestStatus){
-                    Serial.print("RS for ");
-                    Serial.print(ds->nodeID);
-                    Serial.print(" ");
-                    Serial.println(ds->senderID);
                     getIO()->enqueueMessageToSend(this, MESSAGE_ID_REQUEST_STATUS + ds->nodeID, ds->senderID);
                 }
                 ds = ds->next;
@@ -95,27 +88,42 @@ namespace Chetch{
         }
     }
 
+    bool DisplayNode::onPageChange(Page* currentPage, Page* newPage){
+        if(!isActive()){
+            activate();
+            display.updateDisplay();
+            return false; //cancels assigning current page the new page
+        } else {
+            activate(); 
+            display.updateDisplay();
+            newPage->clearBeforeRender = true;
+            return true; //proceed making current page the new page
+        }
+    }
+
     void DisplayNode::activate(){
         if(!active){
             display.backlight(true);
         }
         active = true;
         lastActivityOn = millis();
-
-    }
-
-    void DisplayNode::updateDisplay(bool clear, byte updateTag){
-        if(clear){
-            display.clearDisplay();
-        }
-        display.updateDisplay(updateTag);
+        lastStatusRequest = 0; //so we immediately request status 
     }
 
     void DisplayNode::renderPage(byte updateTag, bool displayInitialised){
         DisplayNode::Page* page = (Page*)pageCycler.getCurrentPage();
         if(page == NULL)return;
 
-        if(page->canRender())page->render();
+        if(page->clearBeforeRender){
+            display.clearDisplay();
+            page->clearBeforeRender = false;
+        }
+        if(page->activateBeforeRender){
+            activate();
+            page->activateBeforeRender = false;
+        }
+        page->render(this, &display);
+        
     }
 
     void DisplayNode::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
@@ -125,9 +133,9 @@ namespace Chetch{
         while(page != NULL){
             if(page->isDataSource(sourceNodeID, message->sender)){
                 page->update(this, sourceNodeID, message, canData);
-                if(page == (Page*)pageCycler.getCurrentPage() && isActive()){
-                    updateDisplay(false);
-                }
+            }
+            if(page == (Page*)pageCycler.getCurrentPage()){
+                display.updateDisplay();
             }
             page = (Page*)page->next;
         }

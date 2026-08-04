@@ -16,7 +16,7 @@ namespace Chetch{
         resetSwitch.addSwitchListener([](SwitchDevice* device, bool on){
             FloatSwitches* fsb = (FloatSwitches*)device->Board;
             if(!on){
-                Serial.println("Reset!");
+                //Serial.println("Reset!");
                 fsb->reset();
             }
         });

@@ -28,7 +28,7 @@ namespace Chetch{
 
         public:
             CANBusIO(MCP2515Device* mcp, unsigned int throttle = 20);
-
+            void setThrottle(unsigned int throttle){ this->throttle = throttle; }
             void setErrorBit(byte bitPosition, bool val);
             byte getErrorFlags(){ return errorFlags; }
             bool enqueueMessageToSend(void* sender, byte messageID, byte messageTag = 0, bool requireUniqueID = false) override;

@@ -19,10 +19,11 @@ namespace Chetch{
         ArduinoMessage* message;
         MCP2515Device::MCP2515ErrorCode err;
 
-        if(!isMessageQueueEmpty() && (millis() - lastMessageSendAttempt > throttle)){
+        if(!isMessageQueueEmpty() && ((millis() - lastMessageSendAttempt) > (unsigned long)throttle)){
             ArduinoIO::MessageQueueItem* qi = &messageQueue[queueStart];
-            //Serial.println("Sending a message from IO");
-
+            //Serial.print("QC = ");
+            //Serial.println(queueCount);
+            
             message = mcp->getMessageForHandler(qi->handler->getID(), ArduinoMessage::TYPE_NONE, qi->messageTag);
             
             qi->handler->populateOutboundMessage(message, qi->messageID);

@@ -24,11 +24,13 @@ namespace Chetch{
                     };
 
                 protected:
-                    DataSource* firstDataSource = NULL;
                     DisplayNode* board = NULL;
-                    LCDI2C* display = NULL;
+                    DataSource* firstDataSource = NULL;
                         
-                
+                public:
+                    bool clearBeforeRender = false;
+                    bool activateBeforeRender = false;
+                    
                 protected:
                     bool addDataSource(byte sourceNodeID, byte senderID, bool requestStatus = false, byte tolerance = 32){
                         if(board == NULL)return false;
@@ -63,9 +65,7 @@ namespace Chetch{
                 public:
                     virtual void initialise(DisplayNode* displayNode){
                         board = displayNode;
-                        display = &board->display;
                     }
-                    bool canRender(){ return display != NULL; }
                     DataSource* getFirstDataSource(){ return firstDataSource; }
                     bool isDataSource(byte sourceNodeID, byte senderID){
                         DataSource* ds = firstDataSource;
@@ -78,7 +78,7 @@ namespace Chetch{
                         return false;
                     }
                     virtual void update(DisplayNode* displayNode, byte sourceNodeID, ArduinoMessage* message, byte* canData){}
-                    virtual void render() = 0;
+                    virtual void render(DisplayNode* displayNode, LCDI2C* display) = 0;
             };
             
         private:
@@ -104,10 +104,11 @@ namespace Chetch{
             void setSleepAfter(unsigned int sleepTimeout){ this->sleepTimeout = sleepTimeout; }
             bool isActive(){ return active; }
             void activate();
-            void updateDisplay(bool clear, byte updateTag = 0);
-
-            void addPage(DisplayNode::Page* page);
             
+            void addPage(DisplayNode::Page* page);
+
+            bool onPageChange(DisplayNode::Page* currentPage, DisplayNode::Page* newPage);
+
             virtual void renderPage(byte updateTag, bool displayInitialised);
 
             void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData) override;
