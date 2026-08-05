@@ -91,6 +91,7 @@ namespace Chetch{
     bool DisplayNode::onPageChange(Page* currentPage, Page* newPage){
         if(!isActive()){
             activate();
+            currentPage->clearBeforeRender = true;
             display.updateDisplay();
             return false; //cancels assigning current page the new page
         } else {

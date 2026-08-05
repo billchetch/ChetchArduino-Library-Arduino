@@ -157,6 +157,24 @@ namespace Chetch{
                 addBytes(&data[idx], sizeof(T));
             }
 
+            template <typename T1, typename T2, typename T3, typename T4, typename T> void populate(byte* data){
+                populate<T1, T2, T3, T4>(data);
+                byte idx = getByteCount() - ArduinoMessage::HEADER_SIZE - getArgumentCount();
+                addBytes(&data[idx], sizeof(T));
+            }
+
+            template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T> void populate(byte* data){
+                populate<T1, T2, T3, T4, T5>(data);
+                byte idx = getByteCount() - ArduinoMessage::HEADER_SIZE - getArgumentCount();
+                addBytes(&data[idx], sizeof(T));
+            }
+
+            template <typename T1, typename T2, typename T3, typename T4, typename T5, typename T6, typename T> void populate(byte* data){
+                populate<T1, T2, T3, T4, T5, T6>(data);
+                byte idx = getByteCount() - ArduinoMessage::HEADER_SIZE - getArgumentCount();
+                addBytes(&data[idx], sizeof(T));
+            }
+
             void addBytes(byte *bytev, byte bytec);
             void add(byte argv);
             void add(bool argv);
