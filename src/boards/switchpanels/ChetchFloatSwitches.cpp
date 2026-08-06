@@ -100,6 +100,8 @@ namespace Chetch{
 
         addDevice(&dieselPumpOverride); //ID = 17
         addDevice(&bilgePumpOverride); //ID = 18
+
+        setReportInterval(1000);
         
     }
 
@@ -122,5 +124,17 @@ namespace Chetch{
             dieselLevel.reset();
         }
         resetError.turn(false);
+    }
+
+    void FloatSwitches::setReportInfo(ArduinoMessage* message){
+        //Maybe not call base depending on byte limit
+        CANBusNode::setReportInfo(message);
+
+        //Note the byte limit here
+        message->add(resetError.isOn());
+        message->add(normalError.isOn());
+        message->add(dieselPump.isOn());
+        message->add(bilgePump.isOn());
+
     }
 } //end namespace

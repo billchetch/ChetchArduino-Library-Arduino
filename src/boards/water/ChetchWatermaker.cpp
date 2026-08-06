@@ -193,8 +193,8 @@ namespace Chetch{
         message->add(duration);*/
     }
 
-    void Watermaker::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
-        CANBusNode::handleReceivedBusMessage(sourceNodeID, message, canData);
+    void Watermaker::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData, byte canDLC){
+        CANBusNode::handleReceivedBusMessage(sourceNodeID, message, canData, canDLC);
 
         if(sourceNodeID == waterMonitorNode->getNodeID()){
             //We focus on data here

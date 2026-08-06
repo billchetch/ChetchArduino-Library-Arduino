@@ -64,6 +64,7 @@ namespace Chetch{
             FloatSwitches(byte nodeID, byte serialPin);
 
             bool begin(MessageIO* io = NULL) override; //will return false if fails to begin
+            void setReportInfo(ArduinoMessage* message) override;
 
             void halt();            
             void reset();

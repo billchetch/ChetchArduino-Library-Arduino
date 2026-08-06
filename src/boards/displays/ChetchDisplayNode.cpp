@@ -105,10 +105,10 @@ namespace Chetch{
     void DisplayNode::activate(){
         if(!active){
             display.backlight(true);
+            lastStatusRequest = 0; //so we immediately request status 
         }
         active = true;
         lastActivityOn = millis();
-        lastStatusRequest = 0; //so we immediately request status 
     }
 
     void DisplayNode::renderPage(byte updateTag, bool displayInitialised){
@@ -127,13 +127,13 @@ namespace Chetch{
         
     }
 
-    void DisplayNode::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
-        CANBusNode::handleReceivedBusMessage(sourceNodeID, message, canData);
+    void DisplayNode::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData, byte canDLC){
+        CANBusNode::handleReceivedBusMessage(sourceNodeID, message, canData, canDLC);
 
         Page* page = (Page*)pageCycler.getFirstPage();
         while(page != NULL){
             if(page->isDataSource(sourceNodeID, message->sender)){
-                page->update(this, sourceNodeID, message, canData);
+                page->update(this, sourceNodeID, message, canData, canDLC);
             }
             if(page == (Page*)pageCycler.getCurrentPage()){
                 display.updateDisplay();

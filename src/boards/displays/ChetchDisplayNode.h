@@ -7,7 +7,6 @@
 #include "devices/displays/ChetchLCDI2C.h"
 #include "devices/displays/ChetchPageCycler.h"
 
-
 namespace Chetch{
 
     class DisplayNode : public CANBusNode{
@@ -77,7 +76,7 @@ namespace Chetch{
                         }
                         return false;
                     }
-                    virtual void update(DisplayNode* displayNode, byte sourceNodeID, ArduinoMessage* message, byte* canData){}
+                    virtual void update(DisplayNode* displayNode, byte sourceNodeID, ArduinoMessage* message, byte* canData, byte canDLC){}
                     virtual void render(DisplayNode* displayNode, LCDI2C* display) = 0;
             };
             
@@ -111,7 +110,7 @@ namespace Chetch{
 
             virtual void renderPage(byte updateTag, bool displayInitialised);
 
-            void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData) override;
+            void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData, byte canDLC) override;
 
     }; //end class
 } //end namespcae

@@ -155,7 +155,7 @@ namespace Chetch{
             void setReportInfo(ArduinoMessage* message) override;
             //void onReportReady() override;
 
-            void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData) override;
+            void handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData, byte canDLC) override;
     };
 } //end namespace
 #endif

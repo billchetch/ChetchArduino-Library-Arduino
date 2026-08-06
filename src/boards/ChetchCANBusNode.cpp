@@ -16,13 +16,13 @@ namespace Chetch{
         mcp.addMessageReceivedListener([](MCP2515Device* dev, byte sourceNodeID, ArduinoMessage* msg, unsigned long canID, byte* canData, byte canDLC){
             CANBusNode* bn = (CANBusNode*)dev->Board;
         
-            bn->handleReceivedBusMessage(sourceNodeID, msg, canData);
+            bn->handleReceivedBusMessage(sourceNodeID, msg, canData, canDLC);
         });
 
        mcp.addMessageSentListener([](MCP2515Device* dev, byte sourceNodeID, ArduinoMessage* msg, unsigned long canID, byte* canData, byte canDLC){
             CANBusNode* bn = (CANBusNode*)dev->Board;
         
-            bn->handleSentBusMessage(sourceNodeID, msg, canData);
+            bn->handleSentBusMessage(sourceNodeID, msg, canData, canDLC);
         });
     }
 
@@ -48,7 +48,7 @@ namespace Chetch{
         //message->add(statusResponseCount);
     }
 
-    void CANBusNode::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
+    void CANBusNode::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData, byte canDLC){
         /*if(message->type == ArduinoMessage::TYPE_STATUS_REQUEST && message->getArgumentCount() > 0){
             byte targetNode = message->getLast<byte>();
             if(targetNode == 0 || targetNode == getNodeID()){
@@ -63,7 +63,7 @@ namespace Chetch{
         Serial.println(message->sender);*/
     }
 
-    bool CANBusNode::handleSentBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData){
+    bool CANBusNode::handleSentBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData, byte canDLC){
         /*if(message->type == ArduinoMessage::TYPE_STATUS_RESPONSE){
             statusResponseCount++;
         }*/ 
