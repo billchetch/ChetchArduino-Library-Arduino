@@ -62,8 +62,10 @@ namespace Chetch{
             Page* page = (Page*)pageCycler.getCurrentPage();
             Page::DataSource* ds = page->getFirstDataSource();
             while(ds != NULL){
-                if(ds->requestStatus){
-                    getIO()->enqueueMessageToSend(this, MESSAGE_ID_REQUEST_STATUS + ds->nodeID, ds->senderID);
+                if(ds->requestStatusIDs != NULL){
+                    for(byte i = 0; i < ds->requestStatusIDsCount; i++){
+                        getIO()->enqueueMessageToSend(this, MESSAGE_ID_REQUEST_STATUS + ds->nodeID, ds->requestStatusIDs[i]);
+                    }
                 }
                 ds = ds->next;
             }
@@ -132,7 +134,7 @@ namespace Chetch{
 
         Page* page = (Page*)pageCycler.getFirstPage();
         while(page != NULL){
-            if(page->isDataSource(sourceNodeID, message->sender)){
+            if(page->isDataSource(sourceNodeID)){
                 page->update(this, sourceNodeID, message, canData, canDLC);
             }
             if(page == (Page*)pageCycler.getCurrentPage()){

@@ -17,9 +17,27 @@ namespace Chetch{
                 public: 
                     struct DataSource{
                         byte nodeID = 0;
-                        byte senderID = 0;
-                        bool requestStatus = false;
+                        byte* requestStatusIDs = NULL;
+                        byte requestStatusIDsCount = 0;
                         DataSource* next = NULL;
+
+                        DataSource(byte nodeID, byte* reqStatusIDs = NULL, byte reqStatusIDsCount = 0){
+                            this->nodeID = nodeID;
+                            if(reqStatusIDs != NULL && reqStatusIDsCount > 0){
+                                requestStatusIDsCount = reqStatusIDsCount;
+                                requestStatusIDs = new byte[requestStatusIDsCount];
+                                for(byte i = 0; i < requestStatusIDsCount; i++){
+                                    requestStatusIDs[i] = reqStatusIDs[i];
+                                }
+                            }
+                        }
+
+                        ~DataSource(){
+                            if(requestStatusIDs != NULL){
+                                delete[] requestStatusIDs;
+                                requestStatusIDsCount = 0;
+                            }
+                        }
                     };
 
                 protected:
@@ -31,30 +49,25 @@ namespace Chetch{
                     bool activateBeforeRender = false;
                     
                 protected:
-                    bool addDataSource(byte sourceNodeID, byte senderID, bool requestStatus = false, byte tolerance = 32){
+                    bool addDataSource(byte sourceNodeID, byte* requestStatusIDs = NULL, byte requestStatusIDsCount = 0,  byte tolerance = 32){
                         if(board == NULL)return false;
 
                         DataSource* ds = NULL; 
                         if(firstDataSource == NULL){
-                            ds = new DataSource;
-                            ds->nodeID = sourceNodeID;
-                            ds->senderID = senderID;
-                            ds->requestStatus = requestStatus;
+                            ds = new DataSource(sourceNodeID, requestStatusIDs, requestStatusIDsCount);
                             firstDataSource = ds;
                             board->addNodeDependency(sourceNodeID, tolerance);
                             return true;
                         } else {
                             DataSource* dsource = firstDataSource;
                             do{
-                                if(dsource->nodeID == sourceNodeID && dsource->senderID == senderID){
+                                if(dsource->nodeID == sourceNodeID){
                                    return false;
                                 }
                                 if(dsource->next != NULL)dsource = dsource->next;
                             } while(dsource->next != NULL);
-                            ds = new DataSource;
-                            ds->nodeID = sourceNodeID;
-                            ds->senderID = senderID;
-                            ds->requestStatus = requestStatus;
+                            
+                            ds = new DataSource(sourceNodeID, requestStatusIDs, requestStatusIDsCount);
                             dsource->next = ds;
                             board->addNodeDependency(sourceNodeID, tolerance);
                             return true;
@@ -66,10 +79,10 @@ namespace Chetch{
                         board = displayNode;
                     }
                     DataSource* getFirstDataSource(){ return firstDataSource; }
-                    bool isDataSource(byte sourceNodeID, byte senderID){
+                    bool isDataSource(byte sourceNodeID){
                         DataSource* ds = firstDataSource;
                         while(ds != NULL){
-                            if(ds->nodeID == sourceNodeID && ds->senderID == senderID){
+                            if(ds->nodeID == sourceNodeID){
                                 return true;
                             }
                             ds = ds->next;
