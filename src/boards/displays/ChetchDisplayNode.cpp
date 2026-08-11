@@ -130,7 +130,12 @@ namespace Chetch{
     }
 
     void DisplayNode::handleReceivedBusMessage(byte sourceNodeID, ArduinoMessage* message, byte* canData, byte canDLC){
+        Serial.print("HRM: ");
+        Serial.println(sourceNodeID);
+        
         CANBusNode::handleReceivedBusMessage(sourceNodeID, message, canData, canDLC);
+
+        
 
         Page* page = (Page*)pageCycler.getFirstPage();
         while(page != NULL){

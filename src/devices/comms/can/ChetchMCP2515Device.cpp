@@ -196,6 +196,9 @@ namespace Chetch{
     MCP2515Device::NodeDependency* MCP2515Device::addNodeDependency(byte nodeID, byte tolerance){
         NodeDependency* nd = new NodeDependency(nodeID, tolerance);
 
+        Serial.print("Add dep: ");
+        Serial.println(nodeID);
+        
         if(firstDependency == NULL){
             firstDependency = nd;
         } else {

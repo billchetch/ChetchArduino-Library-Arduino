@@ -149,6 +149,7 @@ namespace Chetch{
         waterProduced = 0.0;
 
         setReportInterval(REPORT_INTERVAL_RUNNING);
+        onReportReady(); //to send out a report immediately
     }
 
     void Watermaker::stop(){
@@ -163,6 +164,7 @@ namespace Chetch{
         currentSession->stoppedOn = millis();
 
         setReportInterval(REPORT_INTERVAL_IDLE);
+        onReportReady(); //to send out a report immediately
     }
 
     void Watermaker::reset(){
