@@ -91,6 +91,7 @@ namespace Chetch{
             
             static const byte MAX_NODE_ID = 15;
             static const byte MIN_NODE_ID = 1;
+            static const byte ANONYMOUS_NODE_ID = 0; //TODO: cannot send messages
             
             static const uint32_t MESSAGE_TYPES_MASK = 0x18000000; //Singles out bits 5 and 4 of the message type portion of CAN ID (byte 4)
             static const uint32_t NODE_MASK = 0x00F00000; //Singles out bits related to the node ID part of the CAN ID (byte 3)
