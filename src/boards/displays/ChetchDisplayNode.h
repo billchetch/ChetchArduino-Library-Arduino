@@ -19,6 +19,7 @@ namespace Chetch{
                         byte nodeID = 0;
                         byte* requestStatusIDs = NULL;
                         byte requestStatusIDsCount = 0;
+                        unsigned long lastUpdated = 0;
                         DataSource* next = NULL;
 
                         DataSource(byte nodeID, byte* reqStatusIDs = NULL, byte reqStatusIDsCount = 0){
@@ -79,20 +80,45 @@ namespace Chetch{
                         board = displayNode;
                     }
                     DataSource* getFirstDataSource(){ return firstDataSource; }
-                    bool isDataSource(byte sourceNodeID){
+                    DataSource* getDataSource(byte sourceNodeID){
                         DataSource* ds = firstDataSource;
                         while(ds != NULL){
                             if(ds->nodeID == sourceNodeID){
-                                return true;
+                                return ds;
                             }
                             ds = ds->next;
                         }
-                        return false;
+                        return NULL;
+                    }
+                    bool isDataSource(byte sourceNodeID){
+                        return getDataSource(sourceNodeID) != NULL;
                     }
                     virtual void update(DisplayNode* displayNode, byte sourceNodeID, ArduinoMessage* message, byte* canData, byte canDLC){}
                     virtual void render(DisplayNode* displayNode, LCDI2C* display) = 0;
             };
-            
+        
+            class NodesPage : public Page{
+                public:
+                    void render(DisplayNode* displayNode, LCDI2C* display) override{
+                        MCP2515Device::NodeDependency* dep = displayNode->mcp.getFirstDependency();
+                        byte i = 0;
+                        byte line = 0;
+                        while(dep != NULL){
+                            display->print(F("N"));
+                            display->print(dep->nodeID);
+                            display->print(F(":"));
+                            display->print(dep->updated ? F("Y") : F("N"));
+                            display->print(F(" "));
+                            i++;
+                            if(i % 4 == 0){
+                                line++;
+                                display->setCursor(0, line);
+                            }
+                            dep = dep->next;
+                        }
+                    }
+            };
+
         private:
             unsigned long lastActivityOn = 0;
             bool active = false;
@@ -118,6 +144,7 @@ namespace Chetch{
             void activate();
             
             void addPage(DisplayNode::Page* page);
+            void addNodesPage(){ addPage(new NodesPage()); };
 
             bool onPageChange(DisplayNode::Page* currentPage, DisplayNode::Page* newPage);
 

@@ -274,6 +274,7 @@ namespace Chetch{
             NodeDependency* addNodeDependency(byte nodeID, byte tolerance = 1);
             bool hasDependencies(){ return firstDependency != NULL; }
             NodeDependency* getDependency(byte nodeID);
+            NodeDependency* getFirstDependency(){ return firstDependency; }
         
             
             void raiseError(MCP2515ErrorCode errorCode, unsigned long errorData = 0, bool canBroadcast = true);
