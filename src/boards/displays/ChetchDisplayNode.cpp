@@ -92,14 +92,16 @@ namespace Chetch{
 
     bool DisplayNode::onPageChange(Page* currentPage, Page* newPage){
         if(!isActive()){
-            activate();
+            lastStatusRequest = 0;
+            newPage->activateBeforeRender = true;
             currentPage->clearBeforeRender = true;
             display.updateDisplay();
             return false; //cancels assigning current page the new page
         } else {
-            activate(); 
-            display.updateDisplay();
+            lastStatusRequest = 0;
+            newPage->activateBeforeRender = true;
             newPage->clearBeforeRender = true;
+            display.updateDisplay();
             return true; //proceed making current page the new page
         }
     }
@@ -107,7 +109,6 @@ namespace Chetch{
     void DisplayNode::activate(){
         if(!active){
             display.backlight(true);
-            lastStatusRequest = 0; //so we immediately request status 
         }
         active = true;
         lastActivityOn = millis();

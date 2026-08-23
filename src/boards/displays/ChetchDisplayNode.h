@@ -103,6 +103,7 @@ namespace Chetch{
                         MCP2515Device::NodeDependency* dep = displayNode->mcp.getFirstDependency();
                         byte i = 0;
                         byte line = 0;
+                        display->setCursor(0, 0);
                         while(dep != NULL){
                             display->print(F("N"));
                             display->print(dep->nodeID);
