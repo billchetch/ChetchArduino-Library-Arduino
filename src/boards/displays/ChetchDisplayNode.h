@@ -101,9 +101,13 @@ namespace Chetch{
                 public:
                     void render(DisplayNode* displayNode, LCDI2C* display) override{
                         MCP2515Device::NodeDependency* dep = displayNode->mcp.getFirstDependency();
-                        byte i = 0;
                         byte line = 0;
-                        display->setCursor(0, 0);
+                        display->setCursor(0, line++);
+                        display->print(F("MS:"));
+                        display->print(millis());
+                        display->print(F("    "));
+                        display->setCursor(0, line);
+                        byte i = 0;
                         while(dep != NULL){
                             display->print(F("N"));
                             display->print(dep->nodeID);
